@@ -45,4 +45,4 @@ if __name__ == "__main__":
     index_folder = "faiss_indexes"
 
     build_and_save_indexes(faq_folder, model, index_folder)
-    print("Índices criados e salvos!")
+    print("Índices criados e guardados!")
