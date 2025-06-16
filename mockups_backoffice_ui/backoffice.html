@@ -2,250 +2,325 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>CMVC - Backoffice FAQs</title>
+  <title>Chatbot Municipal - Backoffice</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
     body {
-      margin: 0;
       font-family: 'Inter', sans-serif;
-      background-color: #f5f7fa;
-    }
-    .container { display: flex; height: 100vh; }
-    .sidebar {
-      width: 250px;
-      background-color: #2c3e50;
-      color: white;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .sidebar h2 { margin-bottom: 15px; font-size: 18px; }
-    .sidebar ul { list-style: none; padding: 0; }
-    .sidebar ul li {
-      padding: 10px;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    .sidebar ul li:hover {
-      background-color: #34495e;
-    }
-    .sidebar button {
-      margin-top: 20px;
-      background-color: #3498db;
-      border: none;
-      padding: 10px;
-      color: white;
-      font-weight: bold;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    main {
-      flex: 1;
-      padding: 30px;
-      overflow-y: auto;
-    }
-    main h1 {
-      margin-top: 0;
-      color: #2c3e50;
-    }
-    #pesquisa {
-      width: 100%;
-      padding: 10px 15px;
-      margin: 20px 0;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    .faq-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 20px;
-    }
-    .faq-card {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      position: relative;
-    }
-    .faq-card h4 {
-      margin: 0 0 10px;
-      color: #2c3e50;
-    }
-    .faq-card p {
-      font-size: 14px;
       margin: 0;
+      background-color: #f3f4f6;
+      color: #2c3e50;
     }
-    .faq-card .categoria {
-      font-size: 12px;
-      color: #888;
-      margin-bottom: 8px;
+    .layout {
+      display: flex;
+      height: 100vh;
     }
-    .modal {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: rgba(0,0,0,0.5);
+    aside {
+      width: 220px;
+      background: #1f2937;
+      padding: 20px;
+      color: white;
+    }
+    aside h2 {
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    aside ul {
+      list-style: none;
+      padding: 0;
+    }
+    aside li {
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    aside li:hover {
+      background: #374151;
+    }
+    aside .active {
+      background: #4b5563;
+    }
+    header {
+      background: #ffffff;
+      padding: 20px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #ddd;
+    }
+    header .bot-info {
       display: flex;
       align-items: center;
-      justify-content: center;
-      z-index: 10;
+      gap: 10px;
     }
-    .modal.hidden {
-      display: none;
+    header .bot-info img {
+      width: 40px;
+      height: 40px;
     }
-    .modal-content {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      width: 400px;
+    .content {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 15px;
     }
-    .modal-content select,
-    .modal-content input,
-    .modal-content textarea {
-      padding: 10px;
+    .panel {
+      padding: 30px;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      justify-content: space-between;
+    }
+    .left-content {
+      flex: 2;
+    }
+    .bot-list {
+      margin-bottom: 30px;
+    }
+    .bot-card {
+      background-color: #e5efff;
+      border: 1px solid #cfdff7;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .bot-card img {
+      width: 35px;
+      margin-right: 10px;
+    }
+    .bot-info-main {
+      display: flex;
+      flex-direction: column;
       font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
     }
-    .modal-content button {
-      padding: 10px;
+    .bot-name {
       font-weight: bold;
-      border: none;
-      border-radius: 6px;
+    }
+    .bot-meta {
+      font-size: 12px;
+      color: #555;
+    }
+    .resources {
+      display: flex;
+      gap: 20px;
+    }
+    .resources .card {
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 20px;
+      background: white;
+      flex: 1;
       cursor: pointer;
     }
-    .modal-content button:first-of-type {
-      background-color: #2c3e50;
-      color: white;
+    .resources .card.active {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px #2563eb33;
     }
-    .modal-content button:last-of-type {
-      background-color: #bdc3c7;
-      color: #2c3e50;
+    .chat-sidebar {
+      width: 360px;
+      background: #fff;
+      border-left: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -2px 0 6px rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .chat-header {
+      background: #1e3a8a;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+    .chat-header img {
+      width: 40px;
+      margin-bottom: 5px;
+    }
+    .chat-header h3 {
+      margin: 5px 0 0;
+      font-size: 14px;
+    }
+    .chat-header span {
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .chat-body {
+      flex: 1;
+      padding: 15px;
+      background: #f9fafb;
+      overflow-y: auto;
+    }
+    .message {
+      margin-bottom: 10px;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .message.intro {
+      background: #f1f5f9;
+      text-align: center;
+      font-size: 14px;
+    }
+    .categories {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .categories button {
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 25px;
+      padding: 8px 15px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .categories button:hover {
+      background: #e5e7eb;
+    }
+    .question {
+      background: #d1fae5;
+      color: #065f46;
+      text-align: center;
+      font-weight: bold;
+    }
+    .answer {
+      background: #f8fafc;
+      border-left: 4px solid #2563eb;
+    }
+    .answer strong {
+      display: block;
+      margin-top: 10px;
+      color: #1f2937;
+    }
+    .related {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .related button {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 25px;
+      padding: 6px 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .chat-input {
+      padding: 10px;
+      background: white;
+      border-top: 1px solid #ddd;
+    }
+    .chat-input input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <aside class="sidebar">
-      <div>
-        <h2>Categorias</h2>
-        <ul>
-          <li onclick="filtrar('Todas')">Todas</li>
-          <li onclick="filtrar('Educacao')">Educação</li>
-          <li onclick="filtrar('Acao social')">Ação Social</li>
-        </ul>
-      </div>
-      <button onclick="abrirModal()">+ Nova FAQ</button>
+  <div class="layout">
+    <aside>
+      <h2>Menu</h2>
+      <ul>
+        <li class="active">Recursos</li>
+        <li>Respostas</li>
+        <li>Comportamento</li>
+        <li>Fallbacks</li>
+      </ul>
     </aside>
+    <div class="content">
+      <header>
+        <div class="bot-info">
+          <img src="../mockups_chatbot_ui/chatbot-icon.png" alt="bot">
+          <div>
+            <strong>Bot</strong>
+            <div style="font-size: 12px; color: gray;">Chatbot Municipal</div>
+          </div>
+        </div>
+        <button style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold">Publicar</button>
+      </header>
+      <div class="panel">
+        <div class="left-content">
+          <div class="bot-list">
+            <div class="bot-card">
+              <div class="bot-info-main">
+                <div class="bot-name">Bot 1</div>
+                <div class="bot-meta">Estou aqui para ajudar!</div>
+                <div class="bot-meta">Estado Bot: <strong style="color:red">Não Publicado</strong> • Município • 16 Jun 2025</div>
+              </div>
+              <img src="../mockups_chatbot_ui/chatbot-icon.png" alt="bot">
+            </div>
+            <div class="bot-card">
+              <div class="bot-info-main">
+                <div class="bot-name">Bot 2</div>
+                <div class="bot-meta">Seu assistente para serviços cívicos</div>
+                <div class="bot-meta">Estado Bot: <strong style="color:red">Não Publicado</strong> • Município • 16 Jun 2025</div>
+              </div>
+              <img src="../mockups_chatbot_ui/chatbot-icon.png" alt="bot">
+            </div>
+            <div class="bot-card">
+              <div class="bot-info-main">
+                <div class="bot-name">Bot 3</div>
+                <div class="bot-meta">Assistente de ajuda pública</div>
+                <div class="bot-meta">Estado Bot: <strong style="color:green">Publicado</strong> • Município • 16 Jun 2025</div>
+              </div>
+              <img src="../mockups_chatbot_ui/chatbot-icon.png" alt="bot">
+            </div>
+          </div>
+          <h3>Escolha a fonte para as respostas do chatbot</h3>
+          <div class="resources">
+            <div class="card active">
+              <h4>Artigos</h4>
+              <p>Utiliza os artigos da base de conhecimento para gerar sugestões relevantes.</p>
+            </div>
+            <div class="card active">
+              <h4>FAQs</h4>
+              <p>As perguntas frequentes ajudam a guiar as respostas automáticas do bot.</p>
+            </div>
+            <div class="card">
+              <h4>Conversas simples</h4>
+              <p>Utiliza um pacote de respostas predefinidas para interações genéricas.</p>
+            </div>
+          </div>
+        </div>
 
-    <main>
-      <h1>Gestão de FAQs</h1>
-      <input type="text" id="pesquisa" placeholder="🔍 Pesquisar..." oninput="pesquisarFaqs()">
-      <div id="faqContainer" class="faq-container"></div>
-    </main>
-  </div>
-
-  <div id="modal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Nova FAQ</h2>
-      <select id="novaCategoria">
-        <option>Educacao</option>
-        <option>Acao social</option>
-      </select>
-      <input type="text" id="novaPergunta" placeholder="Pergunta">
-      <textarea id="novaResposta" rows="4" placeholder="Resposta"></textarea>
-      <button onclick="guardarFaq()">Guardar</button>
-      <button onclick="fecharModal()">Cancelar</button>
+        <div class="chat-sidebar">
+          <div class="chat-header">
+            <img src="../mockups_chatbot_ui/chatbot-icon.png" alt="bot">
+            <h3>CMVC - Serviços Municipalizados</h3>
+            <span>(Assistente Virtual)</span>
+          </div>
+          <div class="chat-body">
+            <div class="message intro">Olá! Está a conversar com o assistente virtual. <br>Escolha um tema ou escreva a sua pergunta.</div>
+            <div class="categories">
+              <button>Educação</button>
+              <button>Ação Social</button>
+              <button>Habitação</button>
+              <button>Cultura</button>
+              <button>Desporto</button>
+              <button>Ambiente</button>
+            </div>
+            <div class="message question">Quem pode solicitar apoio habitacional?</div>
+            <div class="message answer">
+              Famílias em situação de vulnerabilidade podem solicitar apoio na Câmara Municipal.
+              <strong>Outras perguntas relacionadas:</strong>
+              <div class="related">
+                <button>Como posso obter cabazes alimentares?</button>
+                <button>Onde posso obter apoio psicológico?</button>
+                <button>Quais são os requisitos para apoio ao arrendamento?</button>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input">
+            <input type="text" placeholder="Digite uma mensagem...">
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-
-  <script>
-    const faqs = [
-      {
-        categoria: "Acao social",
-        pergunta: "Quem pode solicitar apoio habitacional?",
-        resposta: "O apoio pode ser solicitado por residentes com comprovada carência habitacional junto do serviço social municipal."
-      },
-      {
-        categoria: "Acao social",
-        pergunta: "Como posso obter cabazes alimentares?",
-        resposta: "Deve dirigir-se ao Departamento de Ação Social da CMVC e preencher o formulário de candidatura com a documentação exigida."
-      },
-      {
-        categoria: "Educacao",
-        pergunta: "Como faço a matrícula escolar?",
-        resposta: "A matrícula pode ser feita online no portal das matrículas ou presencialmente na escola mais próxima."
-      },
-      {
-        categoria: "Educacao",
-        pergunta: "Onde posso obter informações sobre bolsas de estudo?",
-        resposta: "As informações estão disponíveis no site oficial da CMVC ou no Gabinete de Apoio ao Aluno no edifício da educação."
-      }
-    ];
-
-    function renderizarFaqs(lista = faqs) {
-      const container = document.getElementById('faqContainer');
-      container.innerHTML = '';
-      lista.forEach((faq) => {
-        const div = document.createElement('div');
-        div.classList.add('faq-card');
-        div.innerHTML = `
-          <div class="categoria">${faq.categoria}</div>
-          <h4>${faq.pergunta}</h4>
-          <p>${faq.resposta}</p>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function filtrar(categoria) {
-      if (categoria === 'Todas') {
-        renderizarFaqs();
-      } else {
-        const filtradas = faqs.filter(f => f.categoria.toLowerCase() === categoria.toLowerCase());
-        renderizarFaqs(filtradas);
-      }
-    }
-
-    function pesquisarFaqs() {
-      const termo = document.getElementById('pesquisa').value.toLowerCase();
-      const resultado = faqs.filter(f =>
-        f.pergunta.toLowerCase().includes(termo) ||
-        f.resposta.toLowerCase().includes(termo)
-      );
-      renderizarFaqs(resultado);
-    }
-
-    function abrirModal() {
-      document.getElementById('modal').classList.remove('hidden');
-    }
-
-    function fecharModal() {
-      document.getElementById('modal').classList.add('hidden');
-    }
-
-    function guardarFaq() {
-      const categoria = document.getElementById('novaCategoria').value;
-      const pergunta = document.getElementById('novaPergunta').value.trim();
-      const resposta = document.getElementById('novaResposta').value.trim();
-
-      if (pergunta && resposta) {
-        faqs.push({ categoria, pergunta, resposta });
-        fecharModal();
-        renderizarFaqs();
-        document.getElementById('novaPergunta').value = '';
-        document.getElementById('novaResposta').value = '';
-      } else {
-        alert("Preencha todos os campos!");
-      }
-    }
-
-    renderizarFaqs();
-  </script>
 </body>
 </html>
