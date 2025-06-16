@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulação Backoffice - FAQ CMVC</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Backoffice de Gestão de FAQs</h1>
+    <div class="form-section">
+      <label for="categoria">Categoria:</label>
+      <select id="categoria">
+        <option>Educação</option>
+        <option>Ação Social</option>
+        <option>Habitação</option>
+        <option>Desporto</option>
+        <option>Cultura</option>
+      </select>
+
+      <label for="pergunta">Pergunta:</label>
+      <input type="text" id="pergunta" placeholder="Ex: Como pedir apoio habitacional?">
+
+      <label for="resposta">Resposta:</label>
+      <textarea id="resposta" rows="4" placeholder="Ex: O apoio pode ser solicitado no serviço social da CMVC..."></textarea>
+
+      <button onclick="adicionarFaq()">Adicionar FAQ</button>
+    </div>
+
+    <div class="faq-list" id="faq-list">
+      <h2>FAQs Registadas</h2>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
