@@ -2,36 +2,250 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>Simulação Backoffice - FAQ CMVC</title>
-  <link rel="stylesheet" href="style.css">
+  <title>CMVC - Backoffice FAQs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #f5f7fa;
+    }
+    .container { display: flex; height: 100vh; }
+    .sidebar {
+      width: 250px;
+      background-color: #2c3e50;
+      color: white;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .sidebar h2 { margin-bottom: 15px; font-size: 18px; }
+    .sidebar ul { list-style: none; padding: 0; }
+    .sidebar ul li {
+      padding: 10px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .sidebar ul li:hover {
+      background-color: #34495e;
+    }
+    .sidebar button {
+      margin-top: 20px;
+      background-color: #3498db;
+      border: none;
+      padding: 10px;
+      color: white;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+    }
+    main h1 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+    #pesquisa {
+      width: 100%;
+      padding: 10px 15px;
+      margin: 20px 0;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    .faq-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+    .faq-card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+    .faq-card h4 {
+      margin: 0 0 10px;
+      color: #2c3e50;
+    }
+    .faq-card p {
+      font-size: 14px;
+      margin: 0;
+    }
+    .faq-card .categoria {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .modal.hidden {
+      display: none;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .modal-content select,
+    .modal-content input,
+    .modal-content textarea {
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .modal-content button {
+      padding: 10px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .modal-content button:first-of-type {
+      background-color: #2c3e50;
+      color: white;
+    }
+    .modal-content button:last-of-type {
+      background-color: #bdc3c7;
+      color: #2c3e50;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <h1>Backoffice de Gestão de FAQs</h1>
-    <div class="form-section">
-      <label for="categoria">Categoria:</label>
-      <select id="categoria">
-        <option>Educação</option>
-        <option>Ação Social</option>
-        <option>Habitação</option>
-        <option>Desporto</option>
-        <option>Cultura</option>
+    <aside class="sidebar">
+      <div>
+        <h2>Categorias</h2>
+        <ul>
+          <li onclick="filtrar('Todas')">Todas</li>
+          <li onclick="filtrar('Educacao')">Educação</li>
+          <li onclick="filtrar('Acao social')">Ação Social</li>
+        </ul>
+      </div>
+      <button onclick="abrirModal()">+ Nova FAQ</button>
+    </aside>
+
+    <main>
+      <h1>Gestão de FAQs</h1>
+      <input type="text" id="pesquisa" placeholder="🔍 Pesquisar..." oninput="pesquisarFaqs()">
+      <div id="faqContainer" class="faq-container"></div>
+    </main>
+  </div>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Nova FAQ</h2>
+      <select id="novaCategoria">
+        <option>Educacao</option>
+        <option>Acao social</option>
       </select>
-
-      <label for="pergunta">Pergunta:</label>
-      <input type="text" id="pergunta" placeholder="Ex: Como pedir apoio habitacional?">
-
-      <label for="resposta">Resposta:</label>
-      <textarea id="resposta" rows="4" placeholder="Ex: O apoio pode ser solicitado no serviço social da CMVC..."></textarea>
-
-      <button onclick="adicionarFaq()">Adicionar FAQ</button>
-    </div>
-
-    <div class="faq-list" id="faq-list">
-      <h2>FAQs Registadas</h2>
+      <input type="text" id="novaPergunta" placeholder="Pergunta">
+      <textarea id="novaResposta" rows="4" placeholder="Resposta"></textarea>
+      <button onclick="guardarFaq()">Guardar</button>
+      <button onclick="fecharModal()">Cancelar</button>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    const faqs = [
+      {
+        categoria: "Acao social",
+        pergunta: "Quem pode solicitar apoio habitacional?",
+        resposta: "O apoio pode ser solicitado por residentes com comprovada carência habitacional junto do serviço social municipal."
+      },
+      {
+        categoria: "Acao social",
+        pergunta: "Como posso obter cabazes alimentares?",
+        resposta: "Deve dirigir-se ao Departamento de Ação Social da CMVC e preencher o formulário de candidatura com a documentação exigida."
+      },
+      {
+        categoria: "Educacao",
+        pergunta: "Como faço a matrícula escolar?",
+        resposta: "A matrícula pode ser feita online no portal das matrículas ou presencialmente na escola mais próxima."
+      },
+      {
+        categoria: "Educacao",
+        pergunta: "Onde posso obter informações sobre bolsas de estudo?",
+        resposta: "As informações estão disponíveis no site oficial da CMVC ou no Gabinete de Apoio ao Aluno no edifício da educação."
+      }
+    ];
+
+    function renderizarFaqs(lista = faqs) {
+      const container = document.getElementById('faqContainer');
+      container.innerHTML = '';
+      lista.forEach((faq) => {
+        const div = document.createElement('div');
+        div.classList.add('faq-card');
+        div.innerHTML = `
+          <div class="categoria">${faq.categoria}</div>
+          <h4>${faq.pergunta}</h4>
+          <p>${faq.resposta}</p>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function filtrar(categoria) {
+      if (categoria === 'Todas') {
+        renderizarFaqs();
+      } else {
+        const filtradas = faqs.filter(f => f.categoria.toLowerCase() === categoria.toLowerCase());
+        renderizarFaqs(filtradas);
+      }
+    }
+
+    function pesquisarFaqs() {
+      const termo = document.getElementById('pesquisa').value.toLowerCase();
+      const resultado = faqs.filter(f =>
+        f.pergunta.toLowerCase().includes(termo) ||
+        f.resposta.toLowerCase().includes(termo)
+      );
+      renderizarFaqs(resultado);
+    }
+
+    function abrirModal() {
+      document.getElementById('modal').classList.remove('hidden');
+    }
+
+    function fecharModal() {
+      document.getElementById('modal').classList.add('hidden');
+    }
+
+    function guardarFaq() {
+      const categoria = document.getElementById('novaCategoria').value;
+      const pergunta = document.getElementById('novaPergunta').value.trim();
+      const resposta = document.getElementById('novaResposta').value.trim();
+
+      if (pergunta && resposta) {
+        faqs.push({ categoria, pergunta, resposta });
+        fecharModal();
+        renderizarFaqs();
+        document.getElementById('novaPergunta').value = '';
+        document.getElementById('novaResposta').value = '';
+      } else {
+        alert("Preencha todos os campos!");
+      }
+    }
+
+    renderizarFaqs();
+  </script>
 </body>
 </html>
