@@ -55,28 +55,22 @@ Bot (categoria: educacao):
 ## Imagens do sistema
 
 ### 1. Interface do chatbot (PT)
-![Chatbot em português](images/1.png)
-Legenda: Interface principal do chatbot em português.
+<img src="images/1.png" width="200"/>
 
 ### 2. Interface do chatbot (EN)
-![Chatbot em inglês](images/2.png)
-Legenda: Interface principal do chatbot em inglês.
+<img src="images/2.png" width="200"/>
 
 ### 3. Dashboard de métricas
-![Dashboard de desempenho](images/3.png)
-Legenda: Painel de desempenho com métricas detalhadas do chatbot e feedback dos cidadãos.
+<img src="images/3.png" width="300"/>
 
 ### 4. Backoffice do bot
-![Interface do backoffice](images/4.png)
-Legenda: Painel de gestão do bot com seleção de fontes de conhecimento.
+<img src="images/4.png" width="300"/>
 
 ### 5. Fluxo de funcionamento - parte 1
-![Fluxo parte 1](images/5.png)
-Legenda: Primeira parte do fluxo do chatbot: identificação e categorização.
+<img src="images/5.png" width="200"/>
 
 ### 6. Fluxo de funcionamento - parte 2
-![Fluxo parte 2](images/6.png)
-Legenda: Segunda parte do fluxo do chatbot: seleção e envio da resposta.
+<img src="images/6.png" width="200"/>
 
 ## Notas
 
