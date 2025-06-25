@@ -4,272 +4,39 @@
   <meta charset="UTF-8">
   <title>Chatbot Municipal - Backoffice</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      background-color: #f3f4f6;
-      color: #2c3e50;
-    }
-    .layout {
-      display: flex;
-      height: 100vh;
-    }
-    aside {
-      width: 220px;
-      background: #1f2937;
-      padding: 20px;
-      color: white;
-    }
-    aside h2 {
-      font-size: 16px;
-      margin-bottom: 20px;
-    }
-    aside ul {
-      list-style: none;
-      padding: 0;
-    }
-    aside li {
-      padding: 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    aside li:hover {
-      background: #374151;
-    }
-    aside .active {
-      background: #4b5563;
-    }
-    header {
-      background: #ffffff;
-      padding: 20px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #ddd;
-    }
-    header .bot-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    header .bot-info img {
-      width: 40px;
-      height: 40px;
-    }
-    .content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    .panel {
-      padding: 30px;
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      justify-content: space-between;
-    }
-    .left-content {
-      flex: 2;
-    }
-    .bot-list {
-      margin-bottom: 30px;
-    }
-    .bot-card {
-      background-color: #e5efff;
-      border: 1px solid #cfdff7;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .bot-card img {
-      width: 35px;
-      margin-right: 10px;
-    }
-    .bot-info-main {
-      display: flex;
-      flex-direction: column;
-      font-size: 14px;
-    }
-    .bot-name {
-      font-weight: bold;
-    }
-    .bot-meta {
-      font-size: 12px;
-      color: #555;
-    }
-    .resources {
-      display: flex;
-      gap: 20px;
-    }
-    .resources .card {
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      padding: 20px;
-      background: white;
-      flex: 1;
-      cursor: pointer;
-    }
-    .resources .card.active {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 2px #2563eb33;
-    }
-    .chat-sidebar {
-      width: 360px;
-      background: #fff;
-      border-left: 1px solid #ddd;
-      display: flex;
-      flex-direction: column;
-      box-shadow: -2px 0 6px rgba(0, 0, 0, 0.05);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .chat-header {
-      background: #1e3a8a;
-      color: white;
-      padding: 15px;
-      text-align: center;
-    }
-    .chat-header img {
-      width: 40px;
-      margin-bottom: 5px;
-    }
-    .chat-header h3 {
-      margin: 5px 0 0;
-      font-size: 14px;
-    }
-    .chat-header span {
-      font-size: 12px;
-      color: #cbd5e1;
-    }
-    .chat-body {
-      flex: 1;
-      padding: 15px;
-      background: #f9fafb;
-      overflow-y: auto;
-    }
-    .message {
-      margin-bottom: 10px;
-      border-radius: 8px;
-      padding: 12px;
-    }
-    .message.intro {
-      background: #f1f5f9;
-      text-align: center;
-      font-size: 14px;
-    }
-    .categories {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin: 20px 0;
-    }
-    .categories button {
-      background: white;
-      border: 1px solid #cbd5e1;
-      border-radius: 25px;
-      padding: 8px 15px;
-      cursor: pointer;
-      text-align: left;
-    }
-    .categories button:hover {
-      background: #e5e7eb;
-    }
-    .question {
-      background: #d1fae5;
-      color: #065f46;
-      text-align: center;
-      font-weight: bold;
-    }
-    .answer {
-      background: #f8fafc;
-      border-left: 4px solid #2563eb;
-    }
-    .answer strong {
-      display: block;
-      margin-top: 10px;
-      color: #1f2937;
-    }
-    .related {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 10px;
-    }
-    .related button {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 25px;
-      padding: 6px 12px;
-      text-align: left;
-      cursor: pointer;
-    }
-    .chat-input {
-      padding: 10px;
-      background: white;
-      border-top: 1px solid #ddd;
-    }
-    .chat-input input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="layout">
-    <aside>
-      <h2>Menu</h2>
-      <ul>
-        <li class="active">Recursos</li>
-        <li>Respostas</li>
-        <li>Comportamento</li>
-        <li>Fallbacks</li>
-      </ul>
-    </aside>
-    <div class="content">
-      <header>
-        <div class="bot-info">
-          <img src="../mockups_chatbot_ui/chatbot-icon.png" alt="bot">
-          <div>
-            <strong>Bot</strong>
-            <div style="font-size: 12px; color: gray;">Chatbot Municipal</div>
-          </div>
+<div class="layout">
+  <aside>
+    <h2>Menu</h2>
+    <ul>
+      <li id="menuRecursos" class="active" onclick="window.location.hash='recursos'">Recursos</li>
+      <li id="menuRespostas" onclick="window.location.hash='respostas'">Respostas</li>
+      <li>Comportamento</li>
+      <li>Fallbacks</li>
+    </ul>
+  </aside>
+
+  <div class="content">
+    <header>
+      <div class="bot-info">
+        <img src="chatbot-icon.png" alt="bot">
+        <div>
+          <strong>Bot</strong>
+          <div class="bot-subtext">Chatbot Municipal</div>
         </div>
-        <button style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold">Publicar</button>
-      </header>
-      <div class="panel">
+      </div>
+      <button id="publicarBtn">Publicar</button>
+    </header>
+
+    <div class="panel">
+
+      <!-- Secção: Recursos -->
+      <div id="secaoRecursos" class="secao">
         <div class="left-content">
           <div class="bot-list">
-            <div class="bot-card">
-              <div class="bot-info-main">
-                <div class="bot-name">Bot 1</div>
-                <div class="bot-meta">Estou aqui para ajudar!</div>
-                <div class="bot-meta">Estado Bot: <strong style="color:red">Não Publicado</strong> • Município • 16 Jun 2025</div>
-              </div>
-              <img src="../mockups_chatbot_ui/chatbot-icon.png" alt="bot">
-            </div>
-            <div class="bot-card">
-              <div class="bot-info-main">
-                <div class="bot-name">Bot 2</div>
-                <div class="bot-meta">Seu assistente para serviços cívicos</div>
-                <div class="bot-meta">Estado Bot: <strong style="color:red">Não Publicado</strong> • Município • 16 Jun 2025</div>
-              </div>
-              <img src="../mockups_chatbot_ui/chatbot-icon.png" alt="bot">
-            </div>
-            <div class="bot-card">
-              <div class="bot-info-main">
-                <div class="bot-name">Bot 3</div>
-                <div class="bot-meta">Assistente de ajuda pública</div>
-                <div class="bot-meta">Estado Bot: <strong style="color:green">Publicado</strong> • Município • 16 Jun 2025</div>
-              </div>
-              <img src="../mockups_chatbot_ui/chatbot-icon.png" alt="bot">
-            </div>
+            <div class="bot-item">Bot 1 <span class="status">Estado: Não Publicado - Município • 16 Jun 2025</span></div>
           </div>
           <h3>Escolha a fonte para as respostas do chatbot</h3>
           <div class="resources">
@@ -286,41 +53,90 @@
               <p>Utiliza um pacote de respostas predefinidas para interações genéricas.</p>
             </div>
           </div>
-        </div>
-
-        <div class="chat-sidebar">
-          <div class="chat-header">
-            <img src="../mockups_chatbot_ui/chatbot-icon.png" alt="bot">
-            <h3>CMVC - Serviços Municipalizados</h3>
-            <span>(Assistente Virtual)</span>
-          </div>
-          <div class="chat-body">
-            <div class="message intro">Olá! Está a conversar com o assistente virtual. <br>Escolha um tema ou escreva a sua pergunta.</div>
-            <div class="categories">
-              <button>Educação</button>
-              <button>Ação Social</button>
-              <button>Habitação</button>
-              <button>Cultura</button>
-              <button>Desporto</button>
-              <button>Ambiente</button>
+          <hr class="linha-separadora">
+          <h3>Gestão de FAQs</h3>
+          <button id="faqAddBtn" onclick="mostrarFormulario()">Adicionar FAQ</button>
+          <div id="faqContainer" style="display: none;">
+            <form id="faqForm">
+              <input type="number" name="chatbot_id" placeholder="ID do Chatbot" required>
+              <input type="text" name="designacao" placeholder="Designação" required>
+              <input type="text" name="pergunta" placeholder="Pergunta" required>
+              <textarea name="resposta" placeholder="Resposta" required></textarea>
+              <select name="categoria_id" required>
+                <option value="">Escolha a categoria</option>
+                <option value="1">Educação</option>
+                <option value="2">Ação Social</option>
+                <option value="3">Habitação</option>
+                <option value="4">Cultura</option>
+                <option value="5">Desporto</option>
+                <option value="6">Ambiente</option>
+              </select>
+              <input type="text" name="documentos" placeholder="IDs de Documentos (separados por vírgula)">
+              <input type="text" name="relacionadas" placeholder="IDs de FAQs relacionadas (separados por vírgula)">
+              <button type="submit">Adicionar FAQ</button>
+              <div id="mensagemFAQ"></div>
+            </form>
+            <div>
+              <label>Ou carregar ficheiro .docx</label>
+              <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".docx" multiple required>
+                <button type="submit">Adicionar Documento</button>
+              </form>
+              <div id="uploadStatus"></div>
             </div>
-            <div class="message question">Quem pode solicitar apoio habitacional?</div>
-            <div class="message answer">
-              Famílias em situação de vulnerabilidade podem solicitar apoio na Câmara Municipal.
-              <strong>Outras perguntas relacionadas:</strong>
-              <div class="related">
-                <button>Como posso obter cabazes alimentares?</button>
-                <button>Onde posso obter apoio psicológico?</button>
-                <button>Quais são os requisitos para apoio ao arrendamento?</button>
-              </div>
-            </div>
-          </div>
-          <div class="chat-input">
-            <input type="text" placeholder="Digite uma mensagem...">
           </div>
         </div>
       </div>
+
+      <!-- Secção: Respostas -->
+      <div id="secaoRespostas" class="secao" style="display: none;">
+        <div class="left-content">
+          <h2>FAQs Registadas</h2>
+          <div id="listaFAQs" style="margin-top: 20px;"></div>
+        </div>
+      </div>
+
+      <!-- Simulador do chat -->
+      <div class="chat-sidebar">
+        <div class="chat-header">
+          <img src="chatbot-icon.png" alt="bot">
+          <h3>CMVC - Serviços Municipalizados</h3>
+          <span>(Assistente Virtual)</span>
+        </div>
+        <div class="chat-body">
+          <div class="message intro">
+            Olá! Está a conversar com o assistente virtual. <br>
+            Escolha um tema ou escreva a sua pergunta.
+          </div>
+          <div class="categories">
+            <button class="category-btn">Educação</button>
+            <button class="category-btn">Ação Social</button>
+            <button class="category-btn">Habitação</button>
+            <button class="category-btn">Cultura</button>
+            <button class="category-btn">Desporto</button>
+            <button class="category-btn">Ambiente</button>
+          </div>
+        </div>
+        <div class="chat-input">
+          <input type="text" placeholder="Digite uma mensagem...">
+        </div>
+      </div>
+
     </div>
   </div>
+</div>
+
+<!-- Modal de confirmação -->
+<div id="modalConfirmacao" class="modal-overlay" style="display: none;">
+  <div class="modal-box">
+    <p>Tem a certeza que quer eliminar esta FAQ?</p>
+    <div class="modal-buttons">
+      <button id="confirmarEliminacao">Sim</button>
+      <button id="cancelarEliminacao">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>

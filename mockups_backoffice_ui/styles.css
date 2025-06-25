@@ -1,0 +1,360 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  background-color: #f3f4f6;
+  color: #2c3e50;
+}
+
+.layout {
+  display: flex;
+  height: 100vh;
+}
+
+aside {
+  width: 220px;
+  background: #1f2937;
+  padding: 20px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+aside h2 {
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+aside ul {
+  list-style: none;
+  padding: 0;
+  flex: 1;
+}
+
+aside li {
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 5px;
+}
+
+aside li:hover {
+  background: #374151;
+}
+
+aside .active {
+  background: #4b5563;
+}
+
+header {
+  background: #ffffff;
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+}
+
+header .bot-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+header .bot-info img {
+  width: 40px;
+  height: 40px;
+}
+
+.bot-subtext {
+  font-size: 12px;
+  color: gray;
+}
+
+#publicarBtn {
+  background: #1e3a8a;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#publicarBtn:hover {
+  background: #1e40af;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.panel {
+  padding: 30px;
+  flex: 1;
+  display: flex;
+  gap: 30px;
+  align-items: stretch;
+  height: calc(100vh - 90px);
+  overflow: hidden;
+}
+
+.left-content,
+#secaoRecursos,
+#secaoRespostas {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Linha de separação */
+.left-content hr,
+.linha-separadora {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 30px 0;
+  width: 93%;
+}
+
+.bot-list {
+  margin-bottom: 30px;
+}
+
+.bot-item {
+  background: #e5e7eb;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  max-width: 93%;
+}
+
+.bot-item .status {
+  font-size: 12px;
+  color: #6b7280;
+  display: block;
+}
+
+.resources {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.resources .card {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 20px;
+  background: white;
+  flex: 0 1 30%;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.resources .card.active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px #2563eb33;
+}
+
+form input,
+form textarea,
+form button,
+form select {
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+form button {
+  background: #1e3a8a;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 5px;
+}
+
+form button:hover {
+  background: #1e40af;
+}
+
+#faqAddBtn {
+  background: #1e3a8a;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+#faqAddBtn:hover {
+  background: #1e40af;
+}
+
+/* Sidebar do Chat */
+.chat-sidebar {
+  width: 380px;
+  background: #fff;
+  border-left: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -2px 0 6px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.chat-header {
+  background: #1e3a8a;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.chat-header img {
+  width: 40px;
+  margin-bottom: 5px;
+}
+
+.chat-body {
+  flex: 1;
+  padding: 15px;
+  background: #f9fafb;
+  overflow-y: auto;
+}
+
+.message {
+  margin-bottom: 10px;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.message.intro {
+  background: #f1f5f9;
+  text-align: center;
+  font-size: 14px;
+}
+
+.categories {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.category-btn {
+  background: #e5e7eb;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.category-btn:hover {
+  background: #d1d5db;
+}
+
+.suggestions {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.suggestions p {
+  margin: 5px 0;
+}
+
+.suggestions ul {
+  padding-left: 20px;
+  margin: 5px 0;
+}
+
+.chat-input {
+  padding: 10px;
+  background: white;
+  border-top: 1px solid #ddd;
+}
+
+.chat-input input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+/* Botão Eliminar */
+.faq-item button {
+  background-color: #1a3c89;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.faq-item button:hover {
+  background-color: #0f2b63;
+}
+
+/* Modal de confirmação */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-box {
+  background: white;
+  padding: 30px 40px;
+  border-radius: 10px;
+  text-align: center;
+  max-width: 400px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.modal-box p {
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.modal-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#confirmarEliminacao {
+  background-color: #dc2626;
+  color: white;
+}
+
+#cancelarEliminacao {
+  background-color: #e5e7eb;
+  color: black;
+}
