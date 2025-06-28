@@ -3,6 +3,7 @@ from flask_cors import CORS
 import psycopg2
 import docx
 import logging
+from fuzzywuzzy import fuzz
 
 # ---------- MÓDULO SIMULADO PARA FAISS/RAG ----------
 def obter_resposta_rag(pergunta, modo="faiss"):
@@ -32,6 +33,32 @@ except Exception as e:
     print("❌ Erro ao conectar à base de dados:", e)
     raise
 
+# ---------- FUNÇÃO DE SIMILARIDADE ----------
+def obter_faq_mais_semelhante(pergunta_utilizador):
+    cur.execute("SELECT pergunta, resposta FROM FAQ")
+    faqs = cur.fetchall()
+
+    melhor_pergunta = None
+    melhor_resposta = None
+    maior_score = 0
+
+    for pergunta, resposta in faqs:
+        score_token = fuzz.token_sort_ratio(pergunta_utilizador.lower(), pergunta.lower())
+        score_partial = fuzz.partial_ratio(pergunta_utilizador.lower(), pergunta.lower())
+        score = (score_token + score_partial) / 2
+
+        if score > maior_score:
+            maior_score = score
+            melhor_pergunta = pergunta
+            melhor_resposta = resposta
+
+    print(f"➡️ Melhor correspondência: '{melhor_pergunta}' (score: {maior_score})")
+
+    if maior_score >= 55:
+        return {"pergunta": melhor_pergunta, "resposta": melhor_resposta, "score": maior_score}
+    else:
+        return None
+
 # ---------- ROTAS ----------
 @app.route("/categorias", methods=["GET"])
 def get_categorias():
@@ -40,7 +67,6 @@ def get_categorias():
         data = cur.fetchall()
         return jsonify([{"categoria_id": c[0], "nome": c[1]} for c in data])
     except Exception as e:
-        print("❌ Erro ao buscar categorias:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/chatbots", methods=["GET"])
@@ -52,7 +78,6 @@ def get_chatbots():
             {"chatbot_id": row[0], "nome": row[1], "descricao": row[2]} for row in data
         ])
     except Exception as e:
-        print("❌ Erro ao buscar chatbots:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/faq-categoria/<categoria>", methods=["GET"])
@@ -74,7 +99,6 @@ def obter_faq_por_categoria(categoria):
             return jsonify({"success": False, "erro": f"Nenhuma FAQ encontrada para a categoria '{categoria}'."}), 404
 
     except Exception as e:
-        print("❌ Erro ao buscar FAQ por categoria:", e)
         return jsonify({"success": False, "erro": str(e)}), 500
 
 @app.route("/faqs", methods=["GET"])
@@ -86,7 +110,6 @@ def get_faqs():
             {"faq_id": f[0], "chatbot_id": f[1], "designacao": f[2], "pergunta": f[3], "resposta": f[4]} for f in data
         ])
     except Exception as e:
-        print("❌ Erro ao buscar FAQs:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/faqs", methods=["POST"])
@@ -101,10 +124,10 @@ def add_faq():
             return jsonify({"success": False, "error": "Esta FAQ já está inserida."}), 409
 
         cur.execute("""
-            INSERT INTO FAQ (chatbot_id, designacao, pergunta, resposta)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO FAQ (chatbot_id, categoria_id, designacao, pergunta, resposta)
+            VALUES (%s, %s, %s, %s, %s)
             RETURNING faq_id
-        """, (data["chatbot_id"], data["designacao"], data["pergunta"], data["resposta"]))
+        """, (data["chatbot_id"], data["categoria_id"], data["designacao"], data["pergunta"], data["resposta"]))
         faq_id = cur.fetchone()[0]
 
         if "documentos" in data and data["documentos"].strip():
@@ -119,7 +142,6 @@ def add_faq():
         return jsonify({"success": True, "faq_id": faq_id})
     except Exception as e:
         conn.rollback()
-        print("❌ Erro ao adicionar FAQ:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/faqs/<int:faq_id>", methods=["DELETE"])
@@ -130,7 +152,6 @@ def delete_faq(faq_id):
         return jsonify({"success": True})
     except Exception as e:
         conn.rollback()
-        print("❌ Erro ao eliminar FAQ:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/upload-faq-docx", methods=["POST"])
@@ -152,19 +173,14 @@ def upload_faq_docx():
                     if chave and valor:
                         dados[chave] = valor
 
-        print("📄 Dados extraídos da tabela:")
-        for k, v in dados.items():
-            print(f"  {k}: {v}")
-
         if not dados.get("designação da faq") or not dados.get("questão") or not dados.get("resposta"):
             raise Exception("Faltam campos obrigatórios: designação, questão ou resposta.")
 
-        # Verifica se o chatbot existe, senão cria
         cur.execute("SELECT chatbot_id FROM Chatbot WHERE nome = %s", ('Assistente Municipal',))
         result = cur.fetchone()
-        if result:
-            chatbot_id = result[0]
-        else:
+        chatbot_id = result[0] if result else None
+
+        if not chatbot_id:
             cur.execute("INSERT INTO Chatbot (nome, idioma, descricao) VALUES (%s, %s, %s) RETURNING chatbot_id",
                         ('Assistente Municipal', 'pt', 'Chatbot para todos os serviços municipais'))
             chatbot_id = cur.fetchone()[0]
@@ -198,7 +214,6 @@ def upload_faq_docx():
         return jsonify({"success": True, "faq_id": faq_id})
     except Exception as e:
         conn.rollback()
-        print("❌ Erro ao processar ficheiro:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/obter-resposta", methods=["POST"])
@@ -212,12 +227,8 @@ def obter_resposta():
 
     try:
         def obter_faq_por_pergunta(pergunta):
-            cur.execute("""
-                SELECT resposta FROM FAQ
-                WHERE LOWER(pergunta) = LOWER(%s)
-                LIMIT 1
-            """, (pergunta,))
-            return cur.fetchone()
+            resultado = obter_faq_mais_semelhante(pergunta)
+            return (resultado["resposta"],) if resultado else None
 
         if fonte == "faq":
             resultado = obter_faq_por_pergunta(pergunta)
