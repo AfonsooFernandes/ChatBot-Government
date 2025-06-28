@@ -4,7 +4,15 @@ import psycopg2
 import docx
 import logging
 
-# Logging
+# ---------- MÓDULO SIMULADO PARA FAISS/RAG ----------
+def obter_resposta_rag(pergunta, modo="faiss"):
+    if modo == "faiss":
+        return f"🔍 Resposta FAISS para: '{pergunta}'"
+    elif modo == "rag":
+        return f"🧠 Resposta RAG (fallback) para: '{pergunta}'"
+    return "❓ Fonte desconhecida"
+
+# ---------- LOGGING ----------
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
@@ -25,7 +33,6 @@ except Exception as e:
     raise
 
 # ---------- ROTAS ----------
-
 @app.route("/categorias", methods=["GET"])
 def get_categorias():
     try:
@@ -36,28 +43,39 @@ def get_categorias():
         print("❌ Erro ao buscar categorias:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 @app.route("/chatbots", methods=["GET"])
 def get_chatbots():
     try:
-        cur.execute("""
-            SELECT c.chatbot_id, c.nome, c.descricao, cat.nome 
-            FROM Chatbot c
-            LEFT JOIN Categoria cat ON c.categoria_id = cat.categoria_id
-        """)
+        cur.execute("SELECT chatbot_id, nome, descricao FROM Chatbot")
         data = cur.fetchall()
         return jsonify([
-            {
-                "chatbot_id": row[0],
-                "nome": row[1],
-                "descricao": row[2],
-                "categoria": row[3]
-            } for row in data
+            {"chatbot_id": row[0], "nome": row[1], "descricao": row[2]} for row in data
         ])
     except Exception as e:
         print("❌ Erro ao buscar chatbots:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/faq-categoria/<categoria>", methods=["GET"])
+def obter_faq_por_categoria(categoria):
+    try:
+        cur.execute("""
+            SELECT f.pergunta, f.resposta
+            FROM FAQ f
+            INNER JOIN Categoria c ON f.categoria_id = c.categoria_id
+            WHERE LOWER(c.nome) = LOWER(%s)
+            ORDER BY RANDOM()
+            LIMIT 1
+        """, (categoria,))
+        resultado = cur.fetchone()
+
+        if resultado:
+            return jsonify({"success": True, "pergunta": resultado[0], "resposta": resultado[1]})
+        else:
+            return jsonify({"success": False, "erro": f"Nenhuma FAQ encontrada para a categoria '{categoria}'."}), 404
+
+    except Exception as e:
+        print("❌ Erro ao buscar FAQ por categoria:", e)
+        return jsonify({"success": False, "erro": str(e)}), 500
 
 @app.route("/faqs", methods=["GET"])
 def get_faqs():
@@ -65,18 +83,11 @@ def get_faqs():
         cur.execute("SELECT faq_id, chatbot_id, designacao, pergunta, resposta FROM FAQ")
         data = cur.fetchall()
         return jsonify([
-            {
-                "faq_id": f[0],
-                "chatbot_id": f[1],
-                "designacao": f[2],
-                "pergunta": f[3],
-                "resposta": f[4]
-            } for f in data
+            {"faq_id": f[0], "chatbot_id": f[1], "designacao": f[2], "pergunta": f[3], "resposta": f[4]} for f in data
         ])
     except Exception as e:
         print("❌ Erro ao buscar FAQs:", e)
         return jsonify({"success": False, "error": str(e)}), 500
-
 
 @app.route("/faqs", methods=["POST"])
 def add_faq():
@@ -85,9 +96,7 @@ def add_faq():
         cur.execute("""
             SELECT faq_id FROM FAQ
             WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s
-        """, (
-            data["chatbot_id"], data["designacao"], data["pergunta"], data["resposta"]
-        ))
+        """, (data["chatbot_id"], data["designacao"], data["pergunta"], data["resposta"]))
         if cur.fetchone():
             return jsonify({"success": False, "error": "Esta FAQ já está inserida."}), 409
 
@@ -95,9 +104,7 @@ def add_faq():
             INSERT INTO FAQ (chatbot_id, designacao, pergunta, resposta)
             VALUES (%s, %s, %s, %s)
             RETURNING faq_id
-        """, (
-            data["chatbot_id"], data["designacao"], data["pergunta"], data["resposta"]
-        ))
+        """, (data["chatbot_id"], data["designacao"], data["pergunta"], data["resposta"]))
         faq_id = cur.fetchone()[0]
 
         if "documentos" in data and data["documentos"].strip():
@@ -115,7 +122,6 @@ def add_faq():
         print("❌ Erro ao adicionar FAQ:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 @app.route("/faqs/<int:faq_id>", methods=["DELETE"])
 def delete_faq(faq_id):
     try:
@@ -126,7 +132,6 @@ def delete_faq(faq_id):
         conn.rollback()
         print("❌ Erro ao eliminar FAQ:", e)
         return jsonify({"success": False, "error": str(e)}), 500
-
 
 @app.route("/upload-faq-docx", methods=["POST"])
 def upload_faq_docx():
@@ -154,7 +159,16 @@ def upload_faq_docx():
         if not dados.get("designação da faq") or not dados.get("questão") or not dados.get("resposta"):
             raise Exception("Faltam campos obrigatórios: designação, questão ou resposta.")
 
-        chatbot_id = 1
+        # Verifica se o chatbot existe, senão cria
+        cur.execute("SELECT chatbot_id FROM Chatbot WHERE nome = %s", ('Assistente Municipal',))
+        result = cur.fetchone()
+        if result:
+            chatbot_id = result[0]
+        else:
+            cur.execute("INSERT INTO Chatbot (nome, idioma, descricao) VALUES (%s, %s, %s) RETURNING chatbot_id",
+                        ('Assistente Municipal', 'pt', 'Chatbot para todos os serviços municipais'))
+            chatbot_id = cur.fetchone()[0]
+
         designacao = dados.get("designação da faq")
         pergunta = dados.get("questão")
         resposta = dados.get("resposta")
@@ -178,7 +192,7 @@ def upload_faq_docx():
             cur.execute("SELECT categoria_id FROM Categoria WHERE nome ILIKE %s", (categoria,))
             result = cur.fetchone()
             if result:
-                cur.execute("UPDATE Chatbot SET categoria_id = %s WHERE chatbot_id = %s", (result[0], chatbot_id))
+                cur.execute("UPDATE FAQ SET categoria_id = %s WHERE faq_id = %s", (result[0], faq_id))
 
         conn.commit()
         return jsonify({"success": True, "faq_id": faq_id})
@@ -187,7 +201,47 @@ def upload_faq_docx():
         print("❌ Erro ao processar ficheiro:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/obter-resposta", methods=["POST"])
+def obter_resposta():
+    dados = request.get_json()
+    pergunta = dados.get("pergunta", "").strip()
+    fonte = dados.get("fonte", "faq")
 
-# ----------- INICIAR SERVIDOR -----------
+    if not pergunta:
+        return jsonify({"success": False, "erro": "Pergunta não fornecida."}), 400
+
+    try:
+        def obter_faq_por_pergunta(pergunta):
+            cur.execute("""
+                SELECT resposta FROM FAQ
+                WHERE LOWER(pergunta) = LOWER(%s)
+                LIMIT 1
+            """, (pergunta,))
+            return cur.fetchone()
+
+        if fonte == "faq":
+            resultado = obter_faq_por_pergunta(pergunta)
+            if resultado:
+                return jsonify({"success": True, "fonte": "FAQ", "resposta": resultado[0]})
+            return jsonify({"success": False, "erro": "Pergunta não encontrada nas FAQs."})
+
+        elif fonte == "faiss":
+            resposta = obter_resposta_rag(pergunta, modo="faiss")
+            return jsonify({"success": True, "fonte": "FAISS", "resposta": resposta})
+
+        elif fonte == "faq+raga":
+            resultado = obter_faq_por_pergunta(pergunta)
+            if resultado:
+                return jsonify({"success": True, "fonte": "FAQ", "resposta": resultado[0]})
+            resposta = obter_resposta_rag(pergunta, modo="rag")
+            return jsonify({"success": True, "fonte": "RAG", "resposta": resposta})
+
+        else:
+            return jsonify({"success": False, "erro": "Fonte inválida."}), 400
+
+    except Exception as e:
+        return jsonify({"success": False, "erro": str(e)}), 500
+
+# ---------- INICIAR SERVIDOR ----------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

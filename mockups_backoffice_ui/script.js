@@ -4,7 +4,94 @@ function mostrarFormulario() {
   faqContainer.style.display = faqContainer.style.display === 'none' ? 'block' : 'none';
 }
 
-// Carregar lista de chatbots no dropdown
+// Fonte de resposta selecionada
+let fonteSelecionada = "faq";
+
+// Atualizar seleção visual da fonte
+function selecionarFonte(fonte) {
+  fonteSelecionada = fonte;
+  document.querySelectorAll(".resources .card").forEach(card => card.classList.remove("active"));
+  if (fonte === "faq") document.querySelectorAll(".card")[0].classList.add("active");
+  if (fonte === "faiss") document.querySelectorAll(".card")[1].classList.add("active");
+  if (fonte === "faq+raga") document.querySelectorAll(".card")[2].classList.add("active");
+}
+
+// Enviar pergunta manual
+function enviarPergunta() {
+  const input = document.getElementById("chatInput");
+  const texto = input.value.trim();
+  if (!texto) return;
+
+  adicionarMensagemUsuario(texto);
+  input.value = "";
+  responderPergunta(texto);
+}
+
+// Perguntar por categoria
+function perguntarCategoria(nomeCategoria) {
+  adicionarMensagemUsuario(nomeCategoria);
+
+  if (fonteSelecionada !== "faq") {
+    adicionarMensagemBot("⚠️ Fonte selecionada não está implementada no backend. Apenas 'Baseado em Regras (FAQ)' está disponível.");
+    return;
+  }
+
+  fetch(`http://localhost:5000/faq-categoria/${encodeURIComponent(nomeCategoria)}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.pergunta && data.resposta) {
+        adicionarMensagemBot(data.pergunta);
+        setTimeout(() => adicionarMensagemBot(data.resposta), 600);
+      } else {
+        adicionarMensagemBot("❌ Não foi possível obter uma FAQ dessa categoria.");
+      }
+    })
+    .catch(() => adicionarMensagemBot("❌ Erro ao comunicar com o servidor."));
+}
+
+// Responder à pergunta manual
+function responderPergunta(pergunta) {
+  if (fonteSelecionada !== "faq") {
+    adicionarMensagemBot("⚠️ Fonte selecionada não está implementada no backend. Apenas 'Baseado em Regras (FAQ)' está disponível.");
+    return;
+  }
+
+  fetch("http://localhost:5000/obter-resposta", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pergunta, fonte: fonteSelecionada })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        adicionarMensagemBot(data.resposta);
+      } else {
+        adicionarMensagemBot("❌ Nenhuma resposta encontrada.");
+      }
+    })
+    .catch(() => adicionarMensagemBot("❌ Erro ao comunicar com o servidor."));
+}
+
+// Adicionar mensagens no chat
+function adicionarMensagemUsuario(msg) {
+  const chat = document.getElementById("chatBody");
+  const div = document.createElement("div");
+  div.className = "message user";
+  div.textContent = msg;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function adicionarMensagemBot(msg) {
+  const chat = document.getElementById("chatBody");
+  const div = document.createElement("div");
+  div.className = "message bot";
+  div.textContent = msg;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// Carregar chatbots
 async function carregarChatbots() {
   try {
     const res = await fetch("http://localhost:5000/chatbots");
@@ -16,7 +103,7 @@ async function carregarChatbots() {
       chatbots.forEach(bot => {
         const option = document.createElement("option");
         option.value = bot.chatbot_id;
-        option.textContent = `${bot.nome} (${bot.categoria})`;
+        option.textContent = `${bot.nome}`;
         chatbotSelect.appendChild(option);
       });
     }
@@ -25,7 +112,7 @@ async function carregarChatbots() {
   }
 }
 
-// Mostrar lista de FAQs
+// Mostrar respostas/FAQs
 async function mostrarRespostas() {
   const lista = document.getElementById('listaFAQs');
   if (!lista) return;
@@ -57,7 +144,7 @@ async function mostrarRespostas() {
   }
 }
 
-// Modal de confirmação personalizado
+// Modal de confirmação para eliminar FAQ
 let faqIdAEliminar = null;
 function pedirConfirmacao(id) {
   faqIdAEliminar = id;
@@ -73,13 +160,11 @@ document.getElementById("cancelarEliminacao").addEventListener("click", () => {
   document.getElementById("modalConfirmacao").style.display = "none";
 });
 
-// Eliminar FAQ
 async function eliminarFAQ(faq_id) {
   try {
     const res = await fetch(`http://localhost:5000/faqs/${faq_id}`, {
       method: "DELETE"
     });
-
     if (res.ok) {
       mostrarRespostas();
     } else {
@@ -90,7 +175,7 @@ async function eliminarFAQ(faq_id) {
   }
 }
 
-// Submissão do formulário de FAQ manual
+// Submissão do formulário de FAQ
 document.getElementById('faqForm').addEventListener('submit', async function (e) {
   e.preventDefault();
   const mensagemFAQ = document.getElementById('mensagemFAQ');
@@ -114,7 +199,6 @@ document.getElementById('faqForm').addEventListener('submit', async function (e)
     });
 
     const result = await res.json();
-
     if (res.status === 409) {
       mensagemFAQ.textContent = '⚠️ Esta FAQ já foi inserida.';
       mensagemFAQ.style.color = 'orange';
@@ -131,11 +215,10 @@ document.getElementById('faqForm').addEventListener('submit', async function (e)
     mensagemFAQ.textContent = '❌ Erro ao comunicar com o servidor.';
     mensagemFAQ.style.color = 'red';
   }
-
   setTimeout(() => mensagemFAQ.textContent = '', 4000);
 });
 
-// Submissão do upload de ficheiro .docx
+// Submissão do formulário de upload
 document.getElementById('uploadForm').addEventListener('submit', async function (e) {
   e.preventDefault();
   const formData = new FormData();
@@ -150,13 +233,11 @@ document.getElementById('uploadForm').addEventListener('submit', async function 
   }
 
   formData.append('file', files[0]);
-
   try {
     const res = await fetch("http://localhost:5000/upload-faq-docx", {
       method: "POST",
       body: formData
     });
-
     const result = await res.json();
     if (res.status === 409) {
       uploadStatus.textContent = '⚠️ Esta FAQ já foi carregada anteriormente.';
@@ -174,24 +255,21 @@ document.getElementById('uploadForm').addEventListener('submit', async function 
     uploadStatus.textContent = '❌ Erro de comunicação com o servidor.';
     uploadStatus.style.color = 'red';
   }
-
   setTimeout(() => uploadStatus.textContent = '', 4000);
 });
 
-// Ao abrir a página: carregar secção com base no hash
+// Navegação entre secções
 window.addEventListener("DOMContentLoaded", () => {
   carregarChatbots();
   const hash = window.location.hash.replace('#', '') || 'recursos';
   mostrarSecao(hash);
 });
 
-// Reagir a mudanças no hash da URL (sem F5)
 window.addEventListener("hashchange", () => {
   const hash = window.location.hash.replace('#', '') || 'recursos';
   mostrarSecao(hash);
 });
 
-// Função que mostra/esconde secções dinamicamente
 function mostrarSecao(secao) {
   document.querySelectorAll('.secao').forEach(div => div.style.display = 'none');
   document.querySelectorAll('aside li').forEach(li => li.classList.remove("active"));
