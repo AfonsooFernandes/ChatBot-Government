@@ -7,11 +7,14 @@ body {
   margin: 0;
   background-color: #f3f4f6;
   color: #2c3e50;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .layout {
   display: flex;
-  height: 100vh;
+  flex: 1;
 }
 
 aside {
@@ -91,7 +94,7 @@ header .bot-info img {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
 }
 
 .panel {
@@ -100,7 +103,6 @@ header .bot-info img {
   display: flex;
   gap: 30px;
   align-items: stretch;
-  height: calc(100vh - 90px);
   overflow: hidden;
 }
 
@@ -208,7 +210,8 @@ form button:hover {
   box-shadow: -2px 0 6px rgba(0, 0, 0, 0.05);
   border-radius: 8px;
   overflow: hidden;
-  height: 100%;
+  height: 75vh; 
+  flex-shrink: 0; 
 }
 
 .chat-header {
@@ -234,6 +237,7 @@ form button:hover {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: calc(75vh - 100px); 
 }
 
 .message {
@@ -297,6 +301,7 @@ form button:hover {
   border-top: 1px solid #ddd;
   display: flex;
   gap: 8px;
+  min-height: 60px; 
 }
 
 .chat-input input {
@@ -388,4 +393,54 @@ form button:hover {
 #cancelarEliminacao {
   background-color: #e5e7eb;
   color: black;
+}
+
+/* Rodapé */
+.rodape {
+  background: #fff;
+  padding: 10px 20px; 
+  text-align: center;
+  border-top: 1px solid #ddd;
+  color: #2c3e50;
+  width: 100%;
+  position: relative;
+  bottom: 0;
+  margin-top: auto;
+  flex-shrink: 0; 
+}
+
+.rodape-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.rodape span {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.rodape-logos {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.rodape-logos img {
+  height: 40px; 
+  filter: grayscale(100%);
+  transition: filter 0.3s;
+}
+
+.rodape-logos .logo-prr:hover {
+  filter: grayscale(0%) brightness(1.2);
+}
+
+.rodape-logos .logo-pt:hover {
+  filter: grayscale(0%) brightness(1.2);
+}
+
+.rodape-logos .logo-ue:hover {
+  filter: grayscale(0%) brightness(1.2);
 }
