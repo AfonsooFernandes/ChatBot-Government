@@ -42,6 +42,7 @@ aside li {
   border-radius: 5px;
   cursor: pointer;
   margin-bottom: 5px;
+  transition: background 0.3s;
 }
 
 aside li:hover {
@@ -49,7 +50,8 @@ aside li:hover {
 }
 
 aside .active {
-  background: #4b5563;
+  background: #d4af37;
+  color: black;
 }
 
 header {
@@ -73,21 +75,47 @@ header .bot-info img {
 }
 
 .bot-subtext {
+  color: #2c2a2a !important;
+  font-size: 14px;
+}
+
+.bot-item {
+  background: #e5e7eb;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  max-width: 93%;
+  position: relative;
+}
+
+.bot-item .status {
   font-size: 12px;
-  color: gray;
+  color: #6b7280;
+  display: block;
+}
+
+.bot-item.nao-publicado {
+  background: #fdecea;
+  border-left: 5px solid #dc2626;
+}
+
+.bot-item.nao-publicado .status {
+  color: #dc2626;
+  font-weight: bold;
 }
 
 #publicarBtn {
-  background: #1e3a8a;
+  background: #d4af37;
   color: white;
   border: none;
   padding: 8px 16px;
   border-radius: 5px;
   cursor: pointer;
+  transition: background 0.3s;
 }
 
 #publicarBtn:hover {
-  background: #1e40af;
+  background: #e0c565;
 }
 
 .content {
@@ -113,31 +141,12 @@ header .bot-info img {
   overflow-y: auto;
 }
 
-/* Linha de separação */
 .left-content hr,
 .linha-separadora {
   border: none;
   border-top: 1px solid #ccc;
   margin: 30px 0;
   width: 93%;
-}
-
-.bot-list {
-  margin-bottom: 30px;
-}
-
-.bot-item {
-  background: #e5e7eb;
-  padding: 10px;
-  border-radius: 5px;
-  margin-bottom: 10px;
-  max-width: 93%;
-}
-
-.bot-item .status {
-  font-size: 12px;
-  color: #6b7280;
-  display: block;
 }
 
 .resources {
@@ -147,18 +156,19 @@ header .bot-info img {
 }
 
 .resources .card {
-  border: 1px solid #ccc;
-  border-radius: 10px;
+  border: 2px solid #ccc;
+  border-radius: 12px;
   padding: 20px;
-  background: white;
+  background: #ffffff;
   flex: 0 1 30%;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .resources .card.active {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px #2563eb33;
+  border-color: #d4af37;
+  background: #fff7d0;
+  box-shadow: 0 0 0 2px #d4af3755;
 }
 
 form input,
@@ -173,49 +183,40 @@ form select {
   border-radius: 5px;
 }
 
-form button {
-  background: #1e3a8a;
-  color: white;
-  border: none;
-  cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 5px;
-}
-
-form button:hover {
-  background: #1e40af;
-}
-
-#faqAddBtn {
-  background: #1e3a8a;
+form button,
+#faqAddBtn,
+.faq-item button {
+  background: #d4af37;
   color: white;
   border: none;
   padding: 8px 16px;
   border-radius: 5px;
   cursor: pointer;
-  margin-bottom: 10px;
+  font-weight: 500;
+  transition: background 0.3s;
 }
 
-#faqAddBtn:hover {
-  background: #1e40af;
+form button:hover,
+#faqAddBtn:hover,
+.faq-item button:hover {
+  background: #e0c565;
 }
 
-/* Sidebar do Chat */
 .chat-sidebar {
   width: 380px;
   background: #fff;
   border-left: 1px solid #ddd;
   display: flex;
   flex-direction: column;
-  box-shadow: -2px 0 6px rgba(0, 0, 0, 0.05);
   border-radius: 8px;
   overflow: hidden;
-  height: 75vh; 
-  flex-shrink: 0; 
+  height: 75vh;
+  flex-shrink: 0;
+  box-shadow: -2px 0 6px rgba(0, 0, 0, 0.05);
 }
 
 .chat-header {
-  background: #1e3a8a;
+  background: #d4af37;
   color: white;
   padding: 15px;
   text-align: center;
@@ -237,7 +238,7 @@ form button:hover {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: calc(75vh - 100px); 
+  max-height: calc(75vh - 100px);
 }
 
 .message {
@@ -250,16 +251,18 @@ form button:hover {
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
-.message.bot {
-  background-color: #eef2ff;
-  align-self: flex-start;
-  border-top-left-radius: 0;
-}
-
 .message.user {
-  background-color: #dbeafe;
+  background-color: #c19a2f;
+  color: #2c3e50;
   align-self: flex-end;
   border-top-right-radius: 0;
+}
+
+.message.bot {
+  background-color: #e0c565;
+  color: #2c3e50;
+  align-self: flex-start;
+  border-top-left-radius: 0;
 }
 
 .message.intro {
@@ -301,7 +304,7 @@ form button:hover {
   border-top: 1px solid #ddd;
   display: flex;
   gap: 8px;
-  min-height: 60px; 
+  min-height: 60px;
 }
 
 .chat-input input {
@@ -313,7 +316,7 @@ form button:hover {
 }
 
 .chat-input button {
-  background-color: #1e3a8a;
+  background-color: #d4af37;
   color: white;
   border: none;
   padding: 10px 14px;
@@ -324,26 +327,10 @@ form button:hover {
 }
 
 .chat-input button:hover {
-  background-color: #1e40af;
+  background-color: #e0c565;
 }
 
-/* Botão Eliminar */
-.faq-item button {
-  background-color: #1a3c89;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.3s;
-}
-
-.faq-item button:hover {
-  background-color: #0f2b63;
-}
-
-/* Modal de confirmação */
+/* MODAL */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -398,7 +385,7 @@ form button:hover {
 /* Rodapé */
 .rodape {
   background: #fff;
-  padding: 10px 20px; 
+  padding: 10px 20px;
   text-align: center;
   border-top: 1px solid #ddd;
   color: #2c3e50;
@@ -406,7 +393,7 @@ form button:hover {
   position: relative;
   bottom: 0;
   margin-top: auto;
-  flex-shrink: 0; 
+  flex-shrink: 0;
 }
 
 .rodape-content {
@@ -419,6 +406,7 @@ form button:hover {
 .rodape span {
   font-size: 18px;
   font-weight: bold;
+  color: #c19a2f;
 }
 
 .rodape-logos {
@@ -428,19 +416,13 @@ form button:hover {
 }
 
 .rodape-logos img {
-  height: 40px; 
+  height: 40px;
   filter: grayscale(100%);
   transition: filter 0.3s;
 }
 
-.rodape-logos .logo-prr:hover {
-  filter: grayscale(0%) brightness(1.2);
-}
-
-.rodape-logos .logo-pt:hover {
-  filter: grayscale(0%) brightness(1.2);
-}
-
+.rodape-logos .logo-prr:hover,
+.rodape-logos .logo-pt:hover,
 .rodape-logos .logo-ue:hover {
   filter: grayscale(0%) brightness(1.2);
 }

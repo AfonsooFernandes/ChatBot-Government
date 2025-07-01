@@ -11,7 +11,7 @@ let chatbotSelecionado = null;
 // Atualizar seleção visual da fonte
 function selecionarFonte(fonte) {
   fonteSelecionada = fonte;
-  localStorage.setItem("fonteSelecionada", fonte); 
+  localStorage.setItem("fonteSelecionada", fonte);
 
   document.querySelectorAll(".resources .card").forEach(card => card.classList.remove("active"));
   if (fonte === "faq") document.querySelectorAll(".card")[0].classList.add("active");
@@ -297,3 +297,18 @@ function mostrarSecao(secao) {
     if (secao === "respostas") mostrarRespostas();
   }
 }
+
+document.getElementById("publicarBtn").addEventListener("click", () => {
+  const botItem = document.querySelector(".bot-item");
+  if (!botItem) return;
+
+  const statusSpan = botItem.querySelector(".status");
+  const dataAtual = new Date().toLocaleDateString('pt-PT', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  });
+
+  statusSpan.textContent = `Estado: Publicado - Município • ${dataAtual}`;
+  botItem.classList.remove("nao-publicado");
+
+  statusSpan.classList.remove("not-published");
+});

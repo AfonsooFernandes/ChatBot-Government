@@ -35,7 +35,9 @@
       <div id="secaoRecursos" class="secao">
         <div class="left-content">
           <div class="bot-list">
-            <div class="bot-item">Bot 1 <span class="status">Estado: Não Publicado - Município • 16 Jun 2025</span></div>
+            <div class="bot-item nao-publicado">
+              Bot 1 <span class="status">Estado: Não Publicado - Município • 16 Jun 2025</span>
+            </div>
           </div>
           <h3>Escolha a fonte para as respostas do chatbot</h3>
           <div class="resources">
@@ -121,6 +123,7 @@
         </div>
         <div class="chat-input">
           <input type="text" placeholder="Digite uma mensagem..." id="chatInput" onkeydown="if(event.key==='Enter') enviarPergunta()">
+          <button onclick="enviarPergunta()" title="Enviar">&#10148;</button>
         </div>
       </div>
     </div>
