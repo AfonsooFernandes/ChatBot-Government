@@ -6,10 +6,13 @@ function mostrarFormulario() {
 
 // Fonte de resposta selecionada
 let fonteSelecionada = "faq";
+let chatbotSelecionado = null;
 
 // Atualizar seleção visual da fonte
 function selecionarFonte(fonte) {
   fonteSelecionada = fonte;
+  localStorage.setItem("fonteSelecionada", fonte); 
+
   document.querySelectorAll(".resources .card").forEach(card => card.classList.remove("active"));
   if (fonte === "faq") document.querySelectorAll(".card")[0].classList.add("active");
   if (fonte === "faiss") document.querySelectorAll(".card")[1].classList.add("active");
@@ -51,15 +54,19 @@ function perguntarCategoria(nomeCategoria) {
 
 // Responder à pergunta manual
 function responderPergunta(pergunta) {
-  if (fonteSelecionada !== "faq") {
-    adicionarMensagemBot("⚠️ Fonte selecionada não está implementada no backend. Apenas 'Baseado em Regras (FAQ)' está disponível.");
+  if (!chatbotSelecionado) {
+    adicionarMensagemBot("❌ Nenhum chatbot selecionado.");
     return;
   }
 
   fetch("http://localhost:5000/obter-resposta", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ pergunta, fonte: fonteSelecionada })
+    body: JSON.stringify({
+      pergunta,
+      fonte: fonteSelecionada,
+      chatbot_id: chatbotSelecionado
+    })
   })
     .then(res => res.json())
     .then(data => {
@@ -103,8 +110,12 @@ async function carregarChatbots() {
       chatbots.forEach(bot => {
         const option = document.createElement("option");
         option.value = bot.chatbot_id;
-        option.textContent = `${bot.nome}`;
+        option.textContent = bot.nome;
         chatbotSelect.appendChild(option);
+      });
+      chatbotSelecionado = parseInt(chatbotSelect.value);
+      chatbotSelect.addEventListener("change", () => {
+        chatbotSelecionado = parseInt(chatbotSelect.value);
       });
     }
   } catch (err) {
@@ -263,6 +274,9 @@ window.addEventListener("DOMContentLoaded", () => {
   carregarChatbots();
   const hash = window.location.hash.replace('#', '') || 'recursos';
   mostrarSecao(hash);
+
+  const fonteGuardada = localStorage.getItem("fonteSelecionada") || "faq";
+  selecionarFonte(fonteGuardada);
 });
 
 window.addEventListener("hashchange", () => {

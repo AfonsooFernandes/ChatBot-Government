@@ -58,7 +58,9 @@
           <button id="faqAddBtn" onclick="mostrarFormulario()">Adicionar FAQ</button>
           <div id="faqContainer" style="display: none;">
             <form id="faqForm">
-              <input type="number" name="chatbot_id" placeholder="ID do Chatbot" required>
+              <select name="chatbot_id" id="chatbot_id" required>
+                <option value="">Selecione o Chatbot</option>
+              </select>
               <input type="text" name="designacao" placeholder="Designação" required>
               <input type="text" name="pergunta" placeholder="Pergunta" required>
               <textarea name="resposta" placeholder="Resposta" required></textarea>

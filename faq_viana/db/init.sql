@@ -77,6 +77,13 @@ CREATE TABLE IF NOT EXISTS Administrador (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- FonteResposta 
+CREATE TABLE IF NOT EXISTS FonteResposta (
+    id SERIAL PRIMARY KEY,
+    chatbot_id INT REFERENCES Chatbot(chatbot_id) ON DELETE CASCADE,
+    fonte TEXT NOT NULL
+);
+
 -- Inserir chatbot genérico único
 INSERT INTO Chatbot (nome, idioma, descricao)
 VALUES ('Assistente Municipal', 'pt', 'Chatbot para todos os serviços municipais')
