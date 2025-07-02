@@ -3,156 +3,162 @@
 <head>
   <meta charset="UTF-8">
   <title>Chatbot Municipal - Backoffice</title>
+  <link rel="icon" href="chatbot-icon.png" type="image/png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="layout">
-  <aside>
-    <h2>Menu</h2>
-    <ul>
-      <li id="menuRecursos" class="active" onclick="window.location.hash='recursos'">Recursos</li>
-      <li id="menuRespostas" onclick="window.location.hash='respostas'">Respostas</li>
-      <li>Comportamento</li>
-      <li>Fallbacks</li>
-    </ul>
-  </aside>
+  <div class="layout">
+    <aside>
+      <h2>Menu</h2>
+      <ul>
+        <li id="menuRecursos" class="active" onclick="window.location.hash='recursos'">Recursos</li>
+        <li id="menuRespostas" onclick="window.location.hash='respostas'">Respostas</li>
+        <li>Comportamento</li>
+        <li>Fallbacks</li>
+      </ul>
+    </aside>
 
-  <div class="content">
-    <header>
-      <div class="bot-info">
-        <img src="chatbot-icon.png" alt="bot">
-        <div>
-          <strong>Bot</strong>
-          <div class="bot-subtext">Chatbot Municipal</div>
-        </div>
-      </div>
-      <button id="publicarBtn">Publicar</button>
-    </header>
-
-    <div class="panel">
-      <!-- Secção: Recursos -->
-      <div id="secaoRecursos" class="secao">
-        <div class="left-content">
-          <div class="bot-list">
-            <div class="bot-item nao-publicado">
-              Bot 1 <span class="status">Estado: Não Publicado - Município • 16 Jun 2025</span>
-            </div>
-          </div>
-          <h3>Escolha a fonte para as respostas do chatbot</h3>
-          <div class="resources">
-            <div class="card" onclick="selecionarFonte('faq')">
-              <h4>Baseado em Regras (FAQ)</h4>
-              <p>Responde com base nas perguntas frequentes registadas.</p>
-            </div>
-            <div class="card" onclick="selecionarFonte('faiss')">
-              <h4>Só FAISS</h4>
-              <p>Respostas aproximadas com base vetorial (não implementado).</p>
-            </div>
-            <div class="card" onclick="selecionarFonte('faq+raga')">
-              <h4>FAQ + fallback RAG</h4>
-              <p>Tenta responder com regras e usa RAG se falhar (não implementado).</p>
-            </div>
-          </div>
-
-          <hr class="linha-separadora">
-          <h3>Gestão de FAQs</h3>
-          <button id="faqAddBtn" onclick="mostrarFormulario()">Adicionar FAQ</button>
-          <div id="faqContainer" style="display: none;">
-            <form id="faqForm">
-              <select name="chatbot_id" id="chatbot_id" required>
-                <option value="">Selecione o Chatbot</option>
-              </select>
-              <input type="text" name="designacao" placeholder="Designação" required>
-              <input type="text" name="pergunta" placeholder="Pergunta" required>
-              <textarea name="resposta" placeholder="Resposta" required></textarea>
-              <select name="categoria_id" required>
-                <option value="">Escolha a categoria</option>
-                <option value="1">Educação</option>
-                <option value="2">Ação Social</option>
-                <option value="3">Habitação</option>
-                <option value="4">Cultura</option>
-                <option value="5">Desporto</option>
-                <option value="6">Ambiente</option>
-              </select>
-              <input type="text" name="documentos" placeholder="IDs de Documentos (separados por vírgula)">
-              <input type="text" name="relacionadas" placeholder="IDs de FAQs relacionadas (separados por vírgula)">
-              <button type="submit">Adicionar FAQ</button>
-              <div id="mensagemFAQ"></div>
-            </form>
-            <div>
-              <label>Ou carregar ficheiro .docx</label>
-              <form id="uploadForm" enctype="multipart/form-data">
-                <input type="file" name="file" accept=".docx" multiple required>
-                <button type="submit">Adicionar Documento</button>
-              </form>
-              <div id="uploadStatus"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Secção: Respostas -->
-      <div id="secaoRespostas" class="secao" style="display: none;">
-        <div class="left-content">
-          <h2>FAQs Registadas</h2>
-          <div id="listaFAQs" style="margin-top: 20px;"></div>
-        </div>
-      </div>
-
-      <!-- Simulador do chat -->
-      <div class="chat-sidebar">
-        <div class="chat-header">
+    <div class="content">
+      <header>
+        <div class="bot-info">
           <img src="chatbot-icon.png" alt="bot">
-          <h3>CMVC - Serviços Municipalizados</h3>
-          <span>(Assistente Virtual)</span>
-        </div>
-        <div class="chat-body" id="chatBody">
-          <div class="message intro">
-            Olá! Está a conversar com o assistente virtual. <br>
-            Escolha um tema ou escreva a sua pergunta.
-          </div>
-          <div class="categories">
-            <button class="category-btn" onclick="perguntarCategoria('Educação')">Educação</button>
-            <button class="category-btn" onclick="perguntarCategoria('Ação Social')">Ação Social</button>
-            <button class="category-btn" onclick="perguntarCategoria('Habitação')">Habitação</button>
-            <button class="category-btn" onclick="perguntarCategoria('Cultura')">Cultura</button>
-            <button class="category-btn" onclick="perguntarCategoria('Desporto')">Desporto</button>
-            <button class="category-btn" onclick="perguntarCategoria('Ambiente')">Ambiente</button>
+          <div>
+            <strong>AI4APGovernance - Inteligência Artificial para a Governança da Administração Pública</strong>
+            <div class="bot-subtext">Chatbot Municipal</div>
           </div>
         </div>
-        <div class="chat-input">
-          <input type="text" placeholder="Digite uma mensagem..." id="chatInput" onkeydown="if(event.key==='Enter') enviarPergunta()">
-          <button onclick="enviarPergunta()" title="Enviar">&#10148;</button>
+        <button id="publicarBtn">Publicar</button>
+      </header>
+
+      <div class="panel">
+        <!-- Secção Recursos -->
+        <div id="secaoRecursos" class="secao left-content">
+          <div class="bot-item-container">
+            <div class="bot-item nao-publicado" onclick="toggleBotDropdown(this)" data-chatbot-id="1">
+              Bot 1 <span class="status">Estado: Não Publicado - Município • 16 Jun 2025</span>
+              <span class="dropdown-icon">&#x25BC;</span>
+            </div>
+
+            <div class="bot-dropdown" style="display: none;">
+              <h3>Escolha a fonte para as respostas do chatbot</h3>
+              <div class="resources">
+                <div class="card" onclick="selecionarFonte('faq')">
+                  <h4>Baseado em Regras (FAQ)</h4>
+                  <p>Responde com base nas perguntas frequentes registadas.</p>
+                </div>
+                <div class="card" onclick="selecionarFonte('faiss')">
+                  <h4>Só FAISS</h4>
+                  <p>Respostas aproximadas com base vetorial (não implementado).</p>
+                </div>
+                <div class="card" onclick="selecionarFonte('faq+raga')">
+                  <h4>FAQ + fallback RAG</h4>
+                  <p>Tenta responder com regras e usa RAG se falhar (não implementado).</p>
+                </div>
+              </div>
+
+              <hr class="linha-separadora">
+              <h3>Gestão de FAQs</h3>
+              <button id="faqAddBtn" onclick="mostrarFormulario()">Adicionar FAQ</button>
+
+              <div id="faqContainer" style="display: none; margin-top: 10px;">
+                <form id="faqForm">
+                  <select name="chatbot_id" id="chatbot_id" required>
+                    <option value="">Selecione o Chatbot</option>
+                  </select>
+                  <input type="text" name="designacao" placeholder="Designação" required>
+                  <input type="text" name="pergunta" placeholder="Pergunta" required>
+                  <textarea name="resposta" placeholder="Resposta" required></textarea>
+                  <select name="categoria_id" required>
+                    <option value="">Escolha a categoria</option>
+                    <option value="1">Educação</option>
+                    <option value="2">Ação Social</option>
+                    <option value="3">Habitação</option>
+                    <option value="4">Cultura</option>
+                    <option value="5">Desporto</option>
+                    <option value="6">Ambiente</option>
+                  </select>
+                  <input type="text" name="documentos" placeholder="IDs de Documentos (separados por vírgula)">
+                  <input type="text" name="relacionadas" placeholder="IDs de FAQs relacionadas (separados por vírgula)">
+                  <button type="submit">Adicionar FAQ</button>
+                  <div id="mensagemFAQ"></div>
+                </form>
+
+                <div>
+                  <label>Ou carregar ficheiro .docx</label>
+                  <form id="uploadForm" enctype="multipart/form-data">
+                    <input type="file" name="file" accept=".docx" multiple required>
+                    <button type="submit">Adicionar Documento</button>
+                  </form>
+                  <div id="uploadStatus"></div>
+                </div>
+              </div>
+
+              <h3>FAQs Associadas</h3>
+              <div id="faqTabelaBot">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secção Respostas -->
+        <div id="secaoRespostas" class="secao left-content" style="display: none;">
+          <h2>FAQs Registadas</h2>
+          <div id="listaFAQs" style="margin-top: 20px;">
+          </div>
+        </div>
+
+        <!-- Sidebar do Chat -->
+        <div class="chat-sidebar">
+          <div class="chat-header">
+            <img src="chatbot-icon.png" alt="bot">
+            <h3>CMVC - Serviços Municipalizados</h3>
+            <span>(Assistente Virtual)</span>
+          </div>
+
+          <div class="chat-body" id="chatBody">
+            <div class="message intro">Olá! Está a conversar com o assistente virtual. <br>Escolha um tema ou escreva a sua pergunta.</div>
+            <div class="categories">
+              <button class="category-btn" onclick="perguntarCategoria('Educação')">Educação</button>
+              <button class="category-btn" onclick="perguntarCategoria('Ação Social')">Ação Social</button>
+              <button class="category-btn" onclick="perguntarCategoria('Habitação')">Habitação</button>
+              <button class="category-btn" onclick="perguntarCategoria('Cultura')">Cultura</button>
+              <button class="category-btn" onclick="perguntarCategoria('Desporto')">Desporto</button>
+              <button class="category-btn" onclick="perguntarCategoria('Ambiente')">Ambiente</button>
+            </div>
+          </div>
+
+          <div class="chat-input">
+            <input type="text" placeholder="Digite uma mensagem..." id="chatInput" onkeydown="if(event.key==='Enter') enviarPergunta()">
+            <button onclick="enviarPergunta()" title="Enviar">&#10148;</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Modal de confirmação -->
-<div id="modalConfirmacao" class="modal-overlay" style="display: none;">
-  <div class="modal-box">
-    <p>Tem a certeza que quer eliminar esta FAQ?</p>
-    <div class="modal-buttons">
-      <button id="confirmarEliminacao">Sim</button>
-      <button id="cancelarEliminacao">Cancelar</button>
+  <!-- Modal de confirmação de eliminação -->
+  <div id="modalConfirmacao" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <p>Tem a certeza que quer eliminar esta FAQ?</p>
+      <div class="modal-buttons">
+        <button id="confirmarEliminacao">Sim</button>
+        <button id="cancelarEliminacao">Cancelar</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Rodapé -->
-<footer class="rodape">
-  <div class="rodape-content">
-    <span>O Projeto é cofinanciado por:</span>
-    <div class="rodape-logos">
-      <img src="prr.png" alt="PRR" class="logo-prr">
-      <img src="pt.png" alt="República Portuguesa" class="logo-pt">
-      <img src="ue.png" alt="União Europeia" class="logo-ue">
+  <footer class="rodape">
+    <div class="rodape-content">
+      <span>O Projeto é cofinanciado por:</span>
+      <div class="rodape-logos">
+        <img src="prr.png" alt="PRR" class="logo-prr">
+        <img src="pt.png" alt="República Portuguesa" class="logo-pt">
+        <img src="ue.png" alt="União Europeia" class="logo-ue">
+      </div>
     </div>
-  </div>
-</footer>
+  </footer>
 
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

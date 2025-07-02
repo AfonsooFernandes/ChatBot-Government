@@ -140,6 +140,22 @@ def get_faqs():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/faqs/chatbot/<int:chatbot_id>", methods=["GET"])
+def get_faqs_por_chatbot(chatbot_id):
+    try:
+        cur.execute("""
+            SELECT c.nome, f.pergunta, f.resposta
+            FROM FAQ f
+            LEFT JOIN Categoria c ON f.categoria_id = c.categoria_id
+            WHERE f.chatbot_id = %s
+        """, (chatbot_id,))
+        data = cur.fetchall()
+        return jsonify([
+            {"categoria": row[0], "pergunta": row[1], "resposta": row[2]} for row in data
+        ])
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route("/faqs", methods=["POST"])
 def add_faq():
     data = request.get_json()

@@ -86,6 +86,11 @@ header .bot-info img {
   margin-bottom: 10px;
   max-width: 93%;
   position: relative;
+  min-height: 50px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .bot-item .status {
@@ -200,6 +205,10 @@ form button:hover,
 #faqAddBtn:hover,
 .faq-item button:hover {
   background: #e0c565;
+}
+
+#faqAddBtn {
+  margin-bottom: 20px; 
 }
 
 .chat-sidebar {
@@ -425,4 +434,57 @@ form button:hover,
 .rodape-logos .logo-pt:hover,
 .rodape-logos .logo-ue:hover {
   filter: grayscale(0%) brightness(1.2);
+}
+
+.bot-item-container {
+  margin-bottom: 20px;
+}
+
+.dropdown-icon {
+  font-size: 18px;
+  margin-left: 10px;
+  color: #6b7280;
+  transition: transform 0.3s ease;
+}
+
+.bot-item.expanded .dropdown-icon {
+  transform: rotate(180deg);
+}
+
+.bot-dropdown {
+  background-color: #fdfdfd;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 10px;
+  max-width: 1150px;
+}
+
+.faq-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.faq-tabela th,
+.faq-tabela td {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  text-align: left;
+  vertical-align: top;
+}
+
+.faq-tabela th {
+  background-color: #f1f5f9;
+  color: #374151;
+}
+
+.faq-tabela td {
+  background-color: #ffffff;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.faq-tabela tr:nth-child(even) td {
+  background-color: #f9fafb;
 }
