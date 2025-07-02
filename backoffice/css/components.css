@@ -172,3 +172,66 @@ form button:hover,
   margin-top: 10px;
   max-width: 1150px;
 }
+
+#secaoContexto {
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  color: #2c3e50;
+  line-height: 1.6;
+}
+
+#secaoContexto h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #c19a2f;
+}
+
+#secaoContexto h3 {
+  font-size: 20px;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  color: #374151;
+}
+
+#secaoContexto p {
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+#secaoContexto ul,
+#secaoContexto ol {
+  padding-left: 20px;
+  margin-bottom: 20px;
+}
+
+#secaoContexto li {
+  margin-bottom: 8px;
+}
+
+#secaoContexto code {
+  background-color: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+#secaoContexto pre {
+  background-color: #f9fafb;
+  border-left: 4px solid #c19a2f;
+  padding: 10px 15px;
+  overflow-x: auto;
+  font-family: monospace;
+  font-size: 14px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+#secaoContexto img {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fff;
+  padding: 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
