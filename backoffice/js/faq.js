@@ -1,88 +1,4 @@
-function mostrarFormulario() {
-  const el = document.getElementById('faqContainer');
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-
-// Seleção de fonte de resposta
-let fonteSelecionada = "faq";
-let chatbotSelecionado = null;
-
-function selecionarFonte(fonte) {
-  fonteSelecionada = fonte;
-  localStorage.setItem("fonteSelecionada", fonte);
-
-  document.querySelectorAll(".resources .card").forEach((card, index) => {
-    const fontes = ["faq", "faiss", "faq+raga"];
-    card.classList.toggle("active", fontes[index] === fonte);
-  });
-
-  if (chatbotSelecionado) {
-    carregarTabelaFAQs(chatbotSelecionado, true);
-  }
-}
-
-// Enviar pergunta escrita
-function enviarPergunta() {
-  const input = document.getElementById("chatInput");
-  const texto = input.value.trim();
-  if (!texto) return;
-  adicionarMensagem("user", texto);
-  input.value = "";
-  responderPergunta(texto);
-}
-
-// Enviar pergunta por categoria
-function perguntarCategoria(categoria) {
-  adicionarMensagem("user", categoria);
-
-  if (fonteSelecionada !== "faq") {
-    return adicionarMensagem("bot", "⚠️ Apenas a fonte 'Baseado em Regras (FAQ)' está disponível.");
-  }
-
-  fetch(`http://localhost:5000/faq-categoria/${encodeURIComponent(categoria)}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success && data.pergunta && data.resposta) {
-        adicionarMensagem("bot", data.pergunta);
-        setTimeout(() => adicionarMensagem("bot", data.resposta), 600);
-      } else {
-        adicionarMensagem("bot", "❌ Não foi possível obter uma FAQ dessa categoria.");
-      }
-    })
-    .catch(() => adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor."));
-}
-
-// Resposta manual
-function responderPergunta(pergunta) {
-  if (!chatbotSelecionado) return adicionarMensagem("bot", "❌ Nenhum chatbot selecionado.");
-
-  fetch("http://localhost:5000/obter-resposta", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ pergunta, chatbot_id: chatbotSelecionado })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        adicionarMensagem("bot", data.resposta);
-      } else {
-        adicionarMensagem("bot", "❌ Nenhuma resposta encontrada.");
-      }
-    })
-    .catch(() => adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor."));
-}
-
-// Adicionar mensagens ao chat
-function adicionarMensagem(tipo, texto) {
-  const chat = document.getElementById("chatBody");
-  const div = document.createElement("div");
-  div.className = `message ${tipo}`;
-  div.textContent = texto;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-// Carregar chatbots no formulário
+// Carregar todos os chatbots no <select>
 async function carregarChatbots() {
   try {
     const res = await fetch("http://localhost:5000/chatbots");
@@ -103,7 +19,7 @@ async function carregarChatbots() {
   }
 }
 
-// Carregar FAQs para dropdown e para edição
+// Carrega as FAQs associadas a um chatbot
 async function carregarTabelaFAQs(chatbotId, paraDropdown = false) {
   try {
     const res = await fetch(`http://localhost:5000/faqs/chatbot/${chatbotId}`);
@@ -144,7 +60,7 @@ async function carregarTabelaFAQs(chatbotId, paraDropdown = false) {
   }
 }
 
-// Mostrar todas as FAQs com botão eliminar
+// Mostra todas as FAQs existentes no sistema
 async function mostrarRespostas() {
   const lista = document.getElementById('listaFAQs');
   if (!lista) return;
@@ -167,22 +83,7 @@ async function mostrarRespostas() {
   }
 }
 
-// Eliminar FAQ com confirmação
-let faqIdAEliminar = null;
-function pedirConfirmacao(id) {
-  faqIdAEliminar = id;
-  document.getElementById("modalConfirmacao").style.display = "flex";
-}
-
-document.getElementById("confirmarEliminacao").addEventListener("click", () => {
-  eliminarFAQ(faqIdAEliminar);
-  document.getElementById("modalConfirmacao").style.display = "none";
-});
-
-document.getElementById("cancelarEliminacao").addEventListener("click", () => {
-  document.getElementById("modalConfirmacao").style.display = "none";
-});
-
+// Elimina uma FAQ pelo ID
 async function eliminarFAQ(faq_id) {
   try {
     const res = await fetch(`http://localhost:5000/faqs/${faq_id}`, { method: "DELETE" });
@@ -193,7 +94,27 @@ async function eliminarFAQ(faq_id) {
   }
 }
 
-// Submeter nova FAQ manualmente
+// Envia uma pergunta escrita e obtém resposta
+function responderPergunta(pergunta) {
+  if (!chatbotSelecionado) return adicionarMensagem("bot", "❌ Nenhum chatbot selecionado.");
+
+  fetch("http://localhost:5000/obter-resposta", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pergunta, chatbot_id: chatbotSelecionado })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        adicionarMensagem("bot", data.resposta);
+      } else {
+        adicionarMensagem("bot", "❌ Nenhuma resposta encontrada.");
+      }
+    })
+    .catch(() => adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor."));
+}
+
+// Evento: Submeter nova FAQ manualmente
 document.getElementById('faqForm').addEventListener('submit', async function (e) {
   e.preventDefault();
   const msg = document.getElementById('mensagemFAQ');
@@ -236,7 +157,7 @@ document.getElementById('faqForm').addEventListener('submit', async function (e)
   setTimeout(() => msg.textContent = '', 4000);
 });
 
-// Upload de ficheiro .docx com FAQs
+// Evento: Upload de ficheiro .docx com FAQs
 document.getElementById('uploadForm').addEventListener('submit', async function (e) {
   e.preventDefault();
   const uploadStatus = document.getElementById('uploadStatus');
@@ -275,47 +196,4 @@ document.getElementById('uploadForm').addEventListener('submit', async function 
   }
 
   setTimeout(() => uploadStatus.textContent = '', 4000);
-});
-
-window.addEventListener("DOMContentLoaded", () => {
-  carregarChatbots();
-  const hash = window.location.hash.replace('#', '') || 'recursos';
-  mostrarSecao(hash);
-  selecionarFonte(localStorage.getItem("fonteSelecionada") || "faq");
-});
-
-window.addEventListener("hashchange", () => {
-  const hash = window.location.hash.replace('#', '') || 'recursos';
-  mostrarSecao(hash);
-});
-
-function mostrarSecao(secao) {
-  document.querySelectorAll('.secao').forEach(div => div.style.display = 'none');
-  document.querySelectorAll('aside li').forEach(li => li.classList.remove("active"));
-
-  const id = `secao${secao.charAt(0).toUpperCase() + secao.slice(1)}`;
-  const div = document.getElementById(id);
-  if (div) {
-    div.style.display = 'block';
-    const menu = document.getElementById(`menu${secao.charAt(0).toUpperCase() + secao.slice(1)}`);
-    if (menu) menu.classList.add("active");
-    if (secao === "respostas") carregarTabelaFAQs(chatbotSelecionado);
-  }
-}
-
-function toggleBotDropdown(botItem) {
-  const dropdown = botItem.parentElement.querySelector(".bot-dropdown");
-  const expanded = botItem.classList.toggle("expanded");
-  dropdown.style.display = expanded ? "block" : "none";
-}
-
-document.getElementById("publicarBtn").addEventListener("click", () => {
-  const botItem = document.querySelector(".bot-item");
-  if (!botItem) return;
-
-  const statusSpan = botItem.querySelector(".status");
-  const dataAtual = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' });
-
-  statusSpan.textContent = `Estado: Publicado - Município • ${dataAtual}`;
-  botItem.classList.remove("nao-publicado");
 });
