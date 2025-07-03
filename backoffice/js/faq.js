@@ -37,11 +37,12 @@ async function carregarTabelaFAQs(chatbotId, paraDropdown = false) {
       container.innerHTML = `
         <table class="faq-tabela">
           <thead>
-            <tr><th>Categoria</th><th>Pergunta</th><th>Resposta</th></tr>
+            <tr><th>ID</th><th>Categoria</th><th>Pergunta</th><th>Resposta</th></tr>
           </thead>
           <tbody>
             ${faqs.map(f => `
               <tr>
+                <td>${f.faq_id}</td>
                 <td>${f.categoria || '—'}</td>
                 <td>${f.pergunta}</td>
                 <td>${f.resposta}</td>

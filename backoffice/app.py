@@ -144,14 +144,20 @@ def get_faqs():
 def get_faqs_por_chatbot(chatbot_id):
     try:
         cur.execute("""
-            SELECT c.nome, f.pergunta, f.resposta
+            SELECT f.faq_id, c.nome, f.pergunta, f.resposta
             FROM FAQ f
             LEFT JOIN Categoria c ON f.categoria_id = c.categoria_id
             WHERE f.chatbot_id = %s
         """, (chatbot_id,))
         data = cur.fetchall()
         return jsonify([
-            {"categoria": row[0], "pergunta": row[1], "resposta": row[2]} for row in data
+            {
+                "faq_id": row[0],
+                "categoria": row[1],
+                "pergunta": row[2],
+                "resposta": row[3]
+            }
+            for row in data
         ])
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
