@@ -108,11 +108,52 @@ function responderPergunta(pergunta) {
     .then(data => {
       if (data.success) {
         adicionarMensagem("bot", data.resposta);
+        obterPerguntasSemelhantes(pergunta);
       } else {
         adicionarMensagem("bot", "❌ Nenhuma resposta encontrada.");
       }
     })
     .catch(() => adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor."));
+}
+
+// Obter perguntas semelhantes da mesma categoria
+function obterPerguntasSemelhantes(perguntaOriginal) {
+  fetch("http://localhost:5000/perguntas-semelhantes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pergunta: perguntaOriginal, chatbot_id: chatbotSelecionado })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.sugestoes.length > 0) {
+        const chat = document.getElementById("chatBody");
+
+        const divTitulo = document.createElement("div");
+        divTitulo.className = "message bot";
+        divTitulo.textContent = "📌 Perguntas semelhantes:";
+        chat.appendChild(divTitulo);
+
+        const btnContainer = document.createElement("div");
+        btnContainer.style.display = "flex";
+        btnContainer.style.gap = "10px";
+        btnContainer.style.marginTop = "6px";
+        btnContainer.style.flexWrap = "wrap";
+
+        data.sugestoes.forEach(pergunta => {
+          const btn = document.createElement("button");
+          btn.className = "btn-similar";
+          btn.textContent = pergunta;
+          btn.onclick = () => {
+            adicionarMensagem("user", pergunta);
+            responderPergunta(pergunta);
+          };
+          btnContainer.appendChild(btn);
+        });
+
+        chat.appendChild(btnContainer);
+        chat.scrollTop = chat.scrollHeight;
+      }
+    });
 }
 
 // Evento: Submeter nova FAQ manualmente

@@ -307,6 +307,35 @@ def obter_resposta():
     except Exception as e:
         return jsonify({"success": False, "erro": str(e)}), 500
 
+@app.route("/perguntas-semelhantes", methods=["POST"])
+def perguntas_semelhantes():
+    dados = request.get_json()
+    pergunta_atual = dados.get("pergunta", "")
+    chatbot_id = dados.get("chatbot_id")
+
+    try:
+        cur.execute("""
+            SELECT f.categoria_id
+            FROM FAQ f
+            WHERE f.pergunta = %s AND f.chatbot_id = %s
+        """, (pergunta_atual, chatbot_id))
+        categoria_id = cur.fetchone()
+        if not categoria_id:
+            return jsonify({"success": True, "sugestoes": []})
+
+        categoria_id = categoria_id[0]
+        cur.execute("""
+            SELECT pergunta FROM FAQ
+            WHERE categoria_id = %s AND pergunta != %s
+            ORDER BY RANDOM()
+            LIMIT 2
+        """, (categoria_id, pergunta_atual))
+        sugestoes = [row[0] for row in cur.fetchall()]
+
+        return jsonify({"success": True, "sugestoes": sugestoes})
+    except Exception as e:
+        return jsonify({"success": False, "erro": str(e)}), 500
+
 # ---------- INICIAR SERVIDOR ----------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
