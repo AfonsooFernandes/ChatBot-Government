@@ -1,4 +1,3 @@
-// Função para selecionar a fonte do bot
 function selecionarFonte(fonte, dropdown = null) {
   window.fonteSelecionada = fonte;
 
@@ -8,7 +7,7 @@ function selecionarFonte(fonte, dropdown = null) {
 
   if (!dropdown) {
     dropdown = document.querySelector(`.bot-item[data-chatbot-id="${window.chatbotSelecionado}"]`)
-                ?.parentElement?.querySelector(".bot-dropdown");
+      ?.parentElement?.querySelector(".bot-dropdown");
   }
 
   if (!dropdown) {
@@ -21,7 +20,6 @@ function selecionarFonte(fonte, dropdown = null) {
   });
 }
 
-// Função para mostrar/esconder o formulário de inserção de FAQ
 function mostrarFormulario() {
   const el = document.getElementById('faqContainer');
   if (el) {
@@ -29,7 +27,6 @@ function mostrarFormulario() {
   }
 }
 
-// Função para expandir ou fechar dropdown do bot
 function toggleBotDropdown(botItem) {
   const chatbotId = parseInt(botItem.getAttribute("data-chatbot-id"));
   const dropdown = botItem.parentElement.querySelector(".bot-dropdown");
@@ -53,13 +50,51 @@ function toggleBotDropdown(botItem) {
 
     if (typeof carregarTabelaFAQs === "function") {
       carregarTabelaFAQs(chatbotId, true);
-    } else {
-      console.warn("⚠️ Função carregarTabelaFAQs não está definida.");
     }
+
+    const botWrapper = botItem.closest(".bot-wrapper");
+    const ativoBtn = botWrapper.querySelector(".bot-ativo-btn");
+    if (ativoBtn) ativoBtn.style.display = "inline-block";
   }
 }
 
-// Botão "Publicar"
+function definirAtivo(event, chatbotId) {
+  event.stopPropagation();
+
+  window.chatbotSelecionado = chatbotId;
+  localStorage.setItem("chatbotSelecionado", chatbotId);
+  localStorage.setItem("chatbotAtivo", chatbotId);
+
+  document.querySelectorAll(".bot-ativo-btn").forEach(btn => btn.classList.remove("ativo"));
+  event.currentTarget.classList.add("ativo");
+
+  const statusEl = document.getElementById("botAtivoStatus");
+  if (statusEl) statusEl.style.display = "inline-block";
+
+  const mensagem = document.getElementById("botAtivoMensagem");
+  if (mensagem) {
+    mensagem.innerText = `Chatbot Ativo: Bot ${chatbotId} (mesmo com menu fechado)`;
+    mensagem.style.display = "block";
+  }
+
+  document.querySelectorAll(".ativo-label").forEach(el => el.style.display = "none");
+  const label = document.querySelector(`.bot-item[data-chatbot-id="${chatbotId}"] .ativo-label`);
+  if (label) label.style.display = "inline";
+
+  const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
+  window.fonteSelecionada = fonte;
+
+  const dropdown = document.querySelector(`.bot-item[data-chatbot-id="${chatbotId}"]`)
+    ?.parentElement?.querySelector(".bot-dropdown");
+  if (dropdown) {
+    selecionarFonte(fonte, dropdown);
+  }
+
+  if (typeof carregarTabelaFAQs === "function") {
+    carregarTabelaFAQs(chatbotId, true);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const publicarBtn = document.getElementById("publicarBtn");
   if (!publicarBtn) return;
@@ -100,22 +135,42 @@ function mostrarSecao(secao) {
 
 window.addEventListener("DOMContentLoaded", () => {
   const chatbotId = localStorage.getItem("chatbotSelecionado");
+  const chatbotAtivo = localStorage.getItem("chatbotAtivo");
+
   if (chatbotId) {
     window.chatbotSelecionado = parseInt(chatbotId);
     const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
     window.fonteSelecionada = fonte;
+
+    const botAtivoBtn = document.querySelector(`.bot-ativo-btn[onclick*="${chatbotId}"]`);
+    if (botAtivoBtn) botAtivoBtn.classList.add("ativo");
+
+    const statusEl = document.getElementById("botAtivoStatus");
+    if (statusEl) statusEl.style.display = "inline-block";
   } else {
     window.chatbotSelecionado = null;
     window.fonteSelecionada = "faq";
   }
 
-  carregarChatbots(); 
+  if (chatbotAtivo) {
+    const msgEl = document.getElementById("botAtivoMensagem");
+    if (msgEl) {
+      msgEl.innerText = `Chatbot Ativo: Bot ${chatbotAtivo} (mesmo com menu fechado)`;
+      msgEl.style.display = "block";
+    }
+
+    document.querySelectorAll(".ativo-label").forEach(el => el.style.display = "none");
+    const ativoLabel = document.querySelector(`.bot-item[data-chatbot-id="${chatbotAtivo}"] .ativo-label`);
+    if (ativoLabel) ativoLabel.style.display = "inline";
+  }
+
+  carregarChatbots();
+
   const hash = window.location.hash.replace('#', '') || 'recursos';
   mostrarSecao(hash);
 
   const dropdown = document.querySelector(`.bot-item[data-chatbot-id="${window.chatbotSelecionado}"]`)
-                   ?.parentElement?.querySelector(".bot-dropdown");
-
+    ?.parentElement?.querySelector(".bot-dropdown");
   if (dropdown) {
     selecionarFonte(window.fonteSelecionada, dropdown);
   } else {

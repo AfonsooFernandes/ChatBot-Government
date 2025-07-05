@@ -11,6 +11,16 @@
   <link rel="stylesheet" href="css/chat.css">
   <link rel="stylesheet" href="css/modal.css">
   <link rel="stylesheet" href="css/footer.css">
+  <style>
+    .ativo-indicador {
+      background: #dff0d8;
+      color: #3c763d;
+      border-left: 5px solid #3c763d;
+      padding: 10px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body>
   <div class="layout">
@@ -24,7 +34,6 @@
         <li>Fallbacks</li>
       </ul>
     </aside>
-
     <div class="content">
       <header>
         <div class="bot-info">
@@ -36,8 +45,8 @@
         </div>
         <button id="publicarBtn">Publicar</button>
       </header>
-
       <div class="panel">
+        <div id="indicadorAtivo" style="display: none;" class="ativo-indicador">Chatbot Ativo</div>
         <div id="secaoContexto" class="secao left-content" style="display: none;">
           <h2>Contexto do Projeto</h2>
           <p>Este projeto foi desenvolvido no âmbito da iniciativa <strong>AI4APGovernance</strong>, que visa explorar o potencial da Inteligência Artificial para melhorar os serviços públicos municipais. A interface aqui apresentada serve como backoffice para gerir as interações e recursos do chatbot municipal.</p>
@@ -60,15 +69,23 @@
           <img src="images/6.png" alt="Chat de Simulação" style="max-width: 100%; margin-bottom: 15px;">
           <p>À direita, encontra-se o simulador de chat, que permite testar o comportamento do bot e validar as respostas registadas.</p>
         </div>
-
         <div id="secaoRecursos" class="secao left-content">
           <div class="bot-item-container">
             <div class="bot-wrapper">
               <div class="bot-item nao-publicado" data-chatbot-id="1" onclick="toggleBotDropdown(this)">
-                Bot 1 <span class="status">Estado: Não Publicado - Município • 16 Jun 2025</span>
+                <div>
+                  Bot 1
+                  <span class="status">
+                    Estado: Não Publicado - Município • 16 Jun 2025
+                  </span>
+                  <span class="ativo-label" style="display: none; margin-left: 10px; color: #3c763d; font-weight: bold;">
+                    • Chatbot Ativo
+                  </span>
+                </div>
                 <span class="dropdown-icon">▼</span>
               </div>
               <div class="bot-dropdown" style="display: none;">
+                <button class="bot-ativo-btn" onclick="definirAtivo(event, 1)">Ficar Ativo</button>
                 <h3>Escolha a fonte para as respostas do chatbot</h3>
                 <div class="resources">
                   <div class="card" data-fonte="faq" onclick="selecionarFonte('faq', this.closest('.bot-dropdown'))">
@@ -126,21 +143,28 @@
             </div>
             <div class="bot-wrapper">
               <div class="bot-item nao-publicado" data-chatbot-id="2" onclick="toggleBotDropdown(this)">
-                Bot 2 <span class="status">Estado: Não Publicado - Município • 05 Jul 2025</span>
+                <div>
+                  Bot 2
+                  <span class="status">Estado: Não Publicado - Município • 05 Jul 2025</span>
+                  <span class="ativo-label" style="display: none; margin-left: 10px; color: #3c763d; font-weight: bold;">
+                    • Chatbot Ativo
+                  </span>
+                </div>
                 <span class="dropdown-icon">▼</span>
               </div>
               <div class="bot-dropdown" style="display: none;">
+                <button class="bot-ativo-btn" onclick="definirAtivo(event, 2)">Ficar Ativo</button>
                 <h3>Escolha a fonte para as respostas do chatbot</h3>
                 <div class="resources">
-                  <div class="card" onclick="selecionarFonte('faq', this, this.closest('.bot-dropdown'))">
+                  <div class="card" data-fonte="faq" onclick="selecionarFonte('faq', this.closest('.bot-dropdown'))">
                     <h4>Baseado em Regras (FAQ)</h4>
                     <p>Responde com base nas perguntas frequentes registadas.</p>
                   </div>
-                  <div class="card" onclick="selecionarFonte('faiss', this, this.closest('.bot-dropdown'))">
+                  <div class="card" data-fonte="faiss" onclick="selecionarFonte('faiss', this.closest('.bot-dropdown'))">
                     <h4>Só FAISS</h4>
                     <p>Respostas aproximadas com base vetorial (não implementado).</p>
                   </div>
-                  <div class="card" onclick="selecionarFonte('faq+raga', this, this.closest('.bot-dropdown'))">
+                  <div class="card" data-fonte="faq+raga" onclick="selecionarFonte('faq+raga', this.closest('.bot-dropdown'))">
                     <h4>FAQ + fallback RAG</h4>
                     <p>Tenta responder com regras e usa RAG se falhar (não implementado).</p>
                   </div>
@@ -154,12 +178,10 @@
             </div>
           </div>
         </div>
-
         <div id="secaoRespostas" class="secao left-content" style="display: none;">
           <h2>FAQs Registadas</h2>
           <div id="listaFAQs" style="margin-top: 20px;"></div>
         </div>
-
         <div class="chat-sidebar">
           <div class="chat-header">
             <img src="images/chatbot-icon.png" alt="bot">
@@ -185,7 +207,6 @@
       </div>
     </div>
   </div>
-
   <div id="modalConfirmacao" class="modal-overlay" style="display: none;">
     <div class="modal-box">
       <p>Tem a certeza que quer eliminar esta FAQ?</p>
@@ -195,7 +216,6 @@
       </div>
     </div>
   </div>
-
   <footer class="rodape">
     <div class="rodape-content">
       <span>O Projeto é cofinanciado por:</span>
@@ -206,11 +226,20 @@
       </div>
     </div>
   </footer>
-  <script src="js/globals.js"></script> 
-  <script src="js/faq.js"></script> 
+  <script>
+    let botAtivoId = null;
+    function definirAtivo(event, id) {
+      event.stopPropagation();
+      botAtivoId = id;
+      const indicador = document.getElementById("indicadorAtivo");
+      indicador.style.display = "block";
+    }
+  </script>
+  <script src="js/globals.js"></script>
+  <script src="js/faq.js"></script>
   <script src="js/chat.js"></script>
   <script src="js/chatbot.js"></script>
   <script src="js/modal.js"></script>
   <script src="js/navigation.js"></script>
-  </body>
+</body>
 </html>

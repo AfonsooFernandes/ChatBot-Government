@@ -39,12 +39,32 @@ header .bot-info img {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .bot-item .status {
   font-size: 12px;
   color: #6b7280;
-  display: block;
+  display: inline;
+}
+
+.bot-item .ativo-label {
+  font-size: 12px;
+  color: green;
+  font-weight: bold;
+  display: none;
+}
+
+.bot-item .dropdown-icon {
+  font-size: 18px;
+  margin-left: auto;
+  color: #6b7280;
+  transition: transform 0.3s ease;
+}
+
+.bot-item.expanded .dropdown-icon {
+  transform: rotate(180deg);
 }
 
 .bot-item.nao-publicado {
@@ -153,17 +173,6 @@ form button:hover,
   background-color: #f9fafb;
 }
 
-.dropdown-icon {
-  font-size: 18px;
-  margin-left: 10px;
-  color: #6b7280;
-  transition: transform 0.3s ease;
-}
-
-.bot-item.expanded .dropdown-icon {
-  transform: rotate(180deg);
-}
-
 .bot-dropdown {
   background-color: #fdfdfd;
   border: 1px solid #ddd;
@@ -234,4 +243,21 @@ form button:hover,
   background-color: #fff;
   padding: 5px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.bot-ativo-btn {
+  margin-top: 8px;
+  background-color: #e5e7eb;
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.bot-ativo-btn.ativo {
+  background-color: #d4af37;
+  color: white;
+  border-color: #d4af37;
 }
