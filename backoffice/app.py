@@ -34,19 +34,24 @@ except Exception as e:
     raise
 
 # ---------- FUNÇÃO DE SIMILARIDADE ----------
-def obter_faq_mais_semelhante(pergunta_utilizador):
-    cur.execute("SELECT pergunta, resposta FROM FAQ")
+def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id):
+    cur.execute("SELECT pergunta, resposta FROM FAQ WHERE chatbot_id = %s", (chatbot_id,))
     faqs = cur.fetchall()
+
+    pergunta_normalizada = pergunta_utilizador.strip().lower()
 
     melhor_pergunta = None
     melhor_resposta = None
     maior_score = 0
 
     for pergunta, resposta in faqs:
-        score_token = fuzz.token_sort_ratio(pergunta_utilizador.lower(), pergunta.lower())
-        score_partial = fuzz.partial_ratio(pergunta_utilizador.lower(), pergunta.lower())
-        score = (score_token + score_partial) / 2
+        pergunta_bd = pergunta.strip().lower()
 
+        if pergunta_normalizada == pergunta_bd:
+            print(f"✅ Match exato com: '{pergunta}'")
+            return {"pergunta": pergunta, "resposta": resposta, "score": 100}
+
+        score = fuzz.ratio(pergunta_normalizada, pergunta_bd)
         if score > maior_score:
             maior_score = score
             melhor_pergunta = pergunta
@@ -54,7 +59,7 @@ def obter_faq_mais_semelhante(pergunta_utilizador):
 
     print(f"➡️ Melhor correspondência: '{melhor_pergunta}' (score: {maior_score})")
 
-    if maior_score >= 55:
+    if maior_score >= 50:
         return {"pergunta": melhor_pergunta, "resposta": melhor_resposta, "score": maior_score}
     else:
         return None
@@ -86,7 +91,8 @@ def obter_fonte_chatbot(chatbot_id):
         cur.execute("SELECT descricao FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
         row = cur.fetchone()
         if row:
-            return jsonify({"success": True, "fonte": row[0]})
+            fonte = row[0] if row[0] else "faq"  # Default to "faq" if no source is set
+            return jsonify({"success": True, "fonte": fonte})
         return jsonify({"success": False, "erro": "Chatbot não encontrado."}), 404
     except Exception as e:
         return jsonify({"success": False, "erro": str(e)}), 500
@@ -101,6 +107,10 @@ def definir_fonte_chatbot():
         return jsonify({"success": False, "erro": "Fonte inválida."}), 400
 
     try:
+        cur.execute("SELECT 1 FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
+        if not cur.fetchone():
+            return jsonify({"success": False, "erro": "Chatbot não encontrado."}), 404
+
         cur.execute("UPDATE Chatbot SET descricao = %s WHERE chatbot_id = %s", (fonte, chatbot_id))
         conn.commit()
         return jsonify({"success": True})
@@ -111,20 +121,32 @@ def definir_fonte_chatbot():
 @app.route("/faq-categoria/<categoria>", methods=["GET"])
 def obter_faq_por_categoria(categoria):
     try:
+        chatbot_id = request.args.get("chatbot_id")
+        if not chatbot_id:
+            return jsonify({"success": False, "erro": "chatbot_id não fornecido."}), 400
+
         cur.execute("""
-            SELECT f.pergunta, f.resposta
+            SELECT f.faq_id, f.pergunta, f.resposta
             FROM FAQ f
             INNER JOIN Categoria c ON f.categoria_id = c.categoria_id
-            WHERE LOWER(c.nome) = LOWER(%s)
+            WHERE LOWER(c.nome) = LOWER(%s) AND f.chatbot_id = %s
             ORDER BY RANDOM()
             LIMIT 1
-        """, (categoria,))
+        """, (categoria, chatbot_id))
         resultado = cur.fetchone()
 
         if resultado:
-            return jsonify({"success": True, "pergunta": resultado[0], "resposta": resultado[1]})
+            return jsonify({
+                "success": True,
+                "faq_id": resultado[0],
+                "pergunta": resultado[1],
+                "resposta": resultado[2]
+            })
         else:
-            return jsonify({"success": False, "erro": f"Nenhuma FAQ encontrada para a categoria '{categoria}'."}), 404
+            return jsonify({
+                "success": False,
+                "erro": f"Nenhuma FAQ encontrada para a categoria '{categoria}'."
+            }), 404
 
     except Exception as e:
         return jsonify({"success": False, "erro": str(e)}), 500
@@ -271,35 +293,59 @@ def obter_resposta():
     dados = request.get_json()
     pergunta = dados.get("pergunta", "").strip()
     chatbot_id = dados.get("chatbot_id")
+    fonte = dados.get("fonte", "faq")
 
     if not pergunta or not chatbot_id:
         return jsonify({"success": False, "erro": "Pergunta ou chatbot_id não fornecido."}), 400
 
     try:
-        cur.execute("SELECT descricao FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
-        row = cur.fetchone()
-        fonte = row[0] if row else "faq"
-
-        def obter_faq_por_pergunta(pergunta):
-            resultado = obter_faq_mais_semelhante(pergunta)
-            return (resultado["resposta"],) if resultado else None
-
+        # 1. FAQ (base de dados)
         if fonte == "faq":
-            resultado = obter_faq_por_pergunta(pergunta)
+            resultado = obter_faq_mais_semelhante(pergunta, chatbot_id)
             if resultado:
-                return jsonify({"success": True, "fonte": "FAQ", "resposta": resultado[0]})
+                cur.execute("""
+                    SELECT faq_id, categoria_id FROM FAQ
+                    WHERE LOWER(pergunta) = LOWER(%s) AND chatbot_id = %s
+                """, (resultado["pergunta"], chatbot_id))
+                row = cur.fetchone()
+                faq_id, categoria_id = row if row else (None, None)
+
+                return jsonify({
+                    "success": True,
+                    "fonte": "FAQ",
+                    "resposta": resultado["resposta"],
+                    "faq_id": faq_id,
+                    "categoria_id": categoria_id
+                })
+
             return jsonify({"success": False, "erro": "Pergunta não encontrada nas FAQs."})
 
+        # 2. FAISS
         elif fonte == "faiss":
             resposta = obter_resposta_rag(pergunta, modo="faiss")
             return jsonify({"success": True, "fonte": "FAISS", "resposta": resposta})
 
+        # 3. Híbrido (FAQ + fallback RAG)
         elif fonte == "faq+raga":
-            resultado = obter_faq_por_pergunta(pergunta)
+            resultado = obter_faq_mais_semelhante(pergunta, chatbot_id)
             if resultado:
-                return jsonify({"success": True, "fonte": "FAQ", "resposta": resultado[0]})
-            resposta = obter_resposta_rag(pergunta, modo="rag")
-            return jsonify({"success": True, "fonte": "RAG", "resposta": resposta})
+                cur.execute("""
+                    SELECT faq_id, categoria_id FROM FAQ
+                    WHERE LOWER(pergunta) = LOWER(%s) AND chatbot_id = %s
+                """, (resultado["pergunta"], chatbot_id))
+                row = cur.fetchone()
+                faq_id, categoria_id = row if row else (None, None)
+
+                return jsonify({
+                    "success": True,
+                    "fonte": "FAQ",
+                    "resposta": resultado["resposta"],
+                    "faq_id": faq_id,
+                    "categoria_id": categoria_id
+                })
+            else:
+                resposta = obter_resposta_rag(pergunta, modo="rag")
+                return jsonify({"success": True, "fonte": "RAG", "resposta": resposta})
 
         else:
             return jsonify({"success": False, "erro": "Fonte inválida."}), 400
@@ -317,24 +363,27 @@ def perguntas_semelhantes():
         cur.execute("""
             SELECT f.categoria_id
             FROM FAQ f
-            WHERE f.pergunta = %s AND f.chatbot_id = %s
-        """, (pergunta_atual, chatbot_id))
-        categoria_id = cur.fetchone()
-        if not categoria_id:
+            WHERE LOWER(f.pergunta) = LOWER(%s) AND f.chatbot_id = %s
+        """, (pergunta_atual.strip().lower(), chatbot_id))
+        categoria_row = cur.fetchone()
+
+        if not categoria_row:
             return jsonify({"success": True, "sugestoes": []})
 
-        categoria_id = categoria_id[0]
+        categoria_id = categoria_row[0]
+
         cur.execute("""
-            SELECT pergunta FROM FAQ
-            WHERE categoria_id = %s AND pergunta != %s
+            SELECT pergunta
+            FROM FAQ
+            WHERE categoria_id = %s AND LOWER(pergunta) != LOWER(%s) AND chatbot_id = %s
             ORDER BY RANDOM()
             LIMIT 2
-        """, (categoria_id, pergunta_atual))
+        """, (categoria_id, pergunta_atual.strip().lower(), chatbot_id))
         sugestoes = [row[0] for row in cur.fetchall()]
 
         return jsonify({"success": True, "sugestoes": sugestoes})
     except Exception as e:
-        return jsonify({"success": False, "erro": str(e)}), 500
+        return jsonify({"success": False, "erro": str(e)}), 500    
 
 # ---------- INICIAR SERVIDOR ----------
 if __name__ == "__main__":

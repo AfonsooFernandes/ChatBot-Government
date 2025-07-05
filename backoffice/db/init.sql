@@ -1,6 +1,3 @@
--- Criação da base de dados
--- CREATE DATABASE AI4Governance;
-
 -- Tabela: Categoria
 CREATE TABLE IF NOT EXISTS Categoria (
     categoria_id SERIAL PRIMARY KEY,
@@ -20,7 +17,7 @@ ON CONFLICT (nome) DO NOTHING;
 -- Tabela: Chatbot 
 CREATE TABLE IF NOT EXISTS Chatbot (
     chatbot_id SERIAL PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
+    nome VARCHAR(100) NOT NULL UNIQUE,
     idioma VARCHAR(10) NOT NULL,
     descricao TEXT,
     categoria_id INT REFERENCES Categoria(categoria_id) ON DELETE SET NULL
@@ -45,21 +42,21 @@ CREATE TABLE IF NOT EXISTS FAQ (
     UNIQUE (chatbot_id, designacao, pergunta, resposta)
 );
 
--- Tabela: FAQ_Documento (ligação entre FAQ e Documento)
+-- Tabela: FAQ_Documento
 CREATE TABLE IF NOT EXISTS FAQ_Documento (
     faq_id INT REFERENCES FAQ(faq_id) ON DELETE CASCADE,
     documento_id INT REFERENCES Documento(documento_id) ON DELETE CASCADE,
     PRIMARY KEY (faq_id, documento_id)
 );
 
--- Tabela: FAQ_Relacionadas (relacionamentos entre FAQs)
+-- Tabela: FAQ_Relacionadas
 CREATE TABLE IF NOT EXISTS FAQ_Relacionadas (
     faq_id INT REFERENCES FAQ(faq_id) ON DELETE CASCADE,
     faq_relacionada_id INT REFERENCES FAQ(faq_id) ON DELETE CASCADE,
     PRIMARY KEY (faq_id, faq_relacionada_id)
 );
 
--- Tabela: Log (perguntas feitas ao chatbot)
+-- Tabela: Log
 CREATE TABLE IF NOT EXISTS Log (
     log_id SERIAL PRIMARY KEY,
     chatbot_id INT REFERENCES Chatbot(chatbot_id) ON DELETE CASCADE,
@@ -77,14 +74,18 @@ CREATE TABLE IF NOT EXISTS Administrador (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- FonteResposta 
+-- Tabela: FonteResposta
 CREATE TABLE IF NOT EXISTS FonteResposta (
     id SERIAL PRIMARY KEY,
     chatbot_id INT REFERENCES Chatbot(chatbot_id) ON DELETE CASCADE,
     fonte TEXT NOT NULL
 );
 
--- Inserir chatbot genérico único
+-- Inserções de chatbots
 INSERT INTO Chatbot (nome, idioma, descricao)
 VALUES ('Assistente Municipal', 'pt', 'Chatbot para todos os serviços municipais')
+ON CONFLICT (nome) DO NOTHING;
+
+INSERT INTO Chatbot (nome, idioma, descricao)
+VALUES ('Bot Secundário', 'pt', 'Segundo chatbot de apoio aos serviços da Câmara')
 ON CONFLICT (nome) DO NOTHING;
