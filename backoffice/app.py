@@ -91,7 +91,7 @@ def obter_fonte_chatbot(chatbot_id):
         cur.execute("SELECT descricao FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
         row = cur.fetchone()
         if row:
-            fonte = row[0] if row[0] else "faq"  # Default to "faq" if no source is set
+            fonte = row[0] if row[0] else "faq"  
             return jsonify({"success": True, "fonte": fonte})
         return jsonify({"success": False, "erro": "Chatbot não encontrado."}), 404
     except Exception as e:
@@ -232,6 +232,11 @@ def upload_faq_docx():
         return jsonify({"success": False, "error": "Ficheiro não enviado."}), 400
 
     file = request.files['file']
+    chatbot_id_raw = request.form.get("chatbot_id")
+
+    if not chatbot_id_raw:
+        return jsonify({"success": False, "error": "Chatbot ID não fornecido."}), 400
+
     try:
         doc = docx.Document(file)
         dados = {}
@@ -248,42 +253,43 @@ def upload_faq_docx():
         if not dados.get("designação da faq") or not dados.get("questão") or not dados.get("resposta"):
             raise Exception("Faltam campos obrigatórios: designação, questão ou resposta.")
 
-        cur.execute("SELECT chatbot_id FROM Chatbot WHERE nome = %s", ('Assistente Municipal',))
-        result = cur.fetchone()
-        chatbot_id = result[0] if result else None
-
-        if not chatbot_id:
-            cur.execute("INSERT INTO Chatbot (nome, idioma, descricao) VALUES (%s, %s, %s) RETURNING chatbot_id",
-                        ('Assistente Municipal', 'pt', 'faq'))
-            chatbot_id = cur.fetchone()[0]
-
         designacao = dados.get("designação da faq")
         pergunta = dados.get("questão")
         resposta = dados.get("resposta")
-
-        cur.execute("""
-            SELECT faq_id FROM FAQ
-            WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s
-        """, (chatbot_id, designacao, pergunta, resposta))
-        if cur.fetchone():
-            return jsonify({"success": False, "error": "Esta FAQ já foi carregada."}), 409
-
-        cur.execute("""
-            INSERT INTO FAQ (chatbot_id, designacao, pergunta, resposta)
-            VALUES (%s, %s, %s, %s)
-            RETURNING faq_id
-        """, (chatbot_id, designacao, pergunta, resposta))
-        faq_id = cur.fetchone()[0]
-
         categoria = dados.get("categoria")
-        if categoria:
-            cur.execute("SELECT categoria_id FROM Categoria WHERE nome ILIKE %s", (categoria,))
-            result = cur.fetchone()
-            if result:
-                cur.execute("UPDATE FAQ SET categoria_id = %s WHERE faq_id = %s", (result[0], faq_id))
+
+        chatbot_ids = []
+
+        if chatbot_id_raw == "todos":
+            cur.execute("SELECT chatbot_id FROM Chatbot")
+            chatbot_ids = [row[0] for row in cur.fetchall()]
+        else:
+            chatbot_ids = [int(chatbot_id_raw)]
+
+        for chatbot_id in chatbot_ids:
+            cur.execute("""
+                SELECT faq_id FROM FAQ
+                WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s
+            """, (chatbot_id, designacao, pergunta, resposta))
+            if cur.fetchone():
+                continue  
+
+            cur.execute("""
+                INSERT INTO FAQ (chatbot_id, designacao, pergunta, resposta)
+                VALUES (%s, %s, %s, %s)
+                RETURNING faq_id
+            """, (chatbot_id, designacao, pergunta, resposta))
+            faq_id = cur.fetchone()[0]
+
+            if categoria:
+                cur.execute("SELECT categoria_id FROM Categoria WHERE nome ILIKE %s", (categoria,))
+                result = cur.fetchone()
+                if result:
+                    cur.execute("UPDATE FAQ SET categoria_id = %s WHERE faq_id = %s", (result[0], faq_id))
 
         conn.commit()
-        return jsonify({"success": True, "faq_id": faq_id})
+        return jsonify({"success": True, "message": "FAQ inserida com sucesso."})
+
     except Exception as e:
         conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
@@ -299,7 +305,6 @@ def obter_resposta():
         return jsonify({"success": False, "erro": "Pergunta ou chatbot_id não fornecido."}), 400
 
     try:
-        # 1. FAQ (base de dados)
         if fonte == "faq":
             resultado = obter_faq_mais_semelhante(pergunta, chatbot_id)
             if resultado:

@@ -21,9 +21,12 @@ function selecionarFonte(fonte, dropdown = null) {
 }
 
 function mostrarFormulario() {
-  const el = document.getElementById('faqContainer');
-  if (el) {
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  const dropdownVisivel = document.querySelector(".bot-dropdown[style*='block']");
+  if (!dropdownVisivel) return;
+
+  const container = dropdownVisivel.querySelector("#faqContainer");
+  if (container) {
+    container.style.display = container.style.display === "none" ? "block" : "none";
   }
 }
 
@@ -42,8 +45,15 @@ function toggleBotDropdown(botItem) {
     botItem.classList.add("expanded");
     dropdown.style.display = "block";
 
+    requestAnimationFrame(() => carregarChatbots());
+
     window.chatbotSelecionado = chatbotId;
     localStorage.setItem("chatbotSelecionado", chatbotId);
+
+    const selectEl = dropdown.querySelector("select[name='chatbot_id']");
+    if (selectEl) {
+      selectEl.value = chatbotId;
+    }
 
     const fonteSalva = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
     selecionarFonte(fonteSalva, dropdown);
