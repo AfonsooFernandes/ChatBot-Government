@@ -1,3 +1,13 @@
+function adicionarMensagem(tipo, texto) {
+  const chat = document.getElementById("chatBody");
+  if (!chat) return;
+  const div = document.createElement("div");
+  div.className = `message ${tipo}`;
+  div.textContent = texto;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
 async function carregarChatbots() {
   try {
     const res = await fetch("http://localhost:5000/chatbots");
@@ -84,17 +94,38 @@ async function carregarTabelaFAQs(chatbotId, paraDropdown = false) {
 
 async function mostrarRespostas() {
   const lista = document.getElementById('listaFAQs');
-  if (!lista) return;
-
-  const chatbotId = parseInt(localStorage.getItem("chatbotAtivo")) || window.chatbotSelecionado;
-  if (!chatbotId) {
-    lista.innerHTML = "<p>⚠️ Nenhum chatbot ativo ou selecionado.</p>";
+  if (!lista) {
+    console.error("Elemento listaFAQs não encontrado.");
     return;
   }
 
+  const chatbotId = parseInt(localStorage.getItem("chatbotAtivo")) || window.chatbotSelecionado;
+  console.log("Chatbot ID usado:", chatbotId);
+  if (!chatbotId) {
+    console.log("Nenhum chatbot ativo ou selecionado.");
+    lista.innerHTML = "<p>⚠️ Nenhum chatbot ativo ou selecionado. Vá a Recursos para selecionar um.</p>";
+    return;
+  }
+
+  async function fetchWithRetry(url, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        console.log(`Tentando buscar FAQs para chatbotId: ${chatbotId} (tentativa ${i + 1})`);
+        const res = await fetch(`${url}?t=${Date.now()}`);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const faqs = await res.json();
+        console.log("FAQs recebidas:", faqs);
+        return faqs;
+      } catch (error) {
+        console.error(`Erro na tentativa ${i + 1}:`, error);
+        if (i === retries - 1) throw error;
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); 
+      }
+    }
+  }
+
   try {
-    const res = await fetch(`http://localhost:5000/faqs/chatbot/${chatbotId}`);
-    const faqs = await res.json();
+    const faqs = await fetchWithRetry(`http://localhost:5000/faqs/chatbot/${chatbotId}`);
 
     if (!faqs.length) {
       lista.innerHTML = "<p>Sem FAQs registadas para este chatbot.</p>";
@@ -111,8 +142,8 @@ async function mostrarRespostas() {
     function renderizarFAQs(filtradas) {
       resultados.innerHTML = filtradas.map(faq => `
         <div class="faq-item">
-          <strong>${faq.pergunta}</strong><br>
-          <p>${faq.resposta}</p>
+          <strong>${faq.pergunta || 'Sem pergunta'}</strong><br>
+          <p>${faq.resposta || 'Sem resposta'}</p>
           <button onclick="pedirConfirmacao(${faq.faq_id})">Eliminar</button>
           <hr>
         </div>
@@ -131,8 +162,9 @@ async function mostrarRespostas() {
       renderizarFAQs(filtradas);
     });
 
-  } catch {
-    lista.innerHTML = "<p>❌ Erro ao carregar FAQs.</p>";
+  } catch (error) {
+    console.error("Erro final ao carregar FAQs:", error);
+    lista.innerHTML = `<p>❌ Erro ao carregar FAQs: ${error.message}. Verifique o servidor ou tente novamente.</p>`;
   }
 }
 

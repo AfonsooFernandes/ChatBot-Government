@@ -146,8 +146,10 @@ function mostrarSecao(secao) {
     if (menu) menu.classList.add("active");
 
     const chatbotId = parseInt(localStorage.getItem("chatbotAtivo")) || window.chatbotSelecionado;
-    if (secao === "respostas" && chatbotId && typeof carregarTabelaFAQs === "function") {
-      carregarTabelaFAQs(chatbotId, true);
+    if (secao === "respostas" || secao === "recursos") {
+      if (chatbotId && typeof mostrarRespostas === "function") {
+        mostrarRespostas();
+      }
     }
   }
 }

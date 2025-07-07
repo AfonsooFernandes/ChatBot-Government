@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Chatbot Municipal - Respostas</title>
+  <link rel="icon" href="images/chatbot-icon.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/chat.css">
+  <link rel="stylesheet" href="css/modal.css">
+  <link rel="stylesheet" href="css/footer.css">
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <h2>Menu</h2>
+      <ul>
+        <li id="menuContexto" onclick="window.location.href='contexto.html'">Contexto</li>
+        <li id="menuRecursos" onclick="window.location.href='recursos.html'">Recursos</li>
+        <li id="menuRespostas" onclick="window.location.href='respostas.html'">Respostas</li>
+        <li>Comportamento</li>
+        <li>Fallbacks</li>
+      </ul>
+    </aside>
+    <div class="content">
+      <header>
+        <div class="bot-info">
+          <img src="images/chatbot-icon.png" alt="bot">
+          <div>
+            <strong>AI4APGovernance - Inteligência Artificial para a Governança da Administração Pública</strong>
+            <div class="bot-subtext">Chatbot Municipal</div>
+          </div>
+        </div>
+        <button id="publicarBtn">Publicar</button>
+      </header>
+      <div class="panel">
+        <div id="indicadorAtivo" style="display: none;" class="ativo-indicador"></div>
+        
+        <!-- Área principal de respostas -->
+        <div id="secaoRespostas" class="secao left-content" style="display: block !important;">
+          <h2>FAQs Registadas</h2>
+          <div id="listaFAQs" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Chat do assistente -->
+        <div class="chat-sidebar">
+          <div class="chat-header">
+            <img src="images/chatbot-icon.png" alt="bot">
+            <h3>CMVC - Serviços Municipalizados</h3>
+            <span>(Assistente Virtual)</span>
+          </div>
+          <div class="chat-body" id="chatBody">
+            <div class="message intro">Olá! Está a conversar com o assistente virtual. <br>Escolha um tema ou escreva a sua pergunta.</div>
+            <div class="categories">
+              <button class="category-btn" onclick="perguntarCategoria('Educação')">Educação</button>
+              <button class="category-btn" onclick="perguntarCategoria('Ação Social')">Ação Social</button>
+              <button class="category-btn" onclick="perguntarCategoria('Habitação')">Habitação</button>
+              <button class="category-btn" onclick="perguntarCategoria('Cultura')">Cultura</button>
+              <button class="category-btn" onclick="perguntarCategoria('Desporto')">Desporto</button>
+              <button class="category-btn" onclick="perguntarCategoria('Ambiente')">Ambiente</button>
+            </div>
+          </div>
+          <div class="chat-input">
+            <input type="text" placeholder="Digite uma mensagem..." id="chatInput" onkeydown="if(event.key==='Enter') enviarPergunta()">
+            <button onclick="enviarPergunta()" title="Enviar">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmação de eliminação -->
+  <div id="modalConfirmacao" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <p>Tem a certeza que quer eliminar esta FAQ?</p>
+      <div class="modal-buttons">
+        <button id="confirmarEliminacao">Sim</button>
+        <button id="cancelarEliminacao">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rodapé -->
+  <footer class="rodape">
+    <div class="rodape-content">
+      <span>O Projeto é cofinanciado por:</span>
+      <div class="rodape-logos">
+        <img src="images/prr.png" alt="PRR" class="logo-prr">
+        <img src="images/pt.png" alt="República Portuguesa" class="logo-pt">
+        <img src="images/ue.png" alt="União Europeia" class="logo-ue">
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/globals.js"></script>
+  <script src="js/faq.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/chatbot.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/navigation.js"></script>
+</body>
+</html>

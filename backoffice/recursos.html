@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>Chatbot Municipal - Backoffice</title>
+  <title>Chatbot Municipal - Recursos</title>
   <link rel="icon" href="images/chatbot-icon.png" type="image/png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/base.css">
@@ -17,9 +17,9 @@
     <aside>
       <h2>Menu</h2>
       <ul>
-        <li id="menuContexto" onclick="window.location.hash='contexto'">Contexto</li>
-        <li id="menuRecursos" class="active" onclick="window.location.hash='recursos'">Recursos</li>
-        <li id="menuRespostas" onclick="window.location.hash='respostas'">Respostas</li>
+        <li id="menuContexto" onclick="window.location.href='contexto.html'">Contexto</li>
+        <li id="menuRecursos" onclick="window.location.href='recursos.html'">Recursos</li>
+        <li id="menuRespostas" onclick="window.location.href='respostas.html'">Respostas</li>
         <li>Comportamento</li>
         <li>Fallbacks</li>
       </ul>
@@ -37,28 +37,6 @@
       </header>
       <div class="panel">
         <div id="indicadorAtivo" style="display: none;" class="ativo-indicador"></div>
-        <div id="secaoContexto" class="secao left-content" style="display: none;">
-          <h2>Contexto do Projeto</h2>
-          <p>Este projeto foi desenvolvido no âmbito da iniciativa <strong>AI4APGovernance</strong>, que visa explorar o potencial da Inteligência Artificial para melhorar os serviços públicos municipais. A interface aqui apresentada serve como backoffice para gerir as interações e recursos do chatbot municipal.</p>
-          <h3>Objetivo</h3>
-          <p>Permitir aos gestores municipais configurar fontes de resposta, adicionar perguntas frequentes (FAQs), associar documentos relevantes e gerir o comportamento do assistente virtual de forma autónoma.</p>
-          <h3>Funcionamento Técnico</h3>
-          <ul>
-            <li>O chatbot utiliza uma base de dados PostgreSQL para armazenar FAQs, documentos e relações.</li>
-            <li>A API backend é construída com Flask (Python) e oferece rotas REST para comunicação entre front e backend.</li>
-            <li>Há suporte para inserção manual de FAQs ou via ficheiro .docx.</li>
-            <li>O sistema suporta seleção de fontes como: FAQ (regras), FAISS (vetores) ou híbrido (com fallback).</li>
-          </ul>
-          <h3>Exemplo da Interface Backoffice</h3>
-          <img src="images/3.png" alt="Interface Principal" style="max-width: 100%; margin-bottom: 15px;">
-          <p>A imagem acima mostra a interface principal do sistema, com o menu lateral, painel de gestão de bots e o chat lateral.</p>
-          <h3>Gestão de Fontes e FAQs</h3>
-          <img src="images/5.png" alt="Gestão de Fontes" style="max-width: 100%; margin-bottom: 15px;">
-          <p>Nesta secção, o gestor pode escolher entre diferentes fontes de resposta, inserir FAQs manualmente ou carregar documentos com FAQs.</p>
-          <h3>Simulador de Chat</h3>
-          <img src="images/6.png" alt="Chat de Simulação" style="max-width: 100%; margin-bottom: 15px;">
-          <p>À direita, encontra-se o simulador de chat, que permite testar o comportamento do bot e validar as respostas registadas.</p>
-        </div>
         <div id="secaoRecursos" class="secao left-content">
           <div class="bot-item-container">
             <div class="bot-wrapper">
@@ -104,7 +82,7 @@
                     <textarea name="resposta" placeholder="Resposta" required></textarea>
                     <select name="categoria_id" required>
                       <option value="">Escolha a categoria</option>
-                      <option value="1">Educação</option>
+                      <option value="1" selected>Educação</option>
                       <option value="2">Ação Social</option>
                       <option value="3">Habitação</option>
                       <option value="4">Cultura</option>
@@ -121,8 +99,8 @@
                     <form id="uploadForm-1" class="uploadForm" enctype="multipart/form-data">
                       <input type="file" name="file" accept=".docx" required>
                       <button type="submit">Adicionar Documento</button>
+                      <div class="uploadStatus"></div>
                     </form>
-                    <div class="uploadStatus"></div>
                   </div>
                 </div>
                 <h3>FAQs Associadas</h3>
@@ -170,7 +148,7 @@
                     <textarea name="resposta" placeholder="Resposta" required></textarea>
                     <select name="categoria_id" required>
                       <option value="">Escolha a categoria</option>
-                      <option value="1">Educação</option>
+                      <option value="1" selected>Educação</option>
                       <option value="2">Ação Social</option>
                       <option value="3">Habitação</option>
                       <option value="4">Cultura</option>
@@ -187,9 +165,8 @@
                     <form id="uploadForm-2" class="uploadForm" enctype="multipart/form-data">
                       <input type="file" name="file" accept=".docx" required>
                       <button type="submit">Adicionar Documento</button>
+                      <div class="uploadStatus"></div>
                     </form>
-                    <div class="uploadStatus"></div>
-                    <div id="uploadStatus"></div>
                   </div>
                 </div>
                 <h3>FAQs Associadas</h3>
@@ -197,10 +174,6 @@
               </div>
             </div>
           </div>
-        </div>
-        <div id="secaoRespostas" class="secao left-content" style="display: none;">
-          <h2>FAQs Registadas</h2>
-          <div id="listaFAQs" style="margin-top: 20px;"></div>
         </div>
         <div class="chat-sidebar">
           <div class="chat-header">

@@ -271,3 +271,20 @@ form button:hover,
   width: 100%;
   box-sizing: border-box;
 }
+
+.left-content {
+  display: block !important;
+  width: 70% !important;
+  float: left !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.panel {
+  overflow: visible !important;
+  display: flex !important;
+}
+
+.secao {
+  min-height: 500px !important;
+}

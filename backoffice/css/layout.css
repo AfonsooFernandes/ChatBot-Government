@@ -35,9 +35,9 @@ aside li:hover {
   background: #374151;
 }
 
-aside .active {
-  background: #d4af37;
-  color: black;
+aside li.active {
+  background: #d4af37 !important; 
+  color: black !important;
 }
 
 .content {
