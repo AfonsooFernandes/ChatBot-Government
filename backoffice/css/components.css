@@ -257,7 +257,8 @@ form button:hover,
 }
 
 .bot-ativo-btn.ativo {
-  background-color: #d4af37;
-  color: white;
-  border-color: #d4af37;
+  background-color: #d4af37; 
+  color: #ffffff; 
+  border-color: #c19a2f; 
+  font-weight: 600;
 }

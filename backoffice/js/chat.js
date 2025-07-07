@@ -17,58 +17,61 @@ function enviarPergunta() {
   adicionarMensagem("user", texto);
   input.value = "";
 
-  responderPergunta(texto); // Envia pergunta com fonte e chatbot
+  responderPergunta(texto);
 }
 
 // Envia a pergunta ao backend e processa a resposta
 function responderPergunta(pergunta) {
-  if (!window.chatbotSelecionado || isNaN(window.chatbotSelecionado)) {
-    return adicionarMensagem("bot", "❌ Nenhum chatbot selecionado.");
+  const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
+  if (!chatbotId || isNaN(chatbotId)) {
+    return adicionarMensagem("bot", "⚠️ Nenhum chatbot está ativo. Por favor, selecione um chatbot ativo no menu de recursos.");
   }
 
-  const fonte = window.fonteSelecionada || "faq";
+  const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
 
-  console.log("Pergunta:", pergunta);
-  console.log("Chatbot ID:", window.chatbotSelecionado);
-  console.log("Fonte:", fonte);
+  console.log(" Enviando pergunta:", pergunta);
+  console.log(" Chatbot Ativo:", chatbotId);
+  console.log(" Fonte:", fonte);
 
   fetch("http://localhost:5000/obter-resposta", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       pergunta,
-      chatbot_id: window.chatbotSelecionado,
-      fonte: fonte
+      chatbot_id: chatbotId,
+      fonte
     })
   })
     .then(res => res.json())
     .then(data => {
       if (data.success) {
         adicionarMensagem("bot", data.resposta);
-        obterPerguntasSemelhantes(pergunta);
+        obterPerguntasSemelhantes(pergunta, chatbotId);
       } else {
-        adicionarMensagem("bot", data.erro || "❌ Nenhuma resposta encontrada.");
+        adicionarMensagem("bot", data.erro || "❌ Nenhuma resposta encontrada para a pergunta fornecida.");
       }
     })
     .catch(() => {
-      adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor.");
+      adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor. Verifique se o servidor está ativo.");
     });
 }
 
 // Envia uma pergunta baseada numa categoria
 function perguntarCategoria(categoria) {
-  if (!window.chatbotSelecionado || isNaN(window.chatbotSelecionado)) {
-    return adicionarMensagem("bot", "⚠️ Selecione um chatbot antes de fazer uma pergunta.");
+  const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
+  if (!chatbotId || isNaN(chatbotId)) {
+    return adicionarMensagem("bot", "⚠️ Nenhum chatbot está ativo. Por favor, selecione um chatbot ativo no menu de recursos.");
   }
 
   adicionarMensagem("user", categoria);
 
-  const fonte = window.fonteSelecionada || "faq";
+  const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
+
   if (fonte !== "faq") {
     return adicionarMensagem("bot", "⚠️ Apenas a fonte 'Baseado em Regras (FAQ)' suporta categorias.");
   }
 
-  fetch(`http://localhost:5000/faq-categoria/${encodeURIComponent(categoria)}?chatbot_id=${window.chatbotSelecionado}`)
+  fetch(`http://localhost:5000/faq-categoria/${encodeURIComponent(categoria)}?chatbot_id=${chatbotId}`)
     .then(res => res.json())
     .then(data => {
       if (data.success && data.pergunta && data.resposta) {
@@ -79,18 +82,23 @@ function perguntarCategoria(categoria) {
       }
     })
     .catch(() => {
-      adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor.");
+      adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor. Verifique se o servidor está ativo.");
     });
 }
 
 // Mostra sugestões de perguntas semelhantes
-function obterPerguntasSemelhantes(perguntaOriginal) {
+function obterPerguntasSemelhantes(perguntaOriginal, chatbotId) {
+  if (!chatbotId || isNaN(chatbotId)) {
+    console.warn("⚠️ Chatbot ID inválido para buscar perguntas semelhantes.");
+    return;
+  }
+
   fetch("http://localhost:5000/perguntas-semelhantes", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       pergunta: perguntaOriginal,
-      chatbot_id: window.chatbotSelecionado
+      chatbot_id: chatbotId
     })
   })
     .then(res => res.json())
@@ -125,7 +133,7 @@ function obterPerguntasSemelhantes(perguntaOriginal) {
       }
     })
     .catch(() => {
-      console.warn("Erro ao buscar perguntas semelhantes");
+      console.warn("⚠️ Erro ao buscar perguntas semelhantes");
     });
 }
 

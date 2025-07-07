@@ -45,7 +45,11 @@ function toggleBotDropdown(botItem) {
     botItem.classList.add("expanded");
     dropdown.style.display = "block";
 
-    requestAnimationFrame(() => carregarChatbots());
+    requestAnimationFrame(() => {
+      if (typeof carregarChatbots === "function") {
+        carregarChatbots();
+      }
+    });
 
     window.chatbotSelecionado = chatbotId;
     localStorage.setItem("chatbotSelecionado", chatbotId);
@@ -71,20 +75,24 @@ function toggleBotDropdown(botItem) {
 function definirAtivo(event, chatbotId) {
   event.stopPropagation();
 
-  window.chatbotSelecionado = chatbotId;
-  localStorage.setItem("chatbotSelecionado", chatbotId);
   localStorage.setItem("chatbotAtivo", chatbotId);
+  window.chatbotAtivo = chatbotId;
+  console.log("✅ Definindo chatbotAtivo:", chatbotId);
 
-  document.querySelectorAll(".bot-ativo-btn").forEach(btn => btn.classList.remove("ativo"));
-  event.currentTarget.classList.add("ativo");
+  document.querySelectorAll(".bot-ativo-btn").forEach(btn => {
+    btn.classList.remove("ativo");
+    btn.textContent = "Ficar Ativo"; 
+  });
+  const botAtivoBtn = event.target.closest(".bot-dropdown").querySelector(".bot-ativo-btn");
+  if (botAtivoBtn) {
+    botAtivoBtn.classList.add("ativo");
+    botAtivoBtn.textContent = "Ativo"; 
+  }
 
-  const statusEl = document.getElementById("botAtivoStatus");
-  if (statusEl) statusEl.style.display = "inline-block";
-
-  const mensagem = document.getElementById("botAtivoMensagem");
-  if (mensagem) {
-    mensagem.innerText = `Chatbot Ativo: Bot ${chatbotId} (mesmo com menu fechado)`;
-    mensagem.style.display = "block";
+  const indicador = document.getElementById("indicadorAtivo");
+  if (indicador) {
+    indicador.style.display = "block";
+    indicador.textContent = "";
   }
 
   document.querySelectorAll(".ativo-label").forEach(el => el.style.display = "none");
@@ -110,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!publicarBtn) return;
 
   publicarBtn.addEventListener("click", () => {
-    const botItem = document.querySelector(".bot-item");
+    const botItem = document.querySelector(".bot-item.expanded");
     if (!botItem) return;
 
     const statusSpan = botItem.querySelector(".status");
@@ -137,8 +145,9 @@ function mostrarSecao(secao) {
     const menu = document.getElementById(`menu${secao.charAt(0).toUpperCase() + secao.slice(1)}`);
     if (menu) menu.classList.add("active");
 
-    if (secao === "respostas" && window.chatbotSelecionado) {
-      carregarTabelaFAQs(window.chatbotSelecionado, true);
+    const chatbotId = parseInt(localStorage.getItem("chatbotAtivo")) || window.chatbotSelecionado;
+    if (secao === "respostas" && chatbotId && typeof carregarTabelaFAQs === "function") {
+      carregarTabelaFAQs(chatbotId, true);
     }
   }
 }
@@ -147,45 +156,51 @@ window.addEventListener("DOMContentLoaded", () => {
   const chatbotId = localStorage.getItem("chatbotSelecionado");
   const chatbotAtivo = localStorage.getItem("chatbotAtivo");
 
+  if (chatbotAtivo) {
+    window.chatbotAtivo = parseInt(chatbotAtivo);
+    console.log("✅ Inicializando com chatbotAtivo:", chatbotAtivo);
+
+    const botAtivoBtn = document.querySelector(`.bot-ativo-btn[onclick*="${chatbotAtivo}"]`);
+    if (botAtivoBtn) {
+      botAtivoBtn.classList.add("ativo");
+      botAtivoBtn.textContent = "Ativo"; 
+    }
+
+    document.querySelectorAll(".bot-ativo-btn").forEach(btn => {
+      if (btn !== botAtivoBtn) btn.textContent = "Ficar Ativo";
+    });
+
+    const indicador = document.getElementById("indicadorAtivo");
+    if (indicador) {
+      indicador.style.display = "block";
+      indicador.textContent = "";
+    }
+
+    const ativoLabel = document.querySelector(`.bot-item[data-chatbot-id="${chatbotAtivo}"] .ativo-label`);
+    if (ativoLabel) ativoLabel.style.display = "inline";
+  }
+
   if (chatbotId) {
     window.chatbotSelecionado = parseInt(chatbotId);
     const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
     window.fonteSelecionada = fonte;
 
-    const botAtivoBtn = document.querySelector(`.bot-ativo-btn[onclick*="${chatbotId}"]`);
-    if (botAtivoBtn) botAtivoBtn.classList.add("ativo");
-
-    const statusEl = document.getElementById("botAtivoStatus");
-    if (statusEl) statusEl.style.display = "inline-block";
+    const dropdown = document.querySelector(`.bot-item[data-chatbot-id="${chatbotId}"]`)
+      ?.parentElement?.querySelector(".bot-dropdown");
+    if (dropdown) {
+      selecionarFonte(fonte, dropdown);
+    }
   } else {
     window.chatbotSelecionado = null;
     window.fonteSelecionada = "faq";
   }
 
-  if (chatbotAtivo) {
-    const msgEl = document.getElementById("botAtivoMensagem");
-    if (msgEl) {
-      msgEl.innerText = `Chatbot Ativo: Bot ${chatbotAtivo} (mesmo com menu fechado)`;
-      msgEl.style.display = "block";
-    }
-
-    document.querySelectorAll(".ativo-label").forEach(el => el.style.display = "none");
-    const ativoLabel = document.querySelector(`.bot-item[data-chatbot-id="${chatbotAtivo}"] .ativo-label`);
-    if (ativoLabel) ativoLabel.style.display = "inline";
+  if (typeof carregarChatbots === "function") {
+    carregarChatbots();
   }
-
-  carregarChatbots();
 
   const hash = window.location.hash.replace('#', '') || 'recursos';
   mostrarSecao(hash);
-
-  const dropdown = document.querySelector(`.bot-item[data-chatbot-id="${window.chatbotSelecionado}"]`)
-    ?.parentElement?.querySelector(".bot-dropdown");
-  if (dropdown) {
-    selecionarFonte(window.fonteSelecionada, dropdown);
-  } else {
-    console.warn("⚠️ Nenhum dropdown encontrado para o bot selecionado ao iniciar.");
-  }
 });
 
 window.addEventListener("hashchange", () => {

@@ -11,16 +11,6 @@
   <link rel="stylesheet" href="css/chat.css">
   <link rel="stylesheet" href="css/modal.css">
   <link rel="stylesheet" href="css/footer.css">
-  <style>
-    .ativo-indicador {
-      background: #dff0d8;
-      color: #3c763d;
-      border-left: 5px solid #3c763d;
-      padding: 10px;
-      margin-bottom: 15px;
-      font-weight: 600;
-    }
-  </style>
 </head>
 <body>
   <div class="layout">
@@ -46,7 +36,7 @@
         <button id="publicarBtn">Publicar</button>
       </header>
       <div class="panel">
-        <div id="indicadorAtivo" style="display: none;" class="ativo-indicador">Chatbot Ativo</div>
+        <div id="indicadorAtivo" style="display: none;" class="ativo-indicador"></div>
         <div id="secaoContexto" class="secao left-content" style="display: none;">
           <h2>Contexto do Projeto</h2>
           <p>Este projeto foi desenvolvido no âmbito da iniciativa <strong>AI4APGovernance</strong>, que visa explorar o potencial da Inteligência Artificial para melhorar os serviços públicos municipais. A interface aqui apresentada serve como backoffice para gerir as interações e recursos do chatbot municipal.</p>
@@ -256,15 +246,6 @@
       </div>
     </div>
   </footer>
-  <script>
-    let botAtivoId = null;
-    function definirAtivo(event, id) {
-      event.stopPropagation();
-      botAtivoId = id;
-      const indicador = document.getElementById("indicadorAtivo");
-      indicador.style.display = "block";
-    }
-  </script>
   <script src="js/globals.js"></script>
   <script src="js/faq.js"></script>
   <script src="js/chat.js"></script>
