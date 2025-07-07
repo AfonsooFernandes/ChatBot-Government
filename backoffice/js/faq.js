@@ -93,18 +93,44 @@ async function mostrarRespostas() {
   }
 
   try {
-    console.log("📋 Carregando FAQs para chatbotId:", chatbotId); // Log para depuração
     const res = await fetch(`http://localhost:5000/faqs/chatbot/${chatbotId}`);
     const faqs = await res.json();
 
-    lista.innerHTML = faqs.length ? faqs.map(faq => `
-      <div class="faq-item">
-        <strong>${faq.pergunta}</strong><br>
-        <p>${faq.resposta}</p>
-        <button onclick="pedirConfirmacao(${faq.faq_id})">Eliminar</button>
-        <hr>
-      </div>
-    `).join('') : "<p>Sem FAQs registadas para este chatbot.</p>";
+    if (!faqs.length) {
+      lista.innerHTML = "<p>Sem FAQs registadas para este chatbot.</p>";
+      return;
+    }
+
+    lista.innerHTML = `
+      <input type="text" id="pesquisaFAQ" placeholder="🔍 Procurar pergunta..." style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 6px;">
+      <div id="faqResultados"></div>
+    `;
+
+    const resultados = document.getElementById("faqResultados");
+
+    function renderizarFAQs(filtradas) {
+      resultados.innerHTML = filtradas.map(faq => `
+        <div class="faq-item">
+          <strong>${faq.pergunta}</strong><br>
+          <p>${faq.resposta}</p>
+          <button onclick="pedirConfirmacao(${faq.faq_id})">Eliminar</button>
+          <hr>
+        </div>
+      `).join('');
+    }
+
+    renderizarFAQs(faqs);
+
+    const input = document.getElementById("pesquisaFAQ");
+    input.addEventListener("input", () => {
+      const termo = input.value.toLowerCase().trim();
+      const filtradas = faqs.filter(faq =>
+        faq.pergunta.toLowerCase().includes(termo) ||
+        (faq.resposta && faq.resposta.toLowerCase().includes(termo))
+      );
+      renderizarFAQs(filtradas);
+    });
+
   } catch {
     lista.innerHTML = "<p>❌ Erro ao carregar FAQs.</p>";
   }

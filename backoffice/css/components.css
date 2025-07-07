@@ -262,3 +262,12 @@ form button:hover,
   border-color: #c19a2f; 
   font-weight: 600;
 }
+
+#pesquisaFAQ {
+  font-size: 14px;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
