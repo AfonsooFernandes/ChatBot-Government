@@ -38,6 +38,7 @@
       <div class="panel">
         <div id="indicadorAtivo" style="display: none;" class="ativo-indicador"></div>
         <div id="secaoRecursos" class="secao left-content">
+          <button id="novoBotBtn" class="btn-novo-bot">+ Novo Bot</button>
           <div class="bot-item-container">
             <div class="bot-wrapper">
               <div class="bot-item nao-publicado" data-chatbot-id="1" onclick="toggleBotDropdown(this)">
@@ -179,6 +180,24 @@
     </div>
   </div>
 
+  <div id="modalNovoBot" class="modal-overlay" style="display: none;">
+    <div class="modal-box novo-bot-modal">
+      <h2>Novo Chatbot</h2>
+      <form id="novoBotForm">
+        <input type="text" name="nome" placeholder="Nome do Chatbot" required>
+        <textarea name="descricao" placeholder="Descrição"></textarea>
+        <select name="categoria_id">
+          <option value="">Escolha a Categoria</option>
+        </select>
+        <div style="display:flex; gap:12px; margin-top:8px;">
+          <button type="submit">Criar Chatbot</button>
+          <button type="button" onclick="fecharModalNovoBot()" class="btn-cancelar">Cancelar</button>
+        </div>
+        <div id="mensagemNovoBot" style="margin-top:8px;"></div>
+      </form>
+    </div>
+  </div>
+
   <!-- Chat Sidebar -->
   <div class="chat-sidebar" id="chatSidebar" style="display: none;">
     <div class="chat-header">
@@ -238,5 +257,6 @@
   <script src="js/modal.js"></script>
   <script src="js/navigation.js"></script>
   <script src="js/toggleChat.js"></script>
+  <script src="js/AdicionarBot.js"></script>
 </body>
 </html>

@@ -65,6 +65,7 @@ def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id):
         return None
 
 # ---------- ROTAS ----------
+
 @app.route("/categorias", methods=["GET"])
 def get_categorias():
     try:
@@ -83,6 +84,39 @@ def get_chatbots():
             {"chatbot_id": row[0], "nome": row[1], "descricao": row[2]} for row in data
         ])
     except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/chatbots", methods=["POST"])
+def criar_chatbot():
+    data = request.get_json()
+    nome = data.get("nome", "").strip()
+    descricao = data.get("descricao", "").strip()
+    categoria_id = data.get("categoria_id")  # pode vir None
+
+    if not nome:
+        return jsonify({"success": False, "error": "Nome obrigatório."}), 400
+
+    try:
+        cur.execute("SELECT chatbot_id FROM Chatbot WHERE LOWER(nome) = LOWER(%s)", (nome,))
+        if cur.fetchone():
+            return jsonify({"success": False, "error": "Já existe um chatbot com esse nome."}), 409
+
+        if categoria_id:
+            cur.execute(
+                "INSERT INTO Chatbot (nome, descricao, categoria_id) VALUES (%s, %s, %s) RETURNING chatbot_id",
+                (nome, descricao, categoria_id)
+            )
+        else:
+            cur.execute(
+                "INSERT INTO Chatbot (nome, descricao) VALUES (%s, %s) RETURNING chatbot_id",
+                (nome, descricao)
+            )
+
+        chatbot_id = cur.fetchone()[0]
+        conn.commit()
+        return jsonify({"success": True, "chatbot_id": chatbot_id})
+    except Exception as e:
+        conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/fonte/<int:chatbot_id>", methods=["GET"])

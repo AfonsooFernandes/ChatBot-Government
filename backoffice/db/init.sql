@@ -18,7 +18,6 @@ ON CONFLICT (nome) DO NOTHING;
 CREATE TABLE IF NOT EXISTS Chatbot (
     chatbot_id SERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL UNIQUE,
-    idioma VARCHAR(10) NOT NULL,
     descricao TEXT,
     categoria_id INT REFERENCES Categoria(categoria_id) ON DELETE SET NULL
 );
@@ -82,10 +81,10 @@ CREATE TABLE IF NOT EXISTS FonteResposta (
 );
 
 -- Inserções de chatbots
-INSERT INTO Chatbot (nome, idioma, descricao)
-VALUES ('Assistente Municipal', 'pt', 'Chatbot para todos os serviços municipais')
+INSERT INTO Chatbot (nome, descricao)
+VALUES ('Assistente Municipal', 'Chatbot para todos os serviços municipais')
 ON CONFLICT (nome) DO NOTHING;
 
-INSERT INTO Chatbot (nome, idioma, descricao)
-VALUES ('Bot Secundário', 'pt', 'Segundo chatbot de apoio aos serviços da Câmara')
+INSERT INTO Chatbot (nome, descricao)
+VALUES ('Bot Secundário', 'Segundo chatbot de apoio aos serviços da Câmara')
 ON CONFLICT (nome) DO NOTHING;
