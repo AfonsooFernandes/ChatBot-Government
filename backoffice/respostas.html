@@ -37,7 +37,6 @@
       </header>
       <div class="panel">
         <div id="indicadorAtivo" style="display: none;" class="ativo-indicador"></div>
-        <!-- Área principal de respostas -->
         <div id="secaoRespostas" class="secao left-content" style="display: block !important;">
           <h2>FAQs Registadas</h2>
           <div id="listaFAQs" style="margin-top: 20px;"></div>
@@ -45,14 +44,19 @@
       </div>
     </div>
   </div>
+
+  <!-- Chat Sidebar -->
   <div class="chat-sidebar" id="chatSidebar" style="display: none;">
     <div class="chat-header">
+      <button class="chat-close-btn">×</button>
       <img src="images/chatbot-icon.png" alt="bot">
       <h3>CMVC - Serviços Municipalizados</h3>
       <span>(Assistente Virtual)</span>
     </div>
     <div class="chat-body" id="chatBody">
-      <div class="message intro">Olá! Está a conversar com o assistente virtual. <br>Escolha um tema ou escreva a sua pergunta.</div>
+      <div class="message intro">
+        Olá! Está a conversar com o assistente virtual. <br>Escolha um tema ou escreva a sua pergunta.
+      </div>
       <div class="categories">
         <button class="category-btn" onclick="perguntarCategoria('Educação')">Educação</button>
         <button class="category-btn" onclick="perguntarCategoria('Ação Social')">Ação Social</button>
@@ -67,10 +71,13 @@
       <button onclick="enviarPergunta()" title="Enviar">➤</button>
     </div>
   </div>
+
+  <!-- Botão flutuante para abrir o chat -->
   <button id="chatToggleBtn" class="chat-toggle-btn">
     <img src="images/chatbot-icon.png" alt="Chatbot">
   </button>
-  <!-- Modal de confirmação de eliminação -->
+
+  <!-- Modal de confirmação -->
   <div id="modalConfirmacao" class="modal-overlay" style="display: none;">
     <div class="modal-box">
       <p>Tem a certeza que quer eliminar esta FAQ?</p>
@@ -80,6 +87,7 @@
       </div>
     </div>
   </div>
+
   <!-- Rodapé -->
   <footer class="rodape">
     <div class="rodape-content">
@@ -91,6 +99,8 @@
       </div>
     </div>
   </footer>
+
+  <!-- Scripts -->
   <script src="js/globals.js"></script>
   <script src="js/faq.js"></script>
   <script src="js/chat.js"></script>
