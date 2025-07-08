@@ -1,14 +1,19 @@
 .chat-sidebar {
   width: 380px;
   background: #fff;
-  border-left: 1px solid #ddd;
+  border: 1px solid #ddd;
   display: flex;
   flex-direction: column;
   border-radius: 8px;
   overflow: hidden;
   height: 75vh;
-  flex-shrink: 0;
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  z-index: 1000;
   box-shadow: -2px 0 6px rgba(0, 0, 0, 0.05);
+  display: none; /* Hidden by default */
 }
 
 .chat-header {
@@ -144,4 +149,31 @@
 
 .btn-similar:hover {
   background-color: #e5e7eb;
+}
+
+.chat-toggle-btn {
+  position: fixed;
+  bottom: 80px; 
+  right: 20px;
+  background-color: #d4af37;
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  transition: background-color 0.3s;
+}
+
+.chat-toggle-btn:hover {
+  background-color: #e0c565;
+}
+
+.chat-toggle-btn img {
+  width: 30px;
+  height: 30px;
 }
