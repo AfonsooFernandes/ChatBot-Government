@@ -13,6 +13,24 @@ document.addEventListener('DOMContentLoaded', () => {
   if (chatCloseBtn) {
     chatCloseBtn.addEventListener('click', fecharChat);
   }
+
+  const footer = document.querySelector('footer.rodape');
+  if (chatToggleBtn && footer) {
+    function adjustChatBtn() {
+      const footerRect = footer.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      if (footerRect.top < windowHeight) {
+        const overlap = windowHeight - footerRect.top + 32;
+        chatToggleBtn.style.bottom = overlap + 'px';
+      } else {
+        chatToggleBtn.style.bottom = '32px';
+      }
+    }
+
+    window.addEventListener('scroll', adjustChatBtn);
+    window.addEventListener('resize', adjustChatBtn);
+    adjustChatBtn();
+  }
 });
 
 function fecharChat() {
@@ -22,6 +40,6 @@ function fecharChat() {
     chatSidebar.style.display = 'none';
   }
   if (chatToggleBtn) {
-    chatToggleBtn.style.display = 'flex'; 
+    chatToggleBtn.style.display = 'flex';
   }
 }

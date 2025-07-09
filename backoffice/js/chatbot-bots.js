@@ -9,17 +9,30 @@ async function carregarBots() {
       container.innerHTML = "<p>Nenhum bot encontrado.</p>";
       return;
     }
-    container.innerHTML = bots.map(bot => criarBotHTML(bot)).join('');
+    container.innerHTML = bots.map(bot => criarBotHTML(bot, bots)).join('');
+    if (typeof adicionarListenersFormulariosFAQ === "function")
+      adicionarListenersFormulariosFAQ(bots);
+    if (typeof adicionarListenersUploadDocx === "function")
+      adicionarListenersUploadDocx(bots);
   } catch (e) {
     container.innerHTML = `<p style="color:red;">Erro ao carregar bots: ${e.message}</p>`;
   }
 }
 
-function criarBotHTML(bot) {
+function gerarOptionsChatbotSelect(allBots) {
+  let options = `<option value="" disabled selected hidden>Escolha o chatbot</option>`;
+  options += `<option value="todos">Todos os Chatbots</option>`;
+  for (const bot of allBots) {
+    options += `<option value="${bot.chatbot_id}">${bot.nome}</option>`;
+  }
+  return options;
+}
+
+function criarBotHTML(bot, allBots) {
   const dataAtual = new Date().toLocaleDateString('pt-PT', {
     day: '2-digit', month: 'short', year: 'numeric'
   });
-
+  const optionsHtml = gerarOptionsChatbotSelect(allBots);
   return `
     <div class="bot-wrapper">
       <div class="bot-item nao-publicado" data-chatbot-id="${bot.chatbot_id}" onclick="toggleBotDropdown(this)">
@@ -53,18 +66,18 @@ function criarBotHTML(bot) {
         </div>
         <hr class="linha-separadora">
         <h3>Gestão de FAQs</h3>
-        <button id="faqAddBtn-${bot.chatbot_id}" onclick="mostrarFormulario()">Adicionar FAQ</button>
+        <button id="faqAddBtn-${bot.chatbot_id}" class="btn-faq-add" onclick="mostrarFormulario()">Adicionar FAQ</button>
         <div id="faqContainer" style="display: none; margin-top: 10px;">
           <form id="faqForm-${bot.chatbot_id}" class="faqForm">
             <select name="chatbot_id" required>
-              <option value="${bot.chatbot_id}" selected>${bot.nome}</option>
+              ${optionsHtml}
             </select>
             <input type="text" name="designacao" placeholder="Designação" required>
             <input type="text" name="pergunta" placeholder="Pergunta" required>
             <textarea name="resposta" placeholder="Resposta" required></textarea>
             <select name="categoria_id" required>
               <option value="">Escolha a categoria</option>
-              <option value="1" selected>Educação</option>
+              <option value="1">Educação</option>
               <option value="2">Ação Social</option>
               <option value="3">Habitação</option>
               <option value="4">Cultura</option>
@@ -79,6 +92,9 @@ function criarBotHTML(bot) {
           <div>
             <label>Ou carregar ficheiro .docx</label>
             <form id="uploadForm-${bot.chatbot_id}" class="uploadForm" enctype="multipart/form-data">
+              <select name="chatbot_id" required>
+                ${optionsHtml}
+              </select>
               <input type="file" name="file" accept=".docx" required>
               <button type="submit">Adicionar Documento</button>
               <div class="uploadStatus"></div>
@@ -90,105 +106,6 @@ function criarBotHTML(bot) {
       </div>
     </div>
   `;
-}
-
-
-async function carregarFAQsDoBotSelecionado() {
-  const tituloFAQ = document.getElementById("tituloFAQ");
-  const listaFAQs = document.getElementById("listaFAQs");
-  if (!listaFAQs) return;
-
-  const chatbotId = localStorage.getItem("chatbotAtivo") || localStorage.getItem("chatbotSelecionado");
-  if (!chatbotId) {
-    if (tituloFAQ) tituloFAQ.textContent = "Selecione um bot para ver as FAQs.";
-    listaFAQs.innerHTML = "";
-    return;
-  }
-
-  let botName = "...";
-  if (tituloFAQ) tituloFAQ.textContent = "A carregar FAQ do bot selecionado...";
-  try {
-    const res = await fetch("http://localhost:5000/chatbots");
-    const bots = await res.json();
-    const bot = bots.find(b => String(b.chatbot_id) === String(chatbotId));
-    if (bot && tituloFAQ) {
-      botName = bot.nome;
-      tituloFAQ.textContent = `A carregar FAQ do bot: "${botName}"`;
-    }
-  } catch {}
-
-  listaFAQs.innerHTML = "";
-  try {
-    const res = await fetch(`http://localhost:5000/faqs/chatbot/${chatbotId}`);
-    const faqs = await res.json();
-
-    if (tituloFAQ) tituloFAQ.textContent = "";
-
-    if (!Array.isArray(faqs) || faqs.length === 0) {
-      listaFAQs.innerHTML = `<p style="margin-top:10px;">Nenhuma FAQ registada para este bot.</p>`;
-      return;
-    }
-
-    listaFAQs.innerHTML = faqs.map(faq =>
-      `<div style="border-bottom:1px solid #ddd; margin-bottom:20px; padding-bottom:12px;">
-        <strong>${faq.pergunta}</strong>
-        <div style="margin:6px 0 8px 0; color:#444;">${faq.resposta}</div>
-        <button class="faq-eliminar-btn" onclick="eliminarFAQ(${faq.faq_id})">Eliminar</button>
-      </div>`
-    ).join('');
-
-  } catch (e) {
-    if (tituloFAQ) tituloFAQ.textContent = "";
-    listaFAQs.innerHTML = `<p style="color:red;">Erro ao carregar FAQs: ${e.message}</p>`;
-  }
-}
-
-async function eliminarFAQ(faqId) {
-  if (!confirm("Tem a certeza que pretende eliminar esta FAQ?")) return;
-  try {
-    await fetch(`http://localhost:5000/faqs/${faqId}`, { method: 'DELETE' });
-    carregarFAQsDoBotSelecionado();
-  } catch {
-    alert("Erro ao eliminar FAQ.");
-  }
-}
-
-
-window.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("botItemContainer")) {
-    carregarBots();
-  }
-  if (document.getElementById("listaFAQs")) {
-    carregarFAQsDoBotSelecionado();
-  }
-});
-
-
-function selecionarFonte(fonte, dropdown = null) { 
-  window.fonteSelecionada = fonte;
-  if (window.chatbotSelecionado) {
-    localStorage.setItem(`fonteSelecionada_bot${window.chatbotSelecionado}`, fonte);
-  }
-  if (!dropdown) {
-    dropdown = document.querySelector(`.bot-item[data-chatbot-id="${window.chatbotSelecionado}"]`)
-      ?.parentElement?.querySelector(".bot-dropdown");
-  }
-  if (!dropdown) {
-    console.warn("Dropdown não definido em selecionarFonte()");
-    return;
-  }
-  dropdown.querySelectorAll(".card").forEach(card => {
-    card.classList.toggle("active", card.dataset.fonte === fonte);
-  });
-}
-
-function mostrarFormulario() {
-  const dropdownVisivel = document.querySelector(".bot-dropdown[style*='block']");
-  if (!dropdownVisivel) return;
-  const container = dropdownVisivel.querySelector("#faqContainer");
-  if (container) {
-    container.style.display = container.style.display === "none" ? "block" : "none";
-  }
 }
 
 function toggleBotDropdown(botItem) {
@@ -215,11 +132,6 @@ function toggleBotDropdown(botItem) {
     window.chatbotSelecionado = chatbotId;
     localStorage.setItem("chatbotSelecionado", chatbotId);
 
-    const selectEl = dropdown.querySelector("select[name='chatbot_id']");
-    if (selectEl) {
-      selectEl.value = chatbotId;
-    }
-
     const fonteSalva = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
     selecionarFonte(fonteSalva, dropdown);
 
@@ -230,6 +142,33 @@ function toggleBotDropdown(botItem) {
     const botWrapper = botItem.closest(".bot-wrapper");
     const ativoBtn = botWrapper.querySelector(".bot-ativo-btn");
     if (ativoBtn) ativoBtn.style.display = "inline-block";
+  }
+}
+
+function selecionarFonte(fonte, dropdown = null) { 
+  window.fonteSelecionada = fonte;
+  if (window.chatbotSelecionado) {
+    localStorage.setItem(`fonteSelecionada_bot${window.chatbotSelecionado}`, fonte);
+  }
+  if (!dropdown) {
+    dropdown = document.querySelector(`.bot-item[data-chatbot-id="${window.chatbotSelecionado}"]`)
+      ?.parentElement?.querySelector(".bot-dropdown");
+  }
+  if (!dropdown) {
+    console.warn("Dropdown não definido em selecionarFonte()");
+    return;
+  }
+  dropdown.querySelectorAll(".card").forEach(card => {
+    card.classList.toggle("active", card.dataset.fonte === fonte);
+  });
+}
+
+function mostrarFormulario() {
+  const dropdownVisivel = document.querySelector(".bot-dropdown[style*='block']");
+  if (!dropdownVisivel) return;
+  const container = dropdownVisivel.querySelector("#faqContainer");
+  if (container) {
+    container.style.display = container.style.display === "none" ? "block" : "none";
   }
 }
 
@@ -266,6 +205,13 @@ function definirAtivo(event, chatbotId) {
     carregarTabelaFAQs(chatbotId, true);
   }
   if (document.getElementById("listaFAQs")) {
-    carregarFAQsDoBotSelecionado();
+    if (typeof carregarFAQsDoBotSelecionado === "function")
+      carregarFAQsDoBotSelecionado();
   }
 }
+
+window.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("botItemContainer")) {
+    carregarBots();
+  }
+});

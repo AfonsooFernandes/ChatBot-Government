@@ -8,11 +8,11 @@
   border-radius: 8px;
   overflow: hidden;
   position: fixed;
-  right: 20px;
-  bottom: 40px;  /* <-- colado ao fundo */
-  z-index: 1000;
+  right: 32px;
+  bottom: 90px; 
+  z-index: 1001;
   box-shadow: -2px 0 6px rgba(0, 0, 0, 0.05);
-  display: none; /* Hidden by default */
+  display: none; 
 }
 
 .chat-header {
@@ -180,8 +180,8 @@
 
 .chat-toggle-btn {
   position: fixed;
-  bottom: 80px;
-  right: 20px;
+  right: 32px;
+  bottom: 60px;
   background-color: #d4af37;
   border: none;
   border-radius: 50%;
@@ -192,8 +192,8 @@
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 999;
-  transition: background-color 0.3s;
+  z-index: 1100;
+  transition: background-color 0.3s, bottom 0.25s cubic-bezier(.4,0,.2,1);
 }
 
 .chat-toggle-btn:hover {

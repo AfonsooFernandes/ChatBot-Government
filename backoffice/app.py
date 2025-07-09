@@ -222,30 +222,51 @@ def get_faqs_por_chatbot(chatbot_id):
 def add_faq():
     data = request.get_json()
     try:
-        cur.execute("""
-            SELECT faq_id FROM FAQ
-            WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s
-        """, (data["chatbot_id"], data["designacao"], data["pergunta"], data["resposta"]))
-        if cur.fetchone():
-            return jsonify({"success": False, "error": "Esta FAQ já está inserida."}), 409
+        if str(data["chatbot_id"]) == "todos":
+            cur.execute("SELECT chatbot_id FROM Chatbot")
+            todos_chatbots = [row[0] for row in cur.fetchall()]
+            inseridos = 0
+            ja_existiam = 0
+            for bot_id in todos_chatbots:
+                cur.execute("""
+                    SELECT faq_id FROM FAQ
+                    WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s
+                """, (bot_id, data["designacao"], data["pergunta"], data["resposta"]))
+                if cur.fetchone():
+                    ja_existiam += 1
+                    continue
+                cur.execute("""
+                    INSERT INTO FAQ (chatbot_id, categoria_id, designacao, pergunta, resposta)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (bot_id, data["categoria_id"], data["designacao"], data["pergunta"], data["resposta"]))
+                inseridos += 1
+            conn.commit()
+            return jsonify({"success": True, "inseridos": inseridos, "ja_existiam": ja_existiam})
+        else:
+            cur.execute("""
+                SELECT faq_id FROM FAQ
+                WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s
+            """, (data["chatbot_id"], data["designacao"], data["pergunta"], data["resposta"]))
+            if cur.fetchone():
+                return jsonify({"success": False, "error": "Esta FAQ já está inserida."}), 409
 
-        cur.execute("""
-            INSERT INTO FAQ (chatbot_id, categoria_id, designacao, pergunta, resposta)
-            VALUES (%s, %s, %s, %s, %s)
-            RETURNING faq_id
-        """, (data["chatbot_id"], data["categoria_id"], data["designacao"], data["pergunta"], data["resposta"]))
-        faq_id = cur.fetchone()[0]
+            cur.execute("""
+                INSERT INTO FAQ (chatbot_id, categoria_id, designacao, pergunta, resposta)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING faq_id
+            """, (data["chatbot_id"], data["categoria_id"], data["designacao"], data["pergunta"], data["resposta"]))
+            faq_id = cur.fetchone()[0]
 
-        if "documentos" in data and data["documentos"].strip():
-            for doc_id in data["documentos"].split(','):
-                cur.execute("INSERT INTO FAQ_Documento (faq_id, documento_id) VALUES (%s, %s)", (faq_id, int(doc_id.strip())))
+            if "documentos" in data and data["documentos"].strip():
+                for doc_id in data["documentos"].split(','):
+                    cur.execute("INSERT INTO FAQ_Documento (faq_id, documento_id) VALUES (%s, %s)", (faq_id, int(doc_id.strip())))
 
-        if "relacionadas" in data and data["relacionadas"].strip():
-            for rel_id in data["relacionadas"].split(','):
-                cur.execute("INSERT INTO FAQ_Relacionadas (faq_id, faq_relacionada_id) VALUES (%s, %s)", (faq_id, int(rel_id.strip())))
+            if "relacionadas" in data and data["relacionadas"].strip():
+                for rel_id in data["relacionadas"].split(','):
+                    cur.execute("INSERT INTO FAQ_Relacionadas (faq_id, faq_relacionada_id) VALUES (%s, %s)", (faq_id, int(rel_id.strip())))
 
-        conn.commit()
-        return jsonify({"success": True, "faq_id": faq_id})
+            conn.commit()
+            return jsonify({"success": True, "faq_id": faq_id})
     except Exception as e:
         conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
