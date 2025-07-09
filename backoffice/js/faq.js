@@ -99,10 +99,10 @@ async function mostrarRespostas() {
     return;
   }
 
+  lista.innerHTML = "<p>A carregar faqs...</p>";
+
   const chatbotId = parseInt(localStorage.getItem("chatbotAtivo")) || window.chatbotSelecionado;
-  console.log("Chatbot ID usado:", chatbotId);
   if (!chatbotId) {
-    console.log("Nenhum chatbot ativo ou selecionado.");
     lista.innerHTML = "<p>⚠️ Nenhum chatbot ativo ou selecionado. Vá a Recursos para selecionar um.</p>";
     return;
   }
@@ -110,16 +110,13 @@ async function mostrarRespostas() {
   async function fetchWithRetry(url, retries = 3) {
     for (let i = 0; i < retries; i++) {
       try {
-        console.log(`Tentando buscar FAQs para chatbotId: ${chatbotId} (tentativa ${i + 1})`);
         const res = await fetch(`${url}?t=${Date.now()}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const faqs = await res.json();
-        console.log("FAQs recebidas:", faqs);
         return faqs;
       } catch (error) {
-        console.error(`Erro na tentativa ${i + 1}:`, error);
         if (i === retries - 1) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); 
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
     }
   }
@@ -163,8 +160,6 @@ async function mostrarRespostas() {
     });
 
   } catch (error) {
-    console.error("Erro final ao carregar FAQs:", error);
-    lista.innerHTML = `<p>❌ Erro ao carregar FAQs: ${error.message}. Verifique o servidor ou tente novamente.</p>`;
   }
 }
 
@@ -192,7 +187,6 @@ function responderPergunta(pergunta) {
   }
 
   const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
-  console.log("📤 Enviando pergunta para chatbotId:", chatbotId, "Fonte:", fonte); // Log para depuração
   fetch("http://localhost:5000/obter-resposta", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -215,8 +209,6 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId) {
     console.warn("⚠️ Chatbot ID inválido para buscar perguntas semelhantes.");
     return;
   }
-
-  console.log("🔎 Buscando perguntas semelhantes para chatbotId:", chatbotId); // Log para depuração
   fetch("http://localhost:5000/perguntas-semelhantes", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -260,13 +252,10 @@ async function responderComCategoria(categoria) {
     adicionarMensagem("bot", "⚠️ Nenhum chatbot ativo. Por favor, selecione um chatbot ativo no menu de recursos.");
     return;
   }
-
-  console.log("📂 Respondendo categoria:", categoria, "para chatbotId:", chatbotId); // Log para depuração
   try {
     const res = await fetch(`http://localhost:5000/faq-categoria/${encodeURIComponent(categoria)}?chatbot_id=${chatbotId}`);
     const data = await res.json();
 
-    console.log("📥 Resposta do servidor:", data); // Log para depuração
     if (data.success) {
       adicionarMensagem("user", `📂 Categoria: ${categoria}`);
       adicionarMensagem("bot", data.resposta);
@@ -275,7 +264,6 @@ async function responderComCategoria(categoria) {
       adicionarMensagem("bot", data.erro || `❌ Nenhuma FAQ encontrada para a categoria '${categoria}' no Bot ${chatbotId}.`);
     }
   } catch (err) {
-    console.error("❌ Erro ao obter resposta por categoria:", err);
     adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor. Verifique se o servidor está ativo.");
   }
 }
