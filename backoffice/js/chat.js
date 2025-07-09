@@ -67,23 +67,28 @@ function perguntarCategoria(categoria) {
 
   const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
 
-  if (fonte !== "faq") {
-    return adicionarMensagem("bot", "⚠️ Apenas a fonte 'Baseado em Regras (FAQ)' suporta categorias.");
+  if (fonte === "faq") {
+    fetch(`http://localhost:5000/faq-categoria/${encodeURIComponent(categoria)}?chatbot_id=${chatbotId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.pergunta && data.resposta) {
+          adicionarMensagem("bot", data.pergunta);
+          setTimeout(() => adicionarMensagem("bot", data.resposta), 600);
+        } else {
+          adicionarMensagem("bot", `❌ Não foi possível obter uma FAQ para a categoria '${categoria}'.`);
+        }
+      })
+      .catch(() => {
+        adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor. Verifique se o servidor está ativo.");
+      });
+  } else if (fonte === "faiss") {
+    responderPergunta(categoria);
+  } else {
+    adicionarMensagem(
+      "bot",
+      "⚠️ Apenas as fontes 'Baseado em Regras (FAQ)' e 'Só FAISS' suportam categorias neste momento."
+    );
   }
-
-  fetch(`http://localhost:5000/faq-categoria/${encodeURIComponent(categoria)}?chatbot_id=${chatbotId}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success && data.pergunta && data.resposta) {
-        adicionarMensagem("bot", data.pergunta);
-        setTimeout(() => adicionarMensagem("bot", data.resposta), 600);
-      } else {
-        adicionarMensagem("bot", `❌ Não foi possível obter uma FAQ para a categoria '${categoria}'.`);
-      }
-    })
-    .catch(() => {
-      adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor. Verifique se o servidor está ativo.");
-    });
 }
 
 // Mostra sugestões de perguntas semelhantes

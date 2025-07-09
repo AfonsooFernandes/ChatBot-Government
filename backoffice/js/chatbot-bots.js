@@ -57,7 +57,7 @@ function criarBotHTML(bot, allBots) {
           </div>
           <div class="card" data-fonte="faiss" onclick="selecionarFonte('faiss', this.closest('.bot-dropdown'))">
             <h4>Só FAISS</h4>
-            <p>Respostas aproximadas com base vetorial (não implementado).</p>
+            <p>Respostas aproximadas com base vetorial.</p>
           </div>
           <div class="card" data-fonte="faq+raga" onclick="selecionarFonte('faq+raga', this.closest('.bot-dropdown'))">
             <h4>FAQ + fallback RAG</h4>
