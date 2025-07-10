@@ -3,7 +3,8 @@ flask-cors
 psycopg2-binary
 python-docx
 fuzzywuzzy
-python-Levenshtein
 faiss-cpu
 sentence-transformers
 numpy
+scipy
+pickle5

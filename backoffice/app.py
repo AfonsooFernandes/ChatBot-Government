@@ -9,6 +9,7 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 import pickle
 import os
+import traceback
 
 # ---------- LOGGING ----------
 logging.basicConfig(level=logging.DEBUG)
@@ -25,7 +26,6 @@ try:
         user="postgres",
         password="29344"
     )
-    cur = conn.cursor()
 except Exception as e:
     print("❌ Erro ao conectar à base de dados:", e)
     raise
@@ -36,6 +36,7 @@ embedding_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
 # ---------- FUNÇÕES DE EMBEDDING E FAISS ----------
 def get_faqs_from_db(chatbot_id=None):
+    cur = conn.cursor()
     if chatbot_id:
         cur.execute("SELECT faq_id, pergunta, resposta, chatbot_id FROM FAQ WHERE chatbot_id = %s", (chatbot_id,))
     else:
@@ -107,6 +108,7 @@ def pesquisar_faiss(pergunta, chatbot_id=None, k=1):
 
 # ---------- SIMILARIDADE FUZZY ----------
 def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id):
+    cur = conn.cursor()
     cur.execute("SELECT pergunta, resposta FROM FAQ WHERE chatbot_id = %s", (chatbot_id,))
     faqs = cur.fetchall()
     pergunta_normalizada = pergunta_utilizador.strip().lower()
@@ -132,16 +134,19 @@ def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id):
 # ---------- ROTAS DE CATEGORIA, CHATBOT, FAQ ----------
 @app.route("/categorias", methods=["GET"])
 def get_categorias():
+    cur = conn.cursor()
     try:
         cur.execute("SELECT categoria_id, nome FROM Categoria")
         data = cur.fetchall()
         return jsonify([{"categoria_id": c[0], "nome": c[1]} for c in data])
     except Exception as e:
         conn.rollback()
+        print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/chatbots", methods=["GET"])
 def get_chatbots():
+    cur = conn.cursor()
     try:
         cur.execute("SELECT chatbot_id, nome, descricao FROM Chatbot")
         data = cur.fetchall()
@@ -150,18 +155,18 @@ def get_chatbots():
         ])
     except Exception as e:
         conn.rollback()
+        print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/chatbots", methods=["POST"])
 def criar_chatbot():
+    cur = conn.cursor()
     data = request.get_json()
     nome = data.get("nome", "").strip()
     descricao = data.get("descricao", "").strip()
-    categoria_id = data.get("categoria_id") 
-
+    categoria_id = data.get("categoria_id")
     if not nome:
         return jsonify({"success": False, "error": "Nome obrigatório."}), 400
-
     try:
         cur.execute("SELECT chatbot_id FROM Chatbot WHERE LOWER(nome) = LOWER(%s)", (nome,))
         if cur.fetchone():
@@ -177,16 +182,17 @@ def criar_chatbot():
                 "INSERT INTO Chatbot (nome, descricao) VALUES (%s, %s) RETURNING chatbot_id",
                 (nome, descricao)
             )
-
         chatbot_id = cur.fetchone()[0]
         conn.commit()
         return jsonify({"success": True, "chatbot_id": chatbot_id})
     except Exception as e:
         conn.rollback()
+        print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/fonte/<int:chatbot_id>", methods=["GET"])
 def obter_fonte_chatbot(chatbot_id):
+    cur = conn.cursor()
     try:
         cur.execute("SELECT descricao FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
         row = cur.fetchone()
@@ -195,10 +201,12 @@ def obter_fonte_chatbot(chatbot_id):
             return jsonify({"success": True, "fonte": fonte})
         return jsonify({"success": False, "erro": "Chatbot não encontrado."}), 404
     except Exception as e:
+        print(traceback.format_exc())
         return jsonify({"success": False, "erro": str(e)}), 500
 
 @app.route("/fonte", methods=["POST"])
 def definir_fonte_chatbot():
+    cur = conn.cursor()
     data = request.get_json()
     chatbot_id = data.get("chatbot_id")
     fonte = data.get("fonte")
@@ -213,10 +221,12 @@ def definir_fonte_chatbot():
         return jsonify({"success": True})
     except Exception as e:
         conn.rollback()
+        print(traceback.format_exc())
         return jsonify({"success": False, "erro": str(e)}), 500
 
 @app.route("/faq-categoria/<categoria>", methods=["GET"])
 def obter_faq_por_categoria(categoria):
+    cur = conn.cursor()
     try:
         chatbot_id = request.args.get("chatbot_id")
         if not chatbot_id:
@@ -246,10 +256,12 @@ def obter_faq_por_categoria(categoria):
             }), 404
     except Exception as e:
         conn.rollback()
+        print(traceback.format_exc())
         return jsonify({"success": False, "erro": str(e)}), 500
 
 @app.route("/faqs", methods=["GET"])
 def get_faqs():
+    cur = conn.cursor()
     try:
         cur.execute("SELECT faq_id, chatbot_id, designacao, pergunta, resposta FROM FAQ")
         data = cur.fetchall()
@@ -258,10 +270,12 @@ def get_faqs():
         ])
     except Exception as e:
         conn.rollback()
+        print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/faqs/chatbot/<int:chatbot_id>", methods=["GET"])
 def get_faqs_por_chatbot(chatbot_id):
+    cur = conn.cursor()
     try:
         cur.execute("""
             SELECT f.faq_id, c.nome, f.pergunta, f.resposta
@@ -281,11 +295,13 @@ def get_faqs_por_chatbot(chatbot_id):
         ])
     except Exception as e:
         conn.rollback()
+        print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/faqs", methods=["POST"])
 def add_faq():
     global faiss_index, faqs_db, faq_embeddings
+    cur = conn.cursor()
     data = request.get_json()
     try:
         idioma = data.get("idioma", "").strip()
@@ -334,10 +350,12 @@ def add_faq():
         return jsonify({"success": True, "faq_id": faq_id})
     except Exception as e:
         conn.rollback()
+        print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/faqs/<int:faq_id>", methods=["DELETE"])
 def delete_faq(faq_id):
+    cur = conn.cursor()
     try:
         cur.execute("DELETE FROM FAQ WHERE faq_id = %s", (faq_id,))
         conn.commit()
@@ -347,10 +365,12 @@ def delete_faq(faq_id):
         return jsonify({"success": True})
     except Exception as e:
         conn.rollback()
+        print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/upload-faq-docx", methods=["POST"])
 def upload_faq_docx():
+    cur = conn.cursor()
     if 'file' not in request.files:
         return jsonify({"success": False, "error": "Ficheiro não enviado."}), 400
 
@@ -367,10 +387,6 @@ def upload_faq_docx():
             return "pt"
         if valor.startswith("ingl"):
             return "en"
-        if valor.startswith("espa"):
-            return "es"
-        if valor.startswith("fran"):
-            return "fr"
         return valor[:2]
 
     try:
@@ -447,10 +463,12 @@ def upload_faq_docx():
 
     except Exception as e:
         conn.rollback()
+        print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/faqs/detalhes", methods=["GET"])
 def get_faqs_detalhes():
+    cur = conn.cursor()
     try:
         cur.execute("""
             SELECT f.faq_id, f.chatbot_id, f.designacao, f.pergunta, f.resposta, f.idioma, f.links_documentos,
@@ -478,10 +496,12 @@ def get_faqs_detalhes():
         ])
     except Exception as e:
         conn.rollback()
+        print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/obter-resposta", methods=["POST"])
 def obter_resposta():
+    cur = conn.cursor()
     dados = request.get_json()
     pergunta = dados.get("pergunta", "").strip()
     chatbot_id = dados.get("chatbot_id")
@@ -549,10 +569,12 @@ def obter_resposta():
         else:
             return jsonify({"success": False, "erro": "Fonte inválida."}), 400
     except Exception as e:
+        print(traceback.format_exc())
         return jsonify({"success": False, "erro": str(e)}), 500
 
 @app.route("/perguntas-semelhantes", methods=["POST"])
 def perguntas_semelhantes():
+    cur = conn.cursor()
     dados = request.get_json()
     pergunta_atual = dados.get("pergunta", "")
     chatbot_id = dados.get("chatbot_id")
@@ -576,6 +598,7 @@ def perguntas_semelhantes():
         sugestoes = [row[0] for row in cur.fetchall()]
         return jsonify({"success": True, "sugestoes": sugestoes})
     except Exception as e:
+        print(traceback.format_exc())
         return jsonify({"success": False, "erro": str(e)}), 500
 
 @app.route("/rebuild-faiss", methods=["POST"])
