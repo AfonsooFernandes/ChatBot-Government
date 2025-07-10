@@ -4,13 +4,26 @@ function adicionarListenersFormulariosFAQ(allBots = []) {
       event.preventDefault();
       const data = {};
       new FormData(form).forEach((value, key) => data[key] = value);
+
+      data.idioma = data.idioma?.trim() || "pt";
+
       const msgDiv = form.querySelector("#mensagemFAQ");
+      if (!data.idioma) {
+        if (msgDiv) msgDiv.innerHTML = `<span style="color:#dc2626;">Tem de escolher um idioma.</span>`;
+        return;
+      }
+
+      if (!data.chatbot_id) {
+        if (msgDiv) msgDiv.innerHTML = `<span style="color:#dc2626;">Tem de escolher um chatbot.</span>`;
+        return;
+      }
+
       if (data.chatbot_id === "todos") {
         try {
           const bots = allBots.length > 0 ? allBots : (await (await fetch("http://localhost:5000/chatbots")).json());
           let sucesso = 0, erro = 0;
           for (const bot of bots) {
-            const dataCopia = {...data, chatbot_id: bot.chatbot_id};
+            const dataCopia = { ...data, chatbot_id: bot.chatbot_id };
             const res = await fetch("http://localhost:5000/faqs", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -34,7 +47,8 @@ function adicionarListenersFormulariosFAQ(allBots = []) {
             form.reset();
             if (msgDiv) msgDiv.innerHTML = `<span style="color:#2ecc40;">FAQ adicionada com sucesso!</span>`;
           } else {
-            const erro = await res.text();
+            const resultado = await res.json().catch(() => ({}));
+            const erro = resultado.error || resultado.erro || await res.text();
             if (msgDiv) msgDiv.innerHTML = `<span style="color:#dc2626;">Erro ao adicionar FAQ: ${erro}</span>`;
           }
         } catch (err) {
@@ -50,12 +64,15 @@ function adicionarListenersUploadDocx(allBots = []) {
     form.onsubmit = async function(event) {
       event.preventDefault();
       const chatbotId = form.querySelector('[name="chatbot_id"]').value;
+      const idioma = form.querySelector('[name="idioma"]')?.value?.trim() || "pt";
       const fileInput = form.querySelector('input[type="file"]');
       const statusDiv = form.querySelector(".uploadStatus");
-      if (!chatbotId || !fileInput || !fileInput.files.length) {
-        if (statusDiv) statusDiv.innerHTML = "Tem de escolher um chatbot e um ficheiro!";
+
+      if (!chatbotId || !fileInput || !fileInput.files.length || !idioma) {
+        if (statusDiv) statusDiv.innerHTML = "Tem de escolher um chatbot, um ficheiro e um idioma!";
         return;
       }
+
       if (chatbotId === "todos") {
         try {
           const bots = allBots.length > 0 ? allBots : (await (await fetch("http://localhost:5000/chatbots")).json());
@@ -64,6 +81,7 @@ function adicionarListenersUploadDocx(allBots = []) {
             const formDataBot = new FormData();
             formDataBot.append("chatbot_id", bot.chatbot_id);
             formDataBot.append("file", fileInput.files[0]);
+            formDataBot.append("idioma", idioma);
             const res = await fetch("http://localhost:5000/upload-faq-docx", {
               method: "POST",
               body: formDataBot
@@ -84,6 +102,7 @@ function adicionarListenersUploadDocx(allBots = []) {
       } else {
         try {
           const formData = new FormData(form);
+          formData.set("idioma", idioma); 
           const res = await fetch("http://localhost:5000/upload-faq-docx", {
             method: "POST",
             body: formData
@@ -95,7 +114,8 @@ function adicionarListenersUploadDocx(allBots = []) {
               statusDiv.style.color = "#2ecc40";
             }
           } else {
-            const erro = await res.text();
+            const resultado = await res.json().catch(() => ({}));
+            const erro = resultado.error || resultado.erro || await res.text();
             if (statusDiv) {
               statusDiv.innerHTML = "Erro ao carregar: " + erro;
               statusDiv.style.color = "#dc2626";
@@ -111,3 +131,6 @@ function adicionarListenersUploadDocx(allBots = []) {
     };
   });
 }
+
+window.adicionarListenersFormulariosFAQ = adicionarListenersFormulariosFAQ;
+window.adicionarListenersUploadDocx = adicionarListenersUploadDocx;

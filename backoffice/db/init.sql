@@ -14,7 +14,7 @@ INSERT INTO Categoria (nome) VALUES
     ('Ambiente')
 ON CONFLICT (nome) DO NOTHING;
 
--- Tabela: Chatbot 
+-- Tabela: Chatbot
 CREATE TABLE IF NOT EXISTS Chatbot (
     chatbot_id SERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL UNIQUE,
@@ -22,15 +22,7 @@ CREATE TABLE IF NOT EXISTS Chatbot (
     categoria_id INT REFERENCES Categoria(categoria_id) ON DELETE SET NULL
 );
 
--- Tabela: Documento
-CREATE TABLE IF NOT EXISTS Documento (
-    documento_id SERIAL PRIMARY KEY,
-    chatbot_id INT REFERENCES Chatbot(chatbot_id) ON DELETE CASCADE,
-    titulo VARCHAR(255),
-    ficheiro_path TEXT
-);
-
--- Tabela: FAQ 
+-- Tabela: FAQ
 CREATE TABLE IF NOT EXISTS FAQ (
     faq_id SERIAL PRIMARY KEY,
     chatbot_id INT REFERENCES Chatbot(chatbot_id) ON DELETE CASCADE,
@@ -38,14 +30,16 @@ CREATE TABLE IF NOT EXISTS FAQ (
     designacao VARCHAR(255),
     pergunta TEXT NOT NULL,
     resposta TEXT NOT NULL,
-    UNIQUE (chatbot_id, designacao, pergunta, resposta)
+    idioma VARCHAR(20) NOT NULL,
+    links_documentos TEXT,
+    UNIQUE (chatbot_id, designacao, pergunta, resposta, idioma)
 );
 
 -- Tabela: FAQ_Documento
 CREATE TABLE IF NOT EXISTS FAQ_Documento (
     faq_id INT REFERENCES FAQ(faq_id) ON DELETE CASCADE,
-    documento_id INT REFERENCES Documento(documento_id) ON DELETE CASCADE,
-    PRIMARY KEY (faq_id, documento_id)
+    link TEXT NOT NULL,
+    PRIMARY KEY (faq_id, link)
 );
 
 -- Tabela: FAQ_Relacionadas

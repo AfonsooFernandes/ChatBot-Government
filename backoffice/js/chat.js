@@ -1,3 +1,7 @@
+function getIdiomaAtual() {
+  return localStorage.getItem("idiomaAtivo") || "pt";
+}
+
 // Adiciona mensagem ao chat
 function adicionarMensagem(tipo, texto) {
   const chat = document.getElementById("chatBody");
@@ -28,10 +32,12 @@ function responderPergunta(pergunta) {
   }
 
   const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
+  const idioma = getIdiomaAtual();
 
   console.log(" Enviando pergunta:", pergunta);
   console.log(" Chatbot Ativo:", chatbotId);
   console.log(" Fonte:", fonte);
+  console.log(" Idioma:", idioma);
 
   fetch("http://localhost:5000/obter-resposta", {
     method: "POST",
@@ -39,14 +45,15 @@ function responderPergunta(pergunta) {
     body: JSON.stringify({
       pergunta,
       chatbot_id: chatbotId,
-      fonte
+      fonte,
+      idioma
     })
   })
     .then(res => res.json())
     .then(data => {
       if (data.success) {
         adicionarMensagem("bot", data.resposta);
-        obterPerguntasSemelhantes(pergunta, chatbotId);
+        obterPerguntasSemelhantes(pergunta, chatbotId, idioma);
       } else {
         adicionarMensagem("bot", data.erro || "❌ Nenhuma resposta encontrada para a pergunta fornecida.");
       }
@@ -66,9 +73,10 @@ function perguntarCategoria(categoria) {
   adicionarMensagem("user", categoria);
 
   const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
+  const idioma = getIdiomaAtual();
 
   if (fonte === "faq") {
-    fetch(`http://localhost:5000/faq-categoria/${encodeURIComponent(categoria)}?chatbot_id=${chatbotId}`)
+    fetch(`http://localhost:5000/faq-categoria/${encodeURIComponent(categoria)}?chatbot_id=${chatbotId}&idioma=${idioma}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.pergunta && data.resposta) {
@@ -92,18 +100,21 @@ function perguntarCategoria(categoria) {
 }
 
 // Mostra sugestões de perguntas semelhantes
-function obterPerguntasSemelhantes(perguntaOriginal, chatbotId) {
+function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
   if (!chatbotId || isNaN(chatbotId)) {
     console.warn("⚠️ Chatbot ID inválido para buscar perguntas semelhantes.");
     return;
   }
+
+  if (!idioma) idioma = getIdiomaAtual();
 
   fetch("http://localhost:5000/perguntas-semelhantes", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       pergunta: perguntaOriginal,
-      chatbot_id: chatbotId
+      chatbot_id: chatbotId,
+      idioma: idioma
     })
   })
     .then(res => res.json())
@@ -141,6 +152,10 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId) {
       console.warn("⚠️ Erro ao buscar perguntas semelhantes");
     });
 }
+
+window.setIdiomaAtivo = function(idioma) {
+  localStorage.setItem("idiomaAtivo", idioma);
+};
 
 window.perguntarCategoria = perguntarCategoria;
 window.enviarPergunta = enviarPergunta;

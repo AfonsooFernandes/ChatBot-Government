@@ -12,170 +12,146 @@ async function carregarChatbots() {
   try {
     const res = await fetch("http://localhost:5000/chatbots");
     const chatbots = await res.json();
-
     const selects = document.querySelectorAll('select[name="chatbot_id"]');
-    if (!selects.length) return;
-    const chatbotIdSelecionado = localStorage.getItem("chatbotSelecionado");
+    if (selects.length) {
+      const chatbotIdSelecionado = localStorage.getItem("chatbotSelecionado");
+      selects.forEach(select => {
+        select.innerHTML = '<option value="">Selecione o Chatbot</option>' +
+          '<option value="todos">Todos os Chatbots</option>' +
+          chatbots.map(bot => `<option value="${String(bot.chatbot_id)}">${bot.nome}</option>`).join('');
 
-    selects.forEach(select => {
-      select.innerHTML = '<option value="">Selecione o Chatbot</option>' +
-        '<option value="todos">Todos os Chatbots</option>' +
-        chatbots.map(bot => `<option value="${String(bot.chatbot_id)}">${bot.nome}</option>`).join('');
+        const estaEmFormulario = !!select.closest("form");
 
-      const estaEmFormulario = !!select.closest("form");
+        if (!estaEmFormulario && chatbotIdSelecionado && !isNaN(parseInt(chatbotIdSelecionado))) {
+          select.value = chatbotIdSelecionado;
+        }
 
-      if (!estaEmFormulario && chatbotIdSelecionado && !isNaN(parseInt(chatbotIdSelecionado))) {
-        select.value = chatbotIdSelecionado;
-      }
-
-      select.addEventListener("change", () => {
-        const val = select.value;
-        window.chatbotSelecionado = val === "todos" ? null : parseInt(val);
-        if (val !== "todos") carregarTabelaFAQs(window.chatbotSelecionado, true);
+        select.addEventListener("change", () => {
+          const val = select.value;
+          window.chatbotSelecionado = val === "todos" ? null : parseInt(val);
+          if (val !== "todos") carregarTabelaFAQs(window.chatbotSelecionado, true);
+        });
       });
-    });
 
-    if (chatbotIdSelecionado && !isNaN(parseInt(chatbotIdSelecionado))) {
-      window.chatbotSelecionado = parseInt(chatbotIdSelecionado);
-      carregarTabelaFAQs(window.chatbotSelecionado, true);
+      if (chatbotIdSelecionado && !isNaN(parseInt(chatbotIdSelecionado))) {
+        window.chatbotSelecionado = parseInt(chatbotIdSelecionado);
+        carregarTabelaFAQs(window.chatbotSelecionado, true);
+      }
     }
 
+    const filtro = document.getElementById("filtroChatbot");
+    if (filtro) {
+      filtro.innerHTML = `<option value="">Todos os Chatbots</option>` +
+        chatbots.map(bot => `<option value="${String(bot.chatbot_id)}">${bot.nome}</option>`).join('');
+    }
   } catch (err) {
     console.error("❌ Erro ao carregar chatbots:", err);
   }
 }
 
-async function carregarTabelaFAQs(chatbotId, paraDropdown = false) {
-  if (!chatbotId) {
-    const container = document.getElementById(`faqTabelaBot-${chatbotId}`);
-    if (container) container.innerHTML = "<p>⚠️ Nenhum chatbot selecionado ou ativo.</p>";
-    return;
-  }
+async function carregarTabelaFAQsBackoffice() {
+  const lista = document.getElementById("listaFAQs");
+  if (!lista) return;
+  lista.innerHTML = "<p>A carregar FAQs...</p>";
+
+  const textoPesquisa = (document.getElementById("pesquisaFAQ")?.value || "").toLowerCase();
+  const filtroChatbot = document.getElementById("filtroChatbot")?.value || "";
+  const filtroIdioma = document.getElementById("filtroIdioma")?.value || "";
+
   try {
-    const res = await fetch(`http://localhost:5000/faqs/chatbot/${chatbotId}`);
-    let faqs = await res.json();
-    faqs.sort((a, b) => a.faq_id - b.faq_id);
+    const [faqs, chatbots, categorias] = await Promise.all([
+      fetch("http://localhost:5000/faqs/detalhes").then(r => r.json()),
+      fetch("http://localhost:5000/chatbots").then(r => r.json()),
+      fetch("http://localhost:5000/categorias").then(r => r.json())
+    ]);
 
-    if (paraDropdown) {
-      const container = document.getElementById(`faqTabelaBot-${chatbotId}`);
-      if (!container) return;
+    const chatbotsMap = {};
+    chatbots.forEach(bot => chatbotsMap[bot.chatbot_id] = bot.nome);
 
-      if (faqs.length === 0) {
-        container.innerHTML = "<p>Sem FAQs associadas a este bot.</p>";
-        return;
+    const categoriasMap = {};
+    categorias.forEach(cat => categoriasMap[cat.categoria_id] = cat.nome);
+
+    let faqsFiltradas = faqs.filter(faq => {
+      let matchPesquisa = true;
+      if (textoPesquisa) {
+        const target =
+          (faq.designacao || "") + " " +
+          (faq.pergunta || "") + " " +
+          (faq.resposta || "");
+        matchPesquisa = target.toLowerCase().includes(textoPesquisa);
       }
+      let matchChatbot = true;
+      if (filtroChatbot) matchChatbot = String(faq.chatbot_id) === filtroChatbot;
+      let matchIdioma = true;
+      if (filtroIdioma) matchIdioma = (faq.idioma || "").toLowerCase() === filtroIdioma.toLowerCase();
 
-      container.innerHTML = `
-        <table class="faq-tabela">
-          <thead>
-            <tr><th>ID</th><th>Categoria</th><th>Pergunta</th><th>Resposta</th></tr>
-          </thead>
-          <tbody>
-            ${faqs.map(f => `
+      return matchPesquisa && matchChatbot && matchIdioma;
+    });
+
+    lista.innerHTML = `
+      <table class="faq-tabela-backoffice">
+        <thead>
+          <tr>
+            <th>Chatbot</th>
+            <th>Descrição</th>
+            <th>Pergunta</th>
+            <th>Documento</th>
+            <th>Idioma</th>
+            <th>Categorias da FAQ</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${faqsFiltradas.map(faq => {
+            let docLinks = "";
+            if (faq.links_documentos && faq.links_documentos.trim()) {
+              docLinks = faq.links_documentos.split(",").map(link => {
+                link = link.trim();
+                if (!link) return "";
+                return `<a href="${link}" target="_blank">${link.length > 35 ? link.slice(0, 32) + "..." : link}</a>`;
+              }).join("<br>");
+            }
+            let flag = (faq.idioma === "pt" || faq.idioma === "Português") ?
+              '<img src="images/pt.jpg" style="height:20px" title="Português">' : (faq.idioma || "-");
+            return `
               <tr>
-                <td>${f.faq_id}</td>
-                <td>${f.categoria || '—'}</td>
-                <td>${f.pergunta}</td>
-                <td>${f.resposta}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      `;
-    } else {
-      mostrarRespostas();
-    }
-  } catch {
-    if (paraDropdown) {
-      const container = document.getElementById(`faqTabelaBot-${chatbotId}`);
-      if (container) container.innerHTML = "<p>❌ Erro ao carregar FAQs do chatbot.</p>";
-    }
+                <td>${chatbotsMap[faq.chatbot_id] || "-"}</td>
+                <td>${faq.designacao || "-"}</td>
+                <td>${faq.pergunta || "-"}</td>
+                <td>${docLinks || "-"}</td>
+                <td>${flag}</td>
+                <td>${faq.categoria_nome || categoriasMap[faq.categoria_id] || "-"}</td>
+                <td>
+                  <button class="btn-remover" onclick="pedirConfirmacao(${faq.faq_id})">Remover</button>
+                  <button class="btn-editar" onclick="editarFAQ(${faq.faq_id})">Editar</button>
+                </td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    lista.innerHTML = "<p style='color:red;'>Erro ao carregar FAQs.</p>";
   }
 }
 
+async function carregarTabelaFAQs(chatbotId, paraDropdown = false) {
+  if (paraDropdown) {
+    const container = document.getElementById(`faqTabelaBot-${chatbotId}`);
+    if (container) container.innerHTML = "";
+    return;
+  }
+  carregarTabelaFAQsBackoffice();
+}
+
 async function mostrarRespostas() {
-  const lista = document.getElementById('listaFAQs');
-  if (!lista) {
-    console.error("Elemento listaFAQs não encontrado.");
-    return;
-  }
-
-  lista.innerHTML = "<p>A carregar faqs...</p>";
-
-  const chatbotId = parseInt(localStorage.getItem("chatbotAtivo")) || window.chatbotSelecionado;
-  if (!chatbotId) {
-    lista.innerHTML = "<p>⚠️ Nenhum chatbot ativo ou selecionado. Vá a Recursos para selecionar um.</p>";
-    return;
-  }
-
-  async function fetchWithRetry(url, retries = 3) {
-    for (let i = 0; i < retries; i++) {
-      try {
-        const res = await fetch(`${url}?t=${Date.now()}`);
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        const faqs = await res.json();
-        return faqs;
-      } catch (error) {
-        if (i === retries - 1) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-      }
-    }
-  }
-
-  try {
-    const faqs = await fetchWithRetry(`http://localhost:5000/faqs/chatbot/${chatbotId}`);
-
-    if (!faqs.length) {
-      lista.innerHTML = "<p>Sem FAQs registadas para este chatbot.</p>";
-      return;
-    }
-
-    lista.innerHTML = `
-      <input type="text" id="pesquisaFAQ" placeholder="🔍 Procurar pergunta..." style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 6px;">
-      <div id="faqResultados"></div>
-    `;
-
-    const resultados = document.getElementById("faqResultados");
-
-    function renderizarFAQs(filtradas) {
-      resultados.innerHTML = filtradas.map(faq => `
-        <div class="faq-item">
-          <strong>${faq.pergunta || 'Sem pergunta'}</strong><br>
-          <p>${faq.resposta || 'Sem resposta'}</p>
-          <button onclick="pedirConfirmacao(${faq.faq_id})">Eliminar</button>
-          <hr>
-        </div>
-      `).join('');
-    }
-
-    renderizarFAQs(faqs);
-
-    const input = document.getElementById("pesquisaFAQ");
-    input.addEventListener("input", () => {
-      const termo = input.value.toLowerCase().trim();
-      const filtradas = faqs.filter(faq =>
-        faq.pergunta.toLowerCase().includes(termo) ||
-        (faq.resposta && faq.resposta.toLowerCase().includes(termo))
-      );
-      renderizarFAQs(filtradas);
-    });
-
-  } catch (error) {
-  }
+  carregarTabelaFAQsBackoffice();
 }
 
 function pedirConfirmacao(faq_id) {
   if (confirm("Tens a certeza que queres eliminar esta FAQ?")) {
     eliminarFAQ(faq_id);
-  }
-}
-
-async function eliminarFAQ(faq_id) {
-  try {
-    const res = await fetch(`http://localhost:5000/faqs/${faq_id}`, { method: "DELETE" });
-    if (res.ok) mostrarRespostas();
-    else alert("❌ Erro ao eliminar FAQ.");
-  } catch {
-    alert("❌ Erro de comunicação com o servidor.");
   }
 }
 
@@ -386,11 +362,41 @@ document.querySelectorAll(".uploadForm").forEach(uploadForm => {
   });
 });
 
+async function eliminarFAQ(faq_id) {
+  try {
+    const res = await fetch(`http://localhost:5000/faqs/${faq_id}`, { method: "DELETE" });
+    if (res.ok) mostrarRespostas();
+    else alert("❌ Erro ao eliminar FAQ.");
+  } catch {
+    alert("❌ Erro de comunicação com o servidor.");
+  }
+}
+
 window.carregarChatbots = carregarChatbots;
 window.carregarTabelaFAQs = carregarTabelaFAQs;
+window.carregarTabelaFAQsBackoffice = carregarTabelaFAQsBackoffice;
 window.mostrarRespostas = mostrarRespostas;
 window.eliminarFAQ = eliminarFAQ;
 window.responderPergunta = responderPergunta;
 window.obterPerguntasSemelhantes = obterPerguntasSemelhantes;
 window.pedirConfirmacao = pedirConfirmacao;
 window.responderComCategoria = responderComCategoria;
+
+document.addEventListener("DOMContentLoaded", () => {
+  carregarChatbots();
+  carregarTabelaFAQsBackoffice();
+
+  const pesquisaInput = document.getElementById("pesquisaFAQ");
+  const filtroChatbot = document.getElementById("filtroChatbot");
+  const filtroIdioma = document.getElementById("filtroIdioma");
+
+  if (pesquisaInput) {
+    pesquisaInput.addEventListener("input", carregarTabelaFAQsBackoffice);
+  }
+  if (filtroChatbot) {
+    filtroChatbot.addEventListener("change", carregarTabelaFAQsBackoffice);
+  }
+  if (filtroIdioma) {
+    filtroIdioma.addEventListener("change", carregarTabelaFAQsBackoffice);
+  }
+});

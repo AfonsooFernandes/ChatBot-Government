@@ -28,11 +28,21 @@ function gerarOptionsChatbotSelect(allBots) {
   return options;
 }
 
+function gerarOptionsIdiomaSelect() {
+  return `
+    <select name="idioma" required>
+      <option value="pt" selected>Português</option>
+      <option value="en">Inglês</option>
+    </select>
+  `;
+}
+
 function criarBotHTML(bot, allBots) {
   const dataAtual = new Date().toLocaleDateString('pt-PT', {
     day: '2-digit', month: 'short', year: 'numeric'
   });
   const optionsHtml = gerarOptionsChatbotSelect(allBots);
+  const idiomaSelectHtml = gerarOptionsIdiomaSelect();
   return `
     <div class="bot-wrapper">
       <div class="bot-item nao-publicado" data-chatbot-id="${bot.chatbot_id}" onclick="toggleBotDropdown(this)">
@@ -72,6 +82,7 @@ function criarBotHTML(bot, allBots) {
             <select name="chatbot_id" required>
               ${optionsHtml}
             </select>
+            ${idiomaSelectHtml}
             <input type="text" name="designacao" placeholder="Designação" required>
             <input type="text" name="pergunta" placeholder="Pergunta" required>
             <textarea name="resposta" placeholder="Resposta" required></textarea>
@@ -84,7 +95,7 @@ function criarBotHTML(bot, allBots) {
               <option value="5">Desporto</option>
               <option value="6">Ambiente</option>
             </select>
-            <input type="text" name="documentos" placeholder="IDs de Documentos (separados por vírgula)">
+            <input type="text" name="links_documentos" placeholder="Links de Documentos (separados por vírgula)">
             <input type="text" name="relacionadas" placeholder="IDs de FAQs relacionadas (separados por vírgula)">
             <button type="submit">Adicionar FAQ</button>
             <div id="mensagemFAQ"></div>
@@ -101,7 +112,6 @@ function criarBotHTML(bot, allBots) {
             </form>
           </div>
         </div>
-        <h3>FAQs Associadas</h3>
         <div id="faqTabelaBot-${bot.chatbot_id}"></div>
       </div>
     </div>

@@ -289,12 +289,19 @@ form button:hover,
 }
 
 #pesquisaFAQ {
-  font-size: 14px;
-  padding: 10px 12px;
+  font-size: 15px;
+  padding: 8px 14px;
   border: 1px solid #ccc;
   border-radius: 6px;
   width: 100%;
+  max-width: 350px;
   box-sizing: border-box;
+  transition: border 0.2s;
+}
+
+#pesquisaFAQ:focus {
+  border: 1.5px solid #d4af37;
+  outline: none;
 }
 
 .left-content {
@@ -320,4 +327,99 @@ form button:hover,
   margin: 40px 0;
   color: #000000;
   font-size: 18px;
+}
+
+.faq-filtros-bar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 22px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+#filtroChatbot, #filtroIdioma {
+  padding: 8px 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 15px;
+  background: #faf9f6;
+  transition: border 0.2s;
+  min-width: 170px;
+}
+
+#filtroChatbot:focus, #filtroIdioma:focus {
+  border: 1.5px solid #d4af37;
+  outline: none;
+}
+
+.faq-tabela-backoffice {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(31, 41, 55, 0.10);
+  overflow: hidden;
+  margin-bottom: 32px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+}
+.faq-tabela-backoffice th, 
+.faq-tabela-backoffice td {
+  padding: 14px 14px;
+  text-align: left;
+}
+.faq-tabela-backoffice thead {
+  background: #d4af37;
+  color: #fff;
+}
+.faq-tabela-backoffice tbody tr:nth-child(even) {
+  background: #f7f7f7;
+}
+.faq-tabela-backoffice tbody tr:hover {
+  background: #ede9fe;
+  transition: background 0.18s;
+}
+.faq-tabela-backoffice td a {
+  color: #1461a7;
+  text-decoration: underline;
+  word-break: break-all;
+}
+.faq-tabela-backoffice th {
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  font-size: 15px;
+  border-bottom: 2px solid #ddd;
+}
+.faq-tabela-backoffice td {
+  border-bottom: 1px solid #ececec;
+}
+
+.btn-remover,
+.btn-editar {
+  padding: 7px 15px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  margin-right: 8px;
+  margin-bottom: 2px;
+  transition: background 0.2s;
+}
+
+.btn-remover {
+  background: #ff5e5e;
+  color: #fff;
+}
+.btn-remover:hover {
+  background: #e03939;
+}
+
+.btn-editar {
+  background: #1976d2; 
+  color: #fff;
+}
+.btn-editar:hover {
+  background: #2196f3;
+  color: #fff;
 }

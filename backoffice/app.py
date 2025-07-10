@@ -30,11 +30,11 @@ except Exception as e:
     print("❌ Erro ao conectar à base de dados:", e)
     raise
 
-
 INDEX_PATH = "faiss.index"
 FAQ_EMBEDDINGS_PATH = "faq_embeddings.pkl"
 embedding_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
+# ---------- FUNÇÕES DE EMBEDDING E FAISS ----------
 def get_faqs_from_db(chatbot_id=None):
     if chatbot_id:
         cur.execute("SELECT faq_id, pergunta, resposta, chatbot_id FROM FAQ WHERE chatbot_id = %s", (chatbot_id,))
@@ -105,39 +105,31 @@ def pesquisar_faiss(pergunta, chatbot_id=None, k=1):
             })
         return results
 
-# ---------- FUNÇÃO DE SIMILARIDADE ----------
+# ---------- SIMILARIDADE FUZZY ----------
 def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id):
     cur.execute("SELECT pergunta, resposta FROM FAQ WHERE chatbot_id = %s", (chatbot_id,))
     faqs = cur.fetchall()
-
     pergunta_normalizada = pergunta_utilizador.strip().lower()
-
     melhor_pergunta = None
     melhor_resposta = None
     maior_score = 0
-
     for pergunta, resposta in faqs:
         pergunta_bd = pergunta.strip().lower()
-
         if pergunta_normalizada == pergunta_bd:
             print(f"✅ Match exato com: '{pergunta}'")
             return {"pergunta": pergunta, "resposta": resposta, "score": 100}
-
         score = fuzz.ratio(pergunta_normalizada, pergunta_bd)
         if score > maior_score:
             maior_score = score
             melhor_pergunta = pergunta
             melhor_resposta = resposta
-
     print(f"➡️ Melhor correspondência: '{melhor_pergunta}' (score: {maior_score})")
-
     if maior_score >= 50:
         return {"pergunta": melhor_pergunta, "resposta": melhor_resposta, "score": maior_score}
     else:
         return None
 
-# ---------- ROTAS ----------
-
+# ---------- ROTAS DE CATEGORIA, CHATBOT, FAQ ----------
 @app.route("/categorias", methods=["GET"])
 def get_categorias():
     try:
@@ -145,6 +137,7 @@ def get_categorias():
         data = cur.fetchall()
         return jsonify([{"categoria_id": c[0], "nome": c[1]} for c in data])
     except Exception as e:
+        conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/chatbots", methods=["GET"])
@@ -156,6 +149,7 @@ def get_chatbots():
             {"chatbot_id": row[0], "nome": row[1], "descricao": row[2]} for row in data
         ])
     except Exception as e:
+        conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/chatbots", methods=["POST"])
@@ -163,7 +157,7 @@ def criar_chatbot():
     data = request.get_json()
     nome = data.get("nome", "").strip()
     descricao = data.get("descricao", "").strip()
-    categoria_id = data.get("categoria_id")  # pode vir None
+    categoria_id = data.get("categoria_id") 
 
     if not nome:
         return jsonify({"success": False, "error": "Nome obrigatório."}), 400
@@ -197,7 +191,7 @@ def obter_fonte_chatbot(chatbot_id):
         cur.execute("SELECT descricao FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
         row = cur.fetchone()
         if row:
-            fonte = row[0] if row[0] else "faq"  
+            fonte = row[0] if row[0] else "faq"
             return jsonify({"success": True, "fonte": fonte})
         return jsonify({"success": False, "erro": "Chatbot não encontrado."}), 404
     except Exception as e:
@@ -208,15 +202,12 @@ def definir_fonte_chatbot():
     data = request.get_json()
     chatbot_id = data.get("chatbot_id")
     fonte = data.get("fonte")
-
     if fonte not in ["faq", "faiss", "faq+raga"]:
         return jsonify({"success": False, "erro": "Fonte inválida."}), 400
-
     try:
         cur.execute("SELECT 1 FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
         if not cur.fetchone():
             return jsonify({"success": False, "erro": "Chatbot não encontrado."}), 404
-
         cur.execute("UPDATE Chatbot SET descricao = %s WHERE chatbot_id = %s", (fonte, chatbot_id))
         conn.commit()
         return jsonify({"success": True})
@@ -253,8 +244,8 @@ def obter_faq_por_categoria(categoria):
                 "success": False,
                 "erro": f"Nenhuma FAQ encontrada para a categoria '{categoria}'."
             }), 404
-
     except Exception as e:
+        conn.rollback()
         return jsonify({"success": False, "erro": str(e)}), 500
 
 @app.route("/faqs", methods=["GET"])
@@ -266,6 +257,7 @@ def get_faqs():
             {"faq_id": f[0], "chatbot_id": f[1], "designacao": f[2], "pergunta": f[3], "resposta": f[4]} for f in data
         ])
     except Exception as e:
+        conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/faqs/chatbot/<int:chatbot_id>", methods=["GET"])
@@ -288,61 +280,58 @@ def get_faqs_por_chatbot(chatbot_id):
             for row in data
         ])
     except Exception as e:
+        conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/faqs", methods=["POST"])
 def add_faq():
-    global faiss_index, faqs_db, faq_embeddings   
+    global faiss_index, faqs_db, faq_embeddings
     data = request.get_json()
     try:
-        if str(data["chatbot_id"]) == "todos":
-            cur.execute("SELECT chatbot_id FROM Chatbot")
-            todos_chatbots = [row[0] for row in cur.fetchall()]
-            inseridos = 0
-            ja_existiam = 0
-            for bot_id in todos_chatbots:
-                cur.execute("""
-                    SELECT faq_id FROM FAQ
-                    WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s
-                """, (bot_id, data["designacao"], data["pergunta"], data["resposta"]))
-                if cur.fetchone():
-                    ja_existiam += 1
-                    continue
-                cur.execute("""
-                    INSERT INTO FAQ (chatbot_id, categoria_id, designacao, pergunta, resposta)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (bot_id, data["categoria_id"], data["designacao"], data["pergunta"], data["resposta"]))
-                inseridos += 1
-            conn.commit()
-            build_faiss_index()  
-            faiss_index, faqs_db, faq_embeddings = load_faiss_index()
-            return jsonify({"success": True, "inseridos": inseridos, "ja_existiam": ja_existiam})
-        else:
-            cur.execute("""
-                SELECT faq_id FROM FAQ
-                WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s
-            """, (data["chatbot_id"], data["designacao"], data["pergunta"], data["resposta"]))
-            if cur.fetchone():
-                return jsonify({"success": False, "error": "Esta FAQ já está inserida."}), 409
+        idioma = data.get("idioma", "").strip()
+        if not idioma:
+            return jsonify({"success": False, "error": "O campo 'idioma' é obrigatório."}), 400
 
-            cur.execute("""
-                INSERT INTO FAQ (chatbot_id, categoria_id, designacao, pergunta, resposta)
-                VALUES (%s, %s, %s, %s, %s)
-                RETURNING faq_id
-            """, (data["chatbot_id"], data["categoria_id"], data["designacao"], data["pergunta"], data["resposta"]))
-            faq_id = cur.fetchone()[0]
+        links_documentos = data.get("links_documentos", "").strip()
 
-            if "documentos" in data and data["documentos"].strip():
-                for doc_id in data["documentos"].split(','):
-                    cur.execute("INSERT INTO FAQ_Documento (faq_id, documento_id) VALUES (%s, %s)", (faq_id, int(doc_id.strip())))
+        cur.execute("""
+            SELECT faq_id FROM FAQ
+            WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s AND idioma = %s
+        """, (data["chatbot_id"], data["designacao"], data["pergunta"], data["resposta"], idioma))
+        if cur.fetchone():
+            return jsonify({"success": False, "error": "Esta FAQ já está inserida."}), 409
 
-            if "relacionadas" in data and data["relacionadas"].strip():
-                for rel_id in data["relacionadas"].split(','):
-                    cur.execute("INSERT INTO FAQ_Relacionadas (faq_id, faq_relacionada_id) VALUES (%s, %s)", (faq_id, int(rel_id.strip())))
-            conn.commit()
-            build_faiss_index()
-            faiss_index, faqs_db, faq_embeddings = load_faiss_index()
-            return jsonify({"success": True, "faq_id": faq_id})
+        cur.execute("""
+            INSERT INTO FAQ (chatbot_id, categoria_id, designacao, pergunta, resposta, idioma, links_documentos)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING faq_id
+        """, (
+            data["chatbot_id"],
+            data["categoria_id"],
+            data["designacao"],
+            data["pergunta"],
+            data["resposta"],
+            idioma,
+            links_documentos
+        ))
+        faq_id = cur.fetchone()[0]
+
+        if links_documentos:
+            for link in links_documentos.split(','):
+                link = link.strip()
+                if link:
+                    cur.execute(
+                        "INSERT INTO FAQ_Documento (faq_id, link) VALUES (%s, %s)",
+                        (faq_id, link)
+                    )
+
+        if "relacionadas" in data and data["relacionadas"].strip():
+            for rel_id in data["relacionadas"].split(','):
+                cur.execute("INSERT INTO FAQ_Relacionadas (faq_id, faq_relacionada_id) VALUES (%s, %s)", (faq_id, int(rel_id.strip())))
+        conn.commit()
+        build_faiss_index()
+        faiss_index, faqs_db, faq_embeddings = load_faiss_index()
+        return jsonify({"success": True, "faq_id": faq_id})
     except Exception as e:
         conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
@@ -367,9 +356,22 @@ def upload_faq_docx():
 
     file = request.files['file']
     chatbot_id_raw = request.form.get("chatbot_id")
-
     if not chatbot_id_raw:
         return jsonify({"success": False, "error": "Chatbot ID não fornecido."}), 400
+
+    def normalizar_idioma(valor):
+        if not valor:
+            return "pt"
+        valor = valor.strip().lower()
+        if valor.startswith("port"):
+            return "pt"
+        if valor.startswith("ingl"):
+            return "en"
+        if valor.startswith("espa"):
+            return "es"
+        if valor.startswith("fran"):
+            return "fr"
+        return valor[:2]
 
     try:
         doc = docx.Document(file)
@@ -391,9 +393,16 @@ def upload_faq_docx():
         pergunta = dados.get("questão")
         resposta = dados.get("resposta")
         categoria = dados.get("categoria")
+        idioma_lido = dados.get("idioma", "Português")
+        idioma = normalizar_idioma(idioma_lido)
+
+        links_documentos = ""
+        for key in ["documentos associados", "links de documentos"]:
+            if key in dados:
+                links_documentos = dados[key]
+                break
 
         chatbot_ids = []
-
         if chatbot_id_raw == "todos":
             cur.execute("SELECT chatbot_id FROM Chatbot")
             chatbot_ids = [row[0] for row in cur.fetchall()]
@@ -403,16 +412,16 @@ def upload_faq_docx():
         for chatbot_id in chatbot_ids:
             cur.execute("""
                 SELECT faq_id FROM FAQ
-                WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s
-            """, (chatbot_id, designacao, pergunta, resposta))
+                WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s AND idioma = %s
+            """, (chatbot_id, designacao, pergunta, resposta, idioma))
             if cur.fetchone():
-                continue  
+                continue
 
             cur.execute("""
-                INSERT INTO FAQ (chatbot_id, designacao, pergunta, resposta)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO FAQ (chatbot_id, designacao, pergunta, resposta, idioma, links_documentos)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING faq_id
-            """, (chatbot_id, designacao, pergunta, resposta))
+            """, (chatbot_id, designacao, pergunta, resposta, idioma, links_documentos))
             faq_id = cur.fetchone()[0]
 
             if categoria:
@@ -421,12 +430,52 @@ def upload_faq_docx():
                 if result:
                     cur.execute("UPDATE FAQ SET categoria_id = %s WHERE faq_id = %s", (result[0], faq_id))
 
+            if links_documentos:
+                for link in links_documentos.split(','):
+                    link = link.strip()
+                    if link:
+                        cur.execute(
+                            "INSERT INTO FAQ_Documento (faq_id, link) VALUES (%s, %s)",
+                            (faq_id, link)
+                        )
+
         conn.commit()
         build_faiss_index()
         global faiss_index, faqs_db, faq_embeddings
         faiss_index, faqs_db, faq_embeddings = load_faiss_index()
-        return jsonify({"success": True, "message": "FAQ inserida com sucesso."})
+        return jsonify({"success": True, "message": "FAQ e links inseridos com sucesso."})
 
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/faqs/detalhes", methods=["GET"])
+def get_faqs_detalhes():
+    try:
+        cur.execute("""
+            SELECT f.faq_id, f.chatbot_id, f.designacao, f.pergunta, f.resposta, f.idioma, f.links_documentos,
+                   f.categoria_id, c.nome AS categoria_nome, ch.nome AS chatbot_nome
+            FROM FAQ f
+            LEFT JOIN Categoria c ON f.categoria_id = c.categoria_id
+            LEFT JOIN Chatbot ch ON f.chatbot_id = ch.chatbot_id
+            ORDER BY f.faq_id
+        """)
+        data = cur.fetchall()
+        return jsonify([
+            {
+                "faq_id": r[0],
+                "chatbot_id": r[1],
+                "designacao": r[2],
+                "pergunta": r[3],
+                "resposta": r[4],
+                "idioma": r[5],
+                "links_documentos": r[6],
+                "categoria_id": r[7],
+                "categoria_nome": r[8],
+                "chatbot_nome": r[9],
+            }
+            for r in data
+        ])
     except Exception as e:
         conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
@@ -437,10 +486,8 @@ def obter_resposta():
     pergunta = dados.get("pergunta", "").strip()
     chatbot_id = dados.get("chatbot_id")
     fonte = dados.get("fonte", "faq")
-
     if not pergunta or not chatbot_id:
         return jsonify({"success": False, "erro": "Pergunta ou chatbot_id não fornecido."}), 400
-
     try:
         if fonte == "faq":
             resultado = obter_faq_mais_semelhante(pergunta, chatbot_id)
@@ -451,7 +498,6 @@ def obter_resposta():
                 """, (resultado["pergunta"], chatbot_id))
                 row = cur.fetchone()
                 faq_id, categoria_id = row if row else (None, None)
-
                 return jsonify({
                     "success": True,
                     "fonte": "FAQ",
@@ -459,7 +505,6 @@ def obter_resposta():
                     "faq_id": faq_id,
                     "categoria_id": categoria_id
                 })
-
             return jsonify({"success": False, "erro": "Pergunta não encontrada nas FAQs."})
 
         elif fonte == "faiss":
@@ -483,7 +528,6 @@ def obter_resposta():
                 """, (resultado["pergunta"], chatbot_id))
                 row = cur.fetchone()
                 faq_id, categoria_id = row if row else (None, None)
-
                 return jsonify({
                     "success": True,
                     "fonte": "FAQ",
@@ -502,10 +546,8 @@ def obter_resposta():
                     })
                 else:
                     return jsonify({"success": False, "erro": "Nenhuma resposta encontrada (RAG/FAISS)."})
-
         else:
             return jsonify({"success": False, "erro": "Fonte inválida."}), 400
-
     except Exception as e:
         return jsonify({"success": False, "erro": str(e)}), 500
 
@@ -514,7 +556,6 @@ def perguntas_semelhantes():
     dados = request.get_json()
     pergunta_atual = dados.get("pergunta", "")
     chatbot_id = dados.get("chatbot_id")
-
     try:
         cur.execute("""
             SELECT f.categoria_id
@@ -522,12 +563,9 @@ def perguntas_semelhantes():
             WHERE LOWER(f.pergunta) = LOWER(%s) AND f.chatbot_id = %s
         """, (pergunta_atual.strip().lower(), chatbot_id))
         categoria_row = cur.fetchone()
-
         if not categoria_row:
             return jsonify({"success": True, "sugestoes": []})
-
         categoria_id = categoria_row[0]
-
         cur.execute("""
             SELECT pergunta
             FROM FAQ
@@ -536,12 +574,10 @@ def perguntas_semelhantes():
             LIMIT 2
         """, (categoria_id, pergunta_atual.strip().lower(), chatbot_id))
         sugestoes = [row[0] for row in cur.fetchall()]
-
         return jsonify({"success": True, "sugestoes": sugestoes})
     except Exception as e:
-        return jsonify({"success": False, "erro": str(e)}), 500    
+        return jsonify({"success": False, "erro": str(e)}), 500
 
-# ----------- ENDPOINT PARA REBUILD FAISS (Opcional) -----------
 @app.route("/rebuild-faiss", methods=["POST"])
 def rebuild_faiss():
     build_faiss_index()

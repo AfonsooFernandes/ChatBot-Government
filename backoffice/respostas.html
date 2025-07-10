@@ -39,6 +39,18 @@
         <div id="indicadorAtivo" style="display: none;" class="ativo-indicador"></div>
         <div id="secaoRespostas" class="secao left-content" style="display: block !important;">
           <h2>FAQs Registadas</h2>
+          <div id="filtrosFAQs" style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px;">
+            <input type="text" id="pesquisaFAQ" placeholder="Pesquisar pergunta, resposta ou designação..." style="flex:2; max-width:340px;">
+            <select id="filtroChatbot" style="flex:1; max-width:180px;">
+              <option value="">Todos os Chatbots</option>
+            </select>
+            <select id="filtroIdioma" style="flex:1; max-width:140px;">
+              <option value="">Todos os Idiomas</option>
+              <option value="pt">Português</option>
+              <option value="en">Inglês</option>
+            </select>
+          </div>
+          
           <div id="tituloFAQ" style="margin-bottom: 12px; color: #4b4b4b;"></div>
           <div id="listaFAQs" style="margin-top: 20px;"></div>
         </div>
