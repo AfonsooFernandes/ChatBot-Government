@@ -341,15 +341,14 @@ def update_faq(faq_id):
         pergunta = data.get("pergunta", "").strip()
         resposta = data.get("resposta", "").strip()
         idioma = data.get("idioma", "pt").strip()
-        recomendado = data.get("recomendado", False)
         categorias = data.get("categorias", [])
 
         categoria_id = categorias[0] if categorias else None 
 
         cur.execute("""
-            UPDATE FAQ SET pergunta=%s, resposta=%s, idioma=%s, recomendado=%s, categoria_id=%s
+            UPDATE FAQ SET pergunta=%s, resposta=%s, idioma=%s, categoria_id=%s
             WHERE faq_id=%s
-        """, (pergunta, resposta, idioma, recomendado, categoria_id, faq_id))
+        """, (pergunta, resposta, idioma, categoria_id, faq_id))
 
         conn.commit()
         build_faiss_index()
@@ -360,8 +359,6 @@ def update_faq(faq_id):
         conn.rollback()
         print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
-
-# =========================
 
 @app.route("/faqs", methods=["POST"])
 def add_faq():
