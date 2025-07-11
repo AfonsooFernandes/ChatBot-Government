@@ -50,7 +50,6 @@
               <option value="en">Inglês</option>
             </select>
           </div>
-          
           <div id="tituloFAQ" style="margin-bottom: 12px; color: #4b4b4b;"></div>
           <div id="listaFAQs" style="margin-top: 20px;"></div>
         </div>
@@ -98,6 +97,35 @@
         <button id="confirmarEliminacao">Sim</button>
         <button id="cancelarEliminacao">Cancelar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal de Editar FAQ -->
+  <div id="modalEditarFAQ" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <h2 style="margin-bottom: 22px;">Editar FAQ</h2>
+      <form id="formEditarFAQ" autocomplete="off">
+        <label for="editarPergunta">Pergunta</label>
+        <textarea name="pergunta" id="editarPergunta" required class="input-lg" rows="4"></textarea>
+
+        <label for="editarResposta" style="margin-top:18px;">Resposta</label>
+        <textarea name="resposta" id="editarResposta" required class="input-lg" rows="8"></textarea>
+
+        <label for="editarIdioma" style="margin-top:18px;">Idioma</label>
+        <select name="idioma" id="editarIdioma" class="input-lg" style="max-width: 100%;">
+          <option value="pt">Português (PT)</option>
+          <option value="en">Inglês (EN)</option>
+        </select>
+
+        <label style="margin-bottom: 7px; margin-top: 22px;">Categorias associadas</label>
+        <div id="editarCategoriasContainer" class="categorias-scroll"></div>
+
+        <div class="btn-bar" style="margin-top: 30px;">
+          <button type="submit" class="btn-salvar-faq" id="btnGuardarFAQ">Guardar</button>
+          <button type="button" class="btn-cancelar" id="btnCancelarFAQ">Cancelar</button>
+        </div>
+        <div id="editarStatusFAQ" style="margin-top:14px; font-weight: bold;"></div>
+      </form>
     </div>
   </div>
 

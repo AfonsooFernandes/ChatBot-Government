@@ -132,6 +132,7 @@ def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id):
         return None
 
 # ---------- ROTAS DE CATEGORIA, CHATBOT, FAQ ----------
+
 @app.route("/categorias", methods=["GET"])
 def get_categorias():
     cur = conn.cursor()
@@ -272,6 +273,40 @@ def get_faqs():
         conn.rollback()
         print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route("/faqs/<int:faq_id>", methods=["GET"])
+def get_faq_by_id(faq_id):
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            SELECT f.faq_id, f.chatbot_id, f.categoria_id, f.designacao, f.pergunta, f.resposta, f.idioma, f.links_documentos,
+                   c.nome as categoria_nome
+            FROM FAQ f
+            LEFT JOIN Categoria c ON f.categoria_id = c.categoria_id
+            WHERE f.faq_id = %s
+        """, (faq_id,))
+        faq = cur.fetchone()
+        if not faq:
+            return jsonify({"success": False, "error": "FAQ não encontrada."}), 404
+
+        return jsonify({
+            "success": True,
+            "faq": {
+                "faq_id": faq[0],
+                "chatbot_id": faq[1],
+                "categoria_id": faq[2],
+                "designacao": faq[3],
+                "pergunta": faq[4],
+                "resposta": faq[5],
+                "idioma": faq[6],
+                "links_documentos": faq[7],
+                "categoria_nome": faq[8]
+            }
+        })
+    except Exception as e:
+        conn.rollback()
+        print(traceback.format_exc())
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/faqs/chatbot/<int:chatbot_id>", methods=["GET"])
 def get_faqs_por_chatbot(chatbot_id):
@@ -297,6 +332,36 @@ def get_faqs_por_chatbot(chatbot_id):
         conn.rollback()
         print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/faqs/<int:faq_id>", methods=["PUT"])
+def update_faq(faq_id):
+    cur = conn.cursor()
+    data = request.get_json()
+    try:
+        pergunta = data.get("pergunta", "").strip()
+        resposta = data.get("resposta", "").strip()
+        idioma = data.get("idioma", "pt").strip()
+        recomendado = data.get("recomendado", False)
+        categorias = data.get("categorias", [])
+
+        categoria_id = categorias[0] if categorias else None 
+
+        cur.execute("""
+            UPDATE FAQ SET pergunta=%s, resposta=%s, idioma=%s, recomendado=%s, categoria_id=%s
+            WHERE faq_id=%s
+        """, (pergunta, resposta, idioma, recomendado, categoria_id, faq_id))
+
+        conn.commit()
+        build_faiss_index()
+        global faiss_index, faqs_db, faq_embeddings
+        faiss_index, faqs_db, faq_embeddings = load_faiss_index()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        print(traceback.format_exc())
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# =========================
 
 @app.route("/faqs", methods=["POST"])
 def add_faq():

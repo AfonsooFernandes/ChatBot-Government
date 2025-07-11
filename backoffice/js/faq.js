@@ -150,9 +150,8 @@ async function mostrarRespostas() {
 }
 
 function pedirConfirmacao(faq_id) {
-  if (confirm("Tens a certeza que queres eliminar esta FAQ?")) {
-    eliminarFAQ(faq_id);
-  }
+  window.faqIdAEliminar = faq_id;
+  document.getElementById("modalConfirmacao").style.display = "flex";
 }
 
 function responderPergunta(pergunta) {
@@ -361,6 +360,90 @@ document.querySelectorAll(".uploadForm").forEach(uploadForm => {
     }
   });
 });
+
+let faqAEditar = null;
+let categoriasDisponiveis = [];
+
+async function editarFAQ(faq_id) {
+  try {
+    const [faqResp, categorias] = await Promise.all([
+      fetch(`http://localhost:5000/faqs/${faq_id}`).then(r => r.json()),
+      fetch("http://localhost:5000/categorias").then(r => r.json())
+    ]);
+    if (!faqResp.success || !faqResp.faq) {
+      alert("Erro ao carregar dados da FAQ.");
+      return;
+    }
+    faqAEditar = faqResp.faq;
+    categoriasDisponiveis = categorias;
+
+    document.getElementById('editarPergunta').value = faqAEditar.pergunta || "";
+    document.getElementById('editarResposta').value = faqAEditar.resposta || "";
+    document.getElementById('editarIdioma').value = faqAEditar.idioma || "pt";
+    if (document.getElementById('editarRecomendado'))
+      document.getElementById('editarRecomendado').checked = !!faqAEditar.recomendado;
+
+    const catContainer = document.getElementById('editarCategoriasContainer');
+    catContainer.innerHTML = categorias.map(cat => {
+      const checked = cat.categoria_id === faqAEditar.categoria_id;
+      return `<label style="display:inline-flex;align-items:center;gap:3px;">
+        <input type="checkbox" value="${cat.categoria_id}" ${checked ? "checked" : ""} />${cat.nome}
+      </label>`;
+    }).join("");
+
+    document.getElementById("modalEditarFAQ").style.display = "flex";
+    document.getElementById("editarStatusFAQ").textContent = "";
+  } catch (err) {
+    alert("Erro ao carregar dados da FAQ.");
+  }
+}
+
+document.getElementById("btnCancelarFAQ").onclick = function() {
+  document.getElementById("modalEditarFAQ").style.display = "none";
+};
+
+document.getElementById("formEditarFAQ").onsubmit = async function(e) {
+  e.preventDefault();
+  const status = document.getElementById("editarStatusFAQ");
+  status.textContent = "";
+
+  if (!faqAEditar) return;
+
+  const pergunta = document.getElementById('editarPergunta').value.trim();
+  const resposta = document.getElementById('editarResposta').value.trim();
+  const idioma = document.getElementById('editarIdioma').value;
+  const recomendado = document.getElementById('editarRecomendado') ? document.getElementById('editarRecomendado').checked : false;
+
+  const categoriasSel = Array.from(document.querySelectorAll('#editarCategoriasContainer input[type="checkbox"]:checked'))
+    .map(cb => parseInt(cb.value));
+
+  try {
+    const res = await fetch(`http://localhost:5000/faqs/${faqAEditar.faq_id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pergunta, resposta, idioma,
+        recomendado,
+        categorias: categoriasSel
+      })
+    });
+    const out = await res.json();
+    if (out.success) {
+      status.textContent = "✅ FAQ atualizada com sucesso!";
+      status.style.color = "green";
+      setTimeout(() => {
+        document.getElementById("modalEditarFAQ").style.display = "none";
+        mostrarRespostas();
+      }, 800);
+    } else {
+      status.textContent = out.error || "Erro ao atualizar.";
+      status.style.color = "red";
+    }
+  } catch (err) {
+    status.textContent = "Erro de comunicação com o servidor.";
+    status.style.color = "red";
+  }
+};
 
 async function eliminarFAQ(faq_id) {
   try {
