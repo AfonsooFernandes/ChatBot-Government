@@ -168,33 +168,107 @@ form button:hover,
   box-shadow: 0 0 0 2px #d4af3755;
 }
 
-.faq-tabela {
+.faq-tabela,
+.bots-tabela {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(31, 41, 55, 0.10);
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
 }
 
 .faq-tabela th,
-.faq-tabela td {
-  padding: 10px 12px;
-  border: 1px solid #ccc;
+.faq-tabela td,
+.bots-tabela th,
+.bots-tabela td {
+  padding: 12px 16px;
+  border: 1px solid #ececec;
   text-align: left;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
-.faq-tabela th {
+.faq-tabela th,
+.bots-tabela th {
   background-color: #f1f5f9;
   color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid #d4af37;
 }
 
-.faq-tabela td {
-  background-color: #ffffff;
-  color: #2c3e50;
-  font-size: 14px;
-}
-
-.faq-tabela tr:nth-child(even) td {
+.faq-tabela tbody tr:nth-child(even) td,
+.bots-tabela tbody tr:nth-child(even) td {
   background-color: #f9fafb;
+}
+
+.bots-tabela td {
+  background-color: #fff;
+  color: #2c3e50;
+  font-size: 15px;
+}
+
+.bots-tabela tbody tr:hover {
+  background: #ede9fe;
+  transition: background 0.18s;
+}
+
+.bots-tabela td a {
+  color: #1461a7;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.estado-indicador.ativo { color: #218838; font-weight: 600; }
+.estado-indicador.inativo { color: #dc3545; font-weight: 600; }
+.fonte-indicador { font-size: 0.97em; }
+
+.btn-ativo,
+.btn-editar,
+.btn-eliminar {
+  padding: 7px 15px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  margin-right: 8px;
+  margin-bottom: 2px;
+  transition: background 0.2s;
+}
+
+.btn-ativo {
+  background: #f6e05e;
+  color: #43402f;
+}
+.btn-ativo.ativo,
+.btn-ativo:active {
+  background: #218838;
+  color: #fff;
+}
+.btn-ativo:hover {
+  background: #e0c565;
+  color: #2c2a2a;
+}
+
+.btn-editar {
+  background: #1976d2; 
+  color: #fff;
+}
+.btn-editar:hover {
+  background: #2196f3;
+  color: #fff;
+}
+
+.btn-eliminar {
+  background: #ff5e5e;
+  color: #fff;
+}
+.btn-eliminar:hover {
+  background: #e03939;
 }
 
 .bot-dropdown {
@@ -422,4 +496,114 @@ form button:hover,
 .btn-editar:hover {
   background: #2196f3;
   color: #fff;
+}
+
+.filtros-bots-bar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 14px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.filtros-bots-bar input[type="text"],
+.filtros-bots-bar input[type="date"],
+.filtros-bots-bar select {
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-family: 'Inter', sans-serif;
+  color: #222;
+  transition: border 0.18s, box-shadow 0.18s;
+  box-shadow: 0 2px 8px rgba(30,30,30,0.03);
+  outline: none;
+  min-width: 190px;
+  height: 48px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.filtros-bots-bar input[type="text"] {
+  min-width: 250px;
+}
+
+.filtros-bots-bar input[type="text"]::placeholder,
+.filtros-bots-bar input[type="date"]::placeholder {
+  color: #bdbdbd;
+  font-weight: 400;
+  opacity: 1;
+}
+
+.filtros-bots-bar input[type="text"]:focus,
+.filtros-bots-bar input[type="date"]:focus,
+.filtros-bots-bar select:focus {
+  border-color: #d4af37;
+  box-shadow: 0 2px 14px rgba(212, 175, 55, 0.12);
+  background: #fffdf6;
+}
+
+.filtros-bots-bar select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #fff url("data:image/svg+xml,%3Csvg width='16' height='8' viewBox='0 0 16 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L8 7L15 1' stroke='%23bdbdbd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A") no-repeat right 18px center/15px;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+.filtros-bots-bar select option {
+  color: #333;
+  font-size: 15px;
+}
+
+.filtros-bots-bar input[type="date"]:not(:focus):invalid {
+  color: #bdbdbd;
+}
+
+.btn-novo-bot {
+  background: #d4af37;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 13px 32px;
+  font-weight: 700;
+  font-size: 17px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(212,175,55,0.09);
+  margin-bottom: 22px;
+  margin-top: 0;
+}
+.btn-novo-bot:hover {
+  background: #b99723;
+}
+
+#secaoRecursos > h2 {
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-bottom: 20px;
+  color: #232323;
+  letter-spacing: -0.01em;
+}
+
+.btn-adicionar-faq {
+  background: #f6e05e;
+  color: #2d2a15;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 18px 7px 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-right: 8px;
+  margin-bottom: 2px;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 1px 5px rgba(214,175,55,0.07);
+  position: relative;
+}
+.btn-adicionar-faq:hover {
+  background: #ffe066;
+  color: #b99723;
 }

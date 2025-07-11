@@ -2,14 +2,32 @@ let faqIdAEliminar = null;
 
 function pedirConfirmacao(id) {
   faqIdAEliminar = id;
-  document.getElementById("modalConfirmacao").style.display = "flex";
+  const modal = document.getElementById("modalConfirmacao");
+  if (modal) modal.style.display = "flex";
 }
 
-document.getElementById("confirmarEliminacao").addEventListener("click", () => {
-  eliminarFAQ(faqIdAEliminar); 
-  document.getElementById("modalConfirmacao").style.display = "none";
+function fecharModalConfirmacao() {
+  const modal = document.getElementById("modalConfirmacao");
+  if (modal) modal.style.display = "none";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const confirmarBtn = document.getElementById("confirmarEliminacao");
+  const cancelarBtn = document.getElementById("cancelarEliminacao");
+
+  if (confirmarBtn) {
+    confirmarBtn.addEventListener("click", () => {
+      if (typeof eliminarFAQ === "function" && faqIdAEliminar !== null) {
+        eliminarFAQ(faqIdAEliminar); 
+      }
+      fecharModalConfirmacao();
+    });
+  }
+
+  if (cancelarBtn) {
+    cancelarBtn.addEventListener("click", fecharModalConfirmacao);
+  }
 });
 
-document.getElementById("cancelarEliminacao").addEventListener("click", () => {
-  document.getElementById("modalConfirmacao").style.display = "none";
-});
+window.pedirConfirmacao = pedirConfirmacao;
+window.fecharModalConfirmacao = fecharModalConfirmacao;

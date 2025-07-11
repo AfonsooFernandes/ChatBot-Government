@@ -38,14 +38,25 @@
       <div class="panel">
         <div id="indicadorAtivo" style="display: none;" class="ativo-indicador"></div>
         <div id="secaoRecursos" class="secao left-content">
-          <button id="novoBotBtn" class="btn-novo-bot">+ Novo Bot</button>
-          <div class="bot-item-container" id="botItemContainer">
+          <h2>CMVC: Listagem dos Assistentes Virtuais</h2>
+          <div class="filtros-bots-bar">
+            <input id="filtroNomeBot" type="text" placeholder="Filtrar por nome" />
+            <select id="filtroEstadoBot">
+              <option value="todos">Todos os estados</option>
+              <option value="ativo">Ativo</option>
+              <option value="nao_publicado">Não Publicado</option>
+            </select>
+            <input id="filtroDataCriacaoBot" type="date" placeholder="dd/mm/aaaa" />
           </div>
+
+          <button id="novoBotBtn" class="btn-novo-bot">+ Novo Bot</button>
+          <div id="botsTabelaContainer" style="margin-top: 24px;"></div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Modal Novo Chatbot -->
   <div id="modalNovoBot" class="modal-overlay" style="display: none;">
     <div class="modal-box novo-bot-modal">
       <h2>Novo Chatbot</h2>
@@ -56,11 +67,80 @@
           <option value="">Escolha a Categoria</option>
         </select>
         <div style="display:flex; gap:12px; margin-top:8px;">
-          <button type="submit">Criar Chatbot</button>
+          <button type="submit" class="btn-novo-bot">Criar Chatbot</button>
           <button type="button" onclick="fecharModalNovoBot()" class="btn-cancelar">Cancelar</button>
         </div>
         <div id="mensagemNovoBot" style="margin-top:8px;"></div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal Editar Chatbot -->
+  <div id="modalEditarChatbot" class="modal-overlay" style="display: none; align-items:center; justify-content:center;">
+    <div class="modal-box editar-chatbot-modal" style="max-width:420px; width:100%;">
+      <h2>Editar Chatbot</h2>
+      <form id="editarChatbotForm">
+        <label>
+          Nome:
+          <input type="text" name="nome" id="editarNomeChatbot" required />
+        </label>
+        <label>
+          Descrição:
+          <input type="text" name="descricao" id="editarDescricaoChatbot" />
+        </label>
+        <label>
+          Data de Criação:
+          <input type="text" id="editarDataCriacao" disabled style="background:#eee; color:#666;" />
+        </label>
+        <label>
+          Fonte de Resposta:
+          <select name="fonte" id="editarFonteResposta" required>
+            <option value="faq">Baseado em Regras (FAQ)</option>
+            <option value="faiss">FAISS</option>
+            <option value="faq+raga">FAQ+RAG</option>
+          </select>
+        </label>
+        <div>
+          <label>Categorias:</label>
+          <div id="editarCategoriasChatbot" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;"></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:18px;">
+          <button type="submit" style="background:#d4af37; color:#fff; padding:8px 24px; border:none; border-radius:5px; font-weight:600; font-size:17px;">
+            Atualizar
+          </button>
+          <button type="button" onclick="fecharModalEditarChatbot()" class="btn-cancelar">Fechar</button>
+        </div>
+        <div id="editarChatbotStatus" style="margin-top:8px;"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Adicionar FAQ -->
+  <div id="modalAdicionarFAQ" class="modal-overlay" style="display: none; align-items:center; justify-content:center;">
+    <div class="modal-box" style="max-width:500px; width:100%;">
+      <h2>Adicionar FAQ</h2>
+      <form id="formAdicionarFAQ">
+        <input type="hidden" name="chatbot_id" id="faqChatbotId" />
+        <input type="text" name="designacao" placeholder="Designação" required />
+        <input type="text" name="pergunta" placeholder="Pergunta" required />
+        <textarea name="resposta" placeholder="Resposta" required></textarea>
+        <select name="categoria_id" id="faqCategoriaSelect" required>
+          <option value="">Escolha a categoria</option>
+        </select>
+        <input type="text" name="links_documentos" placeholder="Links de Documentos (separados por vírgula)">
+        <input type="text" name="relacionadas" placeholder="IDs de FAQs relacionadas (separados por vírgula)">
+        <button type="submit" class="btn-novo-bot" style="margin-bottom: 8px;">Adicionar FAQ</button>
+        <div style="font-weight: 500; margin-bottom: 8px; text-align: center;">Ou</div>
+      </form>
+      <form id="formUploadDocxFAQ" enctype="multipart/form-data" style="margin-bottom:0;">
+        <input type="hidden" name="chatbot_id" id="docxChatbotId" />
+        <input type="file" name="file" accept=".docx" required>
+        <button type="submit" class="btn-novo-bot">Adicionar Documento .docx</button>
+      </form>
+      <div id="mensagemAdicionarFAQ" style="margin-top:8px; min-height: 20px;"></div>
+      <div style="display:flex;gap:12px;margin-top:14px;">
+        <button type="button" onclick="fecharModalAdicionarFAQ()" class="btn-cancelar" style="width:100%;">Fechar</button>
+      </div>
     </div>
   </div>
 
@@ -89,21 +169,9 @@
     </div>
   </div>
 
-  <!-- Botão flutuante para abrir o chat -->
   <button id="chatToggleBtn" class="chat-toggle-btn">
     <img src="images/chatbot-icon.png" alt="Chatbot">
   </button>
-
-  <!-- Modal de confirmação -->
-  <div id="modalConfirmacao" class="modal-overlay" style="display: none;">
-    <div class="modal-box">
-      <p>Tem a certeza que quer eliminar esta FAQ?</p>
-      <div class="modal-buttons">
-        <button id="confirmarEliminacao">Sim</button>
-        <button id="cancelarEliminacao">Cancelar</button>
-      </div>
-    </div>
-  </div>
 
   <footer class="rodape">
     <div class="rodape-content">
@@ -120,6 +188,7 @@
   <script src="js/chat.js"></script>
   <script src="js/chatbot-bots.js"></script>
   <script src="js/chatbot-faq.js"></script>
+  <script src="js/chatbot-tabela.js"></script>
   <script src="js/modal.js"></script>
   <script src="js/navigation.js"></script>
   <script src="js/toggleChat.js"></script>

@@ -38,9 +38,9 @@ function gerarOptionsIdiomaSelect() {
 }
 
 function criarBotHTML(bot, allBots) {
-  const dataAtual = new Date().toLocaleDateString('pt-PT', {
-    day: '2-digit', month: 'short', year: 'numeric'
-  });
+  const dataCriacao = bot.data_criacao
+    ? new Date(bot.data_criacao).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })
+    : "-";
   const optionsHtml = gerarOptionsChatbotSelect(allBots);
   const idiomaSelectHtml = gerarOptionsIdiomaSelect();
   return `
@@ -49,7 +49,7 @@ function criarBotHTML(bot, allBots) {
         <div>
           ${bot.nome}
           <span class="status">
-            Estado: Não Publicado - Município • ${dataAtual}
+            Estado: Não Publicado - Município • ${dataCriacao}
           </span>
           <span class="ativo-label" style="display: none; margin-left: 10px; color: #3c763d; font-weight: bold;">
             • Chatbot Ativo
@@ -59,6 +59,7 @@ function criarBotHTML(bot, allBots) {
       </div>
       <div class="bot-dropdown" style="display: none;">
         <button class="bot-ativo-btn" onclick="definirAtivo(event, ${bot.chatbot_id})">Ficar Ativo</button>
+        <button class="bot-editar-btn" onclick="event.stopPropagation(); abrirModalEditarChatbot(${bot.chatbot_id});" style="margin-left: 10px;">Atualizar</button>
         <h3>Escolha a fonte para as respostas do chatbot</h3>
         <div class="resources">
           <div class="card" data-fonte="faq" onclick="selecionarFonte('faq', this.closest('.bot-dropdown'))">
@@ -122,33 +123,26 @@ function toggleBotDropdown(botItem) {
   const chatbotId = parseInt(botItem.getAttribute("data-chatbot-id"));
   const dropdown = botItem.parentElement.querySelector(".bot-dropdown");
   const isCurrentlyOpen = botItem.classList.contains("expanded");
-
   document.querySelectorAll(".bot-dropdown").forEach(el => el.style.display = "none");
   document.querySelectorAll(".bot-item").forEach(el => el.classList.remove("expanded"));
-
   if (isCurrentlyOpen) {
     window.chatbotSelecionado = null;
     localStorage.removeItem("chatbotSelecionado");
   } else {
     botItem.classList.add("expanded");
     dropdown.style.display = "block";
-
     requestAnimationFrame(() => {
       if (typeof carregarChatbots === "function") {
         carregarChatbots();
       }
     });
-
     window.chatbotSelecionado = chatbotId;
     localStorage.setItem("chatbotSelecionado", chatbotId);
-
     const fonteSalva = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
     selecionarFonte(fonteSalva, dropdown);
-
     if (typeof carregarTabelaFAQs === "function") {
       carregarTabelaFAQs(chatbotId, true);
     }
-
     const botWrapper = botItem.closest(".bot-wrapper");
     const ativoBtn = botWrapper.querySelector(".bot-ativo-btn");
     if (ativoBtn) ativoBtn.style.display = "inline-block";
@@ -165,7 +159,6 @@ function selecionarFonte(fonte, dropdown = null) {
       ?.parentElement?.querySelector(".bot-dropdown");
   }
   if (!dropdown) {
-    console.warn("Dropdown não definido em selecionarFonte()");
     return;
   }
   dropdown.querySelectorAll(".card").forEach(card => {
@@ -184,7 +177,6 @@ function mostrarFormulario() {
 
 function definirAtivo(event, chatbotId) {
   event.stopPropagation();
-
   localStorage.setItem("chatbotAtivo", chatbotId);
   window.chatbotAtivo = chatbotId;
   document.querySelectorAll(".bot-ativo-btn").forEach(btn => {
@@ -225,3 +217,9 @@ window.addEventListener("DOMContentLoaded", () => {
     carregarBots();
   }
 });
+
+window.carregarBots = carregarBots;
+window.toggleBotDropdown = toggleBotDropdown;
+window.selecionarFonte = selecionarFonte;
+window.definirAtivo = definirAtivo;
+window.mostrarFormulario = mostrarFormulario;

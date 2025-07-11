@@ -68,7 +68,6 @@ def load_faiss_index():
 if not (os.path.exists(INDEX_PATH) and os.path.exists(FAQ_EMBEDDINGS_PATH)):
     print("Building FAISS index...")
     build_faiss_index()
-
 faiss_index, faqs_db, faq_embeddings = load_faiss_index()
 
 def pesquisar_faiss(pergunta, chatbot_id=None, k=1):
@@ -131,8 +130,7 @@ def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id):
     else:
         return None
 
-# ---------- ROTAS DE CATEGORIA, CHATBOT, FAQ ----------
-
+# ---------- CATEGORIAS ----------
 @app.route("/categorias", methods=["GET"])
 def get_categorias():
     cur = conn.cursor()
@@ -145,14 +143,27 @@ def get_categorias():
         print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
 
+# ---------- CHATBOTS ----------
 @app.route("/chatbots", methods=["GET"])
 def get_chatbots():
     cur = conn.cursor()
     try:
-        cur.execute("SELECT chatbot_id, nome, descricao FROM Chatbot")
+        cur.execute("""
+            SELECT c.chatbot_id, c.nome, c.descricao, c.data_criacao, fr.fonte
+            FROM Chatbot c
+            LEFT JOIN FonteResposta fr ON fr.chatbot_id = c.chatbot_id
+            ORDER BY c.chatbot_id ASC
+        """)
         data = cur.fetchall()
         return jsonify([
-            {"chatbot_id": row[0], "nome": row[1], "descricao": row[2]} for row in data
+            {
+                "chatbot_id": row[0],
+                "nome": row[1],
+                "descricao": row[2],
+                "data_criacao": row[3],
+                "fonte": row[4] if row[4] else "faq"
+            }
+            for row in data
         ])
     except Exception as e:
         conn.rollback()
@@ -184,8 +195,36 @@ def criar_chatbot():
                 (nome, descricao)
             )
         chatbot_id = cur.fetchone()[0]
+        cur.execute(
+            "INSERT INTO FonteResposta (chatbot_id, fonte) VALUES (%s, %s)",
+            (chatbot_id, "faq")
+        )
         conn.commit()
         return jsonify({"success": True, "chatbot_id": chatbot_id})
+    except Exception as e:
+        conn.rollback()
+        print(traceback.format_exc())
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route("/chatbots/<int:chatbot_id>", methods=["PUT"])
+def atualizar_chatbot(chatbot_id):
+    cur = conn.cursor()
+    data = request.get_json()
+    try:
+        nome = data.get("nome", "").strip()
+        descricao = data.get("descricao", "").strip()
+        fonte = data.get("fonte", "faq")
+        if not nome:
+            return jsonify({"success": False, "error": "O nome do chatbot é obrigatório."}), 400
+
+        cur.execute("UPDATE Chatbot SET nome=%s, descricao=%s WHERE chatbot_id=%s", (nome, descricao, chatbot_id))
+        cur.execute("SELECT 1 FROM FonteResposta WHERE chatbot_id=%s", (chatbot_id,))
+        if cur.fetchone():
+            cur.execute("UPDATE FonteResposta SET fonte=%s WHERE chatbot_id=%s", (fonte, chatbot_id))
+        else:
+            cur.execute("INSERT INTO FonteResposta (chatbot_id, fonte) VALUES (%s, %s)", (chatbot_id, fonte))
+        conn.commit()
+        return jsonify({"success": True})
     except Exception as e:
         conn.rollback()
         print(traceback.format_exc())
@@ -195,7 +234,7 @@ def criar_chatbot():
 def obter_fonte_chatbot(chatbot_id):
     cur = conn.cursor()
     try:
-        cur.execute("SELECT descricao FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
+        cur.execute("SELECT fonte FROM FonteResposta WHERE chatbot_id = %s", (chatbot_id,))
         row = cur.fetchone()
         if row:
             fonte = row[0] if row[0] else "faq"
@@ -214,10 +253,11 @@ def definir_fonte_chatbot():
     if fonte not in ["faq", "faiss", "faq+raga"]:
         return jsonify({"success": False, "erro": "Fonte inválida."}), 400
     try:
-        cur.execute("SELECT 1 FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
+        cur.execute("SELECT 1 FROM FonteResposta WHERE chatbot_id = %s", (chatbot_id,))
         if not cur.fetchone():
-            return jsonify({"success": False, "erro": "Chatbot não encontrado."}), 404
-        cur.execute("UPDATE Chatbot SET descricao = %s WHERE chatbot_id = %s", (fonte, chatbot_id))
+            cur.execute("INSERT INTO FonteResposta (chatbot_id, fonte) VALUES (%s, %s)", (chatbot_id, fonte))
+        else:
+            cur.execute("UPDATE FonteResposta SET fonte = %s WHERE chatbot_id = %s", (fonte, chatbot_id))
         conn.commit()
         return jsonify({"success": True})
     except Exception as e:

@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS Chatbot (
     chatbot_id SERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL UNIQUE,
     descricao TEXT,
-    categoria_id INT REFERENCES Categoria(categoria_id) ON DELETE SET NULL
+    categoria_id INT REFERENCES Categoria(categoria_id) ON DELETE SET NULL,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tabela: FAQ
@@ -71,7 +72,8 @@ CREATE TABLE IF NOT EXISTS Administrador (
 CREATE TABLE IF NOT EXISTS FonteResposta (
     id SERIAL PRIMARY KEY,
     chatbot_id INT REFERENCES Chatbot(chatbot_id) ON DELETE CASCADE,
-    fonte TEXT NOT NULL
+    fonte TEXT NOT NULL,
+    UNIQUE(chatbot_id) 
 );
 
 -- Inserções de chatbots
