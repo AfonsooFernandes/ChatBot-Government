@@ -200,16 +200,33 @@
 .form-group-categorias {
   margin: 20px 0 10px 0;
 }
+
+#editarCategoriasContainer,
 .categorias-row {
   display: flex;
-  gap: 28px;
+  gap: 18px;
   flex-wrap: nowrap;
+  overflow-x: auto;
   align-items: center;
   margin-top: 6px;
+  padding-bottom: 4px;
 }
-.categorias-row label {
+
+.categorias-row label,
+#editarCategoriasContainer label {
   white-space: nowrap;
   font-size: 1.02em;
+  max-width: 160px;     
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#editarCategoriasContainer::-webkit-scrollbar {
+  height: 7px;
+}
+#editarCategoriasContainer::-webkit-scrollbar-thumb {
+  background: #eee;
+  border-radius: 8px;
 }
 
 .modal-box-adicionar-faq-exclusivo {

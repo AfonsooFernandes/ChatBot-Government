@@ -596,3 +596,49 @@ form button:hover,
   background: #e03939 !important;
   color: #fff !important;
 }
+
+#btnGuardarFAQ {
+  background: #d4af37;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-weight: 600;
+  font-size: 17px;
+  min-width: 80px;
+  height: 45px !important;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s;
+  box-shadow: 0 1px 5px rgba(212,175,55,0.08);
+}
+
+#btnGuardarFAQ:hover,
+#btnGuardarFAQ:focus {
+  background: #b99723;
+  color: #fff;
+}
+
+#btnCancelarFAQ {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-weight: 600;
+  font-size: 17px;
+  min-width: 80px;
+  height: 45px !important;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s;
+  box-shadow: 0 1px 5px rgba(255,94,94,0.08);
+}
+
+#btnCancelarFAQ:hover,
+#btnCancelarFAQ:focus {
+  background: #b91c1c;
+  color: #fff;
+}
