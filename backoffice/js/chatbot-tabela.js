@@ -174,7 +174,6 @@ window.abrirModalAtualizar = async function(chatbot_id) {
     document.getElementById("editarChatbotForm").setAttribute("data-edit-id", chatbot_id);
 
     const botCategorias = Array.isArray(bot.categorias) ? bot.categorias.map(c => String(c)) : [];
-
     const catDiv = document.getElementById("editarCategoriasChatbot");
     catDiv.innerHTML = "<span style='color:#888'>A carregar categorias...</span>";
     const resCat = await fetch("http://localhost:5000/categorias");
@@ -223,100 +222,15 @@ window.abrirModalAdicionarFAQ = async function(chatbot_id) {
   } catch {}
 
   document.getElementById("modalAdicionarFAQ").style.display = "flex";
-  document.getElementById("mensagemAdicionarFAQ").innerHTML = "";
+  if (document.getElementById("mensagemAdicionarFAQ"))
+    document.getElementById("mensagemAdicionarFAQ").innerHTML = "";
+  if (window.adicionarListenersFormulariosFAQ) window.adicionarListenersFormulariosFAQ();
+  if (window.adicionarListenersUploadDocx) window.adicionarListenersUploadDocx();
 };
 
 window.fecharModalAdicionarFAQ = function() {
   document.getElementById("modalAdicionarFAQ").style.display = "none";
 };
-
-document.addEventListener("DOMContentLoaded", function() {
-  const form = document.getElementById("editarChatbotForm");
-  if (!form) return;
-  form.onsubmit = async function(e) {
-    e.preventDefault();
-    const chatbot_id = this.getAttribute("data-edit-id");
-    const nome = document.getElementById("editarNomeChatbot").value.trim();
-    const descricao = document.getElementById("editarDescricaoChatbot").value.trim();
-    const fonte = document.getElementById("editarFonteResposta").value;
-
-    const categorias = Array.from(form.querySelectorAll('input[name="categoria"]:checked')).map(cb => Number(cb.value));
-
-    try {
-      const res = await fetch(`http://localhost:5000/chatbots/${chatbot_id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, descricao, fonte, categorias })
-      });
-      if (res.ok) {
-        document.getElementById("modalEditarChatbot").style.display = "none";
-        carregarTabelaBots();
-      } else {
-        const data = await res.json();
-        alert(data.error || "Erro ao atualizar o chatbot.");
-      }
-    } catch (e) {
-      alert("Erro ao comunicar com o servidor.");
-    }
-  };
-
-  const faqForm = document.getElementById("formAdicionarFAQ");
-  if (faqForm) {
-    faqForm.onsubmit = async function(e) {
-      e.preventDefault();
-      const formData = new FormData(faqForm);
-      const data = {};
-      for (const [key, value] of formData.entries()) data[key] = value;
-      try {
-        const res = await fetch("http://localhost:5000/faqs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
-        const msgDiv = document.getElementById("mensagemAdicionarFAQ");
-        if (res.ok) {
-          msgDiv.style.color = "green";
-          msgDiv.innerText = "FAQ adicionada com sucesso!";
-          faqForm.reset();
-        } else {
-          const err = await res.json();
-          msgDiv.style.color = "red";
-          msgDiv.innerText = err.error || "Erro ao adicionar FAQ.";
-        }
-      } catch {
-        document.getElementById("mensagemAdicionarFAQ").style.color = "red";
-        document.getElementById("mensagemAdicionarFAQ").innerText = "Erro ao comunicar com o servidor.";
-      }
-    };
-  }
-
-  const docxForm = document.getElementById("formUploadDocxFAQ");
-  if (docxForm) {
-    docxForm.onsubmit = async function(e) {
-      e.preventDefault();
-      const formData = new FormData(docxForm);
-      try {
-        const res = await fetch("http://localhost:5000/upload-faq-docx", {
-          method: "POST",
-          body: formData
-        });
-        const msgDiv = document.getElementById("mensagemAdicionarFAQ");
-        if (res.ok) {
-          msgDiv.style.color = "green";
-          msgDiv.innerText = "Documento carregado com sucesso!";
-          docxForm.reset();
-        } else {
-          const err = await res.json();
-          msgDiv.style.color = "red";
-          msgDiv.innerText = err.error || "Erro ao carregar o documento.";
-        }
-      } catch {
-        document.getElementById("mensagemAdicionarFAQ").style.color = "red";
-        document.getElementById("mensagemAdicionarFAQ").innerText = "Erro ao comunicar com o servidor.";
-      }
-    };
-  }
-});
 
 window.fecharModalEditarChatbot = function() {
   document.getElementById("modalEditarChatbot").style.display = "none";

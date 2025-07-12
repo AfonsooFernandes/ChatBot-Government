@@ -52,6 +52,7 @@
       </div>
     </div>
   </div>
+
   <!-- Modal Novo Chatbot -->
   <div id="modalNovoBot" class="modal-overlay modal-overlay-novo-bot" style="display: none;">
     <div class="modal-box modal-box-novo-bot-exclusivo">
@@ -70,6 +71,7 @@
       </form>
     </div>
   </div>
+
   <!-- Modal Editar Chatbot -->
   <div id="modalEditarChatbot" class="modal-overlay modal-overlay-editar-chatbot" style="display: none;">
     <div class="modal-box modal-box-editar-chatbot-exclusivo">
@@ -115,7 +117,7 @@
   <div id="modalAdicionarFAQ" class="modal-overlay modal-overlay-adicionar-faq" style="display: none;">
     <div class="modal-box modal-box-adicionar-faq-exclusivo">
       <h2>Adicionar FAQ</h2>
-      <form id="formAdicionarFAQ">
+      <form id="formAdicionarFAQ" class="faqForm">
         <input type="hidden" name="chatbot_id" id="faqChatbotId" />
         <input type="text" name="designacao" placeholder="Designação" required />
         <input type="text" name="pergunta" placeholder="Pergunta" required />
@@ -127,18 +129,20 @@
           <option value="">Escolha o idioma</option>
           <option value="pt">Português</option>
           <option value="en">Inglês</option>
+          <option value="es">Espanhol</option>
         </select>
         <input type="text" name="links_documentos" placeholder="Links de Documentos (separados por vírgula)">
         <input type="text" name="relacionadas" placeholder="IDs de FAQs relacionadas (separados por vírgula)">
         <button type="submit" class="btn-adicionar-faq-modal" style="margin-bottom: 8px;">Adicionar FAQ</button>
+        <div id="mensagemFAQ" style="font-weight: 500; margin-bottom: 8px; text-align: center;"></div>
         <div style="font-weight: 500; margin-bottom: 8px; text-align: center;">Ou</div>
       </form>
-      <form id="formUploadDocxFAQ" enctype="multipart/form-data" style="margin-bottom:0;">
+      <form id="formUploadDocxFAQ" class="uploadForm" enctype="multipart/form-data" style="margin-bottom:0;">
         <input type="hidden" name="chatbot_id" id="docxChatbotId" />
-        <input type="file" name="file" accept=".docx" required>
-        <button type="submit" class="btn-adicionar-docx-modal">Adicionar Documento .docx</button>
+        <input type="file" name="files" id="docxFilesInput" accept=".docx" multiple required>
+        <button type="submit" class="btn-adicionar-docx-modal">Adicionar Documento(s) .docx</button>
+        <div class="uploadStatus" style="margin-top:8px; min-height:20px;"></div>
       </form>
-      <div id="mensagemAdicionarFAQ" style="margin-top:8px; min-height: 20px;"></div>
       <div class="btn-bar-adicionar-faq" style="margin-top:14px;">
         <button type="button" onclick="fecharModalAdicionarFAQ()" class="btn-cancelar-adicionar-faq">Fechar</button>
       </div>

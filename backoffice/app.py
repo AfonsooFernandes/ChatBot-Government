@@ -589,7 +589,6 @@ def upload_faq_docx():
                             "INSERT INTO FAQ_Documento (faq_id, link) VALUES (%s, %s)",
                             (faq_id, link)
                         )
-
         conn.commit()
         build_faiss_index()
         global faiss_index, faqs_db, faq_embeddings
@@ -600,6 +599,104 @@ def upload_faq_docx():
         conn.rollback()
         print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route("/upload-faq-docx-multiplos", methods=["POST"])
+def upload_faq_docx_multiplos():
+    cur = conn.cursor()
+    if 'files' not in request.files:
+        return jsonify({"success": False, "error": "Ficheiros não enviados."}), 400
+
+    chatbot_id_raw = request.form.get("chatbot_id")
+    if not chatbot_id_raw:
+        return jsonify({"success": False, "error": "Chatbot ID não fornecido."}), 400
+
+    files = request.files.getlist('files')
+    total_inseridas = 0
+    erros = []
+
+    def normalizar_idioma(valor):
+        if not valor:
+            return "pt"
+        valor = valor.strip().lower()
+        if valor.startswith("port"):
+            return "pt"
+        if valor.startswith("ingl"):
+            return "en"
+        return valor[:2]
+
+    for file in files:
+        try:
+            doc = docx.Document(file)
+            dados = {}
+            for table in doc.tables:
+                for row in table.rows:
+                    if len(row.cells) >= 2:
+                        chave_raw = row.cells[0].text.strip().lower().replace("’", "'")
+                        valor = row.cells[1].text.strip()
+                        chave = chave_raw.replace(":", "").strip()
+                        if chave and valor:
+                            dados[chave] = valor
+            if not dados.get("designação da faq") or not dados.get("questão") or not dados.get("resposta"):
+                raise Exception("Faltam campos obrigatórios: designação, questão ou resposta.")
+
+            designacao = dados.get("designação da faq")
+            pergunta = dados.get("questão")
+            resposta = dados.get("resposta")
+            categoria = dados.get("categoria")
+            idioma_lido = dados.get("idioma", "Português")
+            idioma = normalizar_idioma(idioma_lido)
+
+            links_documentos = ""
+            for key in ["documentos associados", "links de documentos"]:
+                if key in dados:
+                    links_documentos = dados[key]
+                    break
+
+            chatbot_ids = []
+            if chatbot_id_raw == "todos":
+                cur.execute("SELECT chatbot_id FROM Chatbot")
+                chatbot_ids = [row[0] for row in cur.fetchall()]
+            else:
+                chatbot_ids = [int(chatbot_id_raw)]
+
+            for chatbot_id in chatbot_ids:
+                cur.execute("""
+                    SELECT faq_id FROM FAQ
+                    WHERE chatbot_id = %s AND designacao = %s AND pergunta = %s AND resposta = %s AND idioma = %s
+                """, (chatbot_id, designacao, pergunta, resposta, idioma))
+                if cur.fetchone():
+                    continue
+
+                cur.execute("""
+                    INSERT INTO FAQ (chatbot_id, designacao, pergunta, resposta, idioma, links_documentos)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING faq_id
+                """, (chatbot_id, designacao, pergunta, resposta, idioma, links_documentos))
+                faq_id = cur.fetchone()[0]
+
+                if categoria:
+                    cur.execute("SELECT categoria_id FROM Categoria WHERE nome ILIKE %s", (categoria,))
+                    result = cur.fetchone()
+                    if result:
+                        cur.execute("UPDATE FAQ SET categoria_id = %s WHERE faq_id = %s", (result[0], faq_id))
+
+                if links_documentos:
+                    for link in links_documentos.split(','):
+                        link = link.strip()
+                        if link:
+                            cur.execute(
+                                "INSERT INTO FAQ_Documento (faq_id, link) VALUES (%s, %s)",
+                                (faq_id, link)
+                            )
+                total_inseridas += 1
+        except Exception as e:
+            erros.append(str(e))
+            conn.rollback()
+    conn.commit()
+    build_faiss_index()
+    global faiss_index, faqs_db, faq_embeddings
+    faiss_index, faqs_db, faq_embeddings = load_faiss_index()
+    return jsonify({"success": True, "inseridas": total_inseridas, "erros": erros})    
 
 @app.route("/faqs/detalhes", methods=["GET"])
 def get_faqs_detalhes():
