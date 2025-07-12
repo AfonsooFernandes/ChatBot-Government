@@ -131,6 +131,24 @@ def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id):
         return None
 
 # ---------- CATEGORIAS ----------
+@app.route("/chatbots/<int:chatbot_id>", methods=["DELETE"])
+def eliminar_chatbot(chatbot_id):
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM FAQ_Relacionadas WHERE faq_id IN (SELECT faq_id FROM FAQ WHERE chatbot_id = %s)", (chatbot_id,))
+        cur.execute("DELETE FROM FAQ_Documento WHERE faq_id IN (SELECT faq_id FROM FAQ WHERE chatbot_id = %s)", (chatbot_id,))
+        cur.execute("DELETE FROM FAQ WHERE chatbot_id = %s", (chatbot_id,))
+
+        cur.execute("DELETE FROM FonteResposta WHERE chatbot_id = %s", (chatbot_id,))
+
+        cur.execute("DELETE FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        print(traceback.format_exc())
+        return jsonify({"success": False, "error": str(e)}), 50
+    
 @app.route("/categorias", methods=["GET"])
 def get_categorias():
     cur = conn.cursor()

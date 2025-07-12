@@ -1,9 +1,7 @@
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
   background: rgba(30, 32, 36, 0.32);
   display: none;
   align-items: center;
@@ -23,7 +21,6 @@
   box-shadow: 0 8px 48px rgba(31,41,55,0.22);
   animation: modalUp 0.24s cubic-bezier(.47,1.64,.41,.8);
 }
-
 @keyframes modalUp {
   from { transform: translateY(50px) scale(.98); opacity: 0.4; }
   to { transform: translateY(0) scale(1); opacity: 1; }
@@ -38,7 +35,6 @@
   letter-spacing: 0.01em;
   text-align: left;
 }
-
 .modal-box label {
   color: #292929;
   font-weight: 500;
@@ -60,7 +56,6 @@
   font-family: 'Inter', sans-serif;
   transition: border 0.19s;
 }
-
 .modal-box input:focus,
 .modal-box textarea:focus,
 .modal-box select:focus {
@@ -68,11 +63,13 @@
   outline: none;
   background: #fffbea;
 }
-
-.modal-box textarea { resize: vertical; min-height: 64px; }
+.modal-box textarea {
+  resize: vertical;
+  min-height: 64px;
+}
 
 .modal-box .btn-novo-bot,
-.modal-box .btn-salvar-faq {
+.modal-box .btn-guardar-faq {
   background: #d4af37;
   color: #fff;
   border: none;
@@ -87,47 +84,59 @@
   box-shadow: 0 1px 5px rgba(212,175,55,0.11);
 }
 
-.modal-box .btn-novo-bot:hover,
-.modal-box .btn-salvar-faq:hover {
-  background: #e0c565;
-}
-
-.btn-cancelar {
-  background: #f7f7f7 !important;
-  color: #686868 !important;
-  border: 1px solid #ddd !important;
-  border-radius: 7px;
-  padding: 12px 0;
-  width: 100%;
-  font-size: 17px;
-  font-weight: 500;
-  margin-top: 7px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.btn-cancelar:hover {
-  background: #f2f2ea !important;
-  color: #d4af37 !important;
-}
-
-.modal-box .btn-bar {
+.modal-box .btn-bar,
+.btn-bar-editar-bot {
   display: flex;
   gap: 14px;
   margin-top: 24px;
 }
+.modal-box .btn-bar .btn-guardar-faq,
+.modal-box .btn-bar .btn-cancelar,
+.btn-bar-editar-bot .btn-atualizar-editar-bot,
+.btn-bar-editar-bot .btn-fechar-editar-bot {
+  width: 50%;
+  min-width: 120px;
+  height: 46px;
+  margin-bottom: 0;
+  margin-top: 0;
+  padding: 0;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+}
+.btn-bar-editar-bot .btn-atualizar-editar-bot {
+  background: #d4af37;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+}
+.btn-bar-editar-bot .btn-atualizar-editar-bot:hover {
+  background: #e0c565;
+}
+.btn-bar-editar-bot .btn-fechar-editar-bot {
+  background: #ff6b6b !important;
+  color: #fff !important;
+  border: none;
+  font-weight: 600;
+}
+.btn-bar-editar-bot .btn-fechar-editar-bot:hover {
+  background: #e03939 !important;
+  color: #fff !important;
+}
 
-.modal-box .form-divider {
-  font-weight: 500;
-  font-size: 15px;
-  color: #b3a270;
-  margin: 10px 0 7px 0;
-  text-align: center;
-  opacity: .9;
+.modal-box .btn-novo-bot:not(.btn-bar .btn-novo-bot),
+.modal-box .btn-guardar-faq:not(.btn-bar .btn-guardar-faq) {
+  width: 100%;
+  padding: 12px 0;
+  margin-bottom: 12px;
 }
 
 #mensagemAdicionarFAQ,
 #mensagemNovoBot,
-#editarChatbotStatus {
+#editarChatbotStatus,
+#editarStatusFAQ {
   min-height: 18px;
   font-size: 14px;
   color: #b32222;
@@ -135,8 +144,156 @@
   text-align: center;
 }
 
-input[type="file"] {
-  background: none;
-  padding: 6px 0;
+.modal-box-novo-bot-exclusivo {
+  max-width: 540px;
+  min-width: 330px;
+  width: 98vw;
+  padding: 48px 44px 36px 44px;
+  border-radius: 22px;
+  box-shadow: 0 10px 60px rgba(31,41,55,0.18);
+  background: #fff;
+  font-family: 'Inter', sans-serif;
+}
+.modal-box-novo-bot-exclusivo h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 26px;
+  color: #2e2e2e;
+  letter-spacing: 0.01em;
+}
+
+.modal-box-editar-chatbot-exclusivo {
+  max-width: 900px;
+  min-width: 380px;
+  width: 98vw;
+  padding: 40px 38px 28px 38px;
+  border-radius: 22px;
+  box-shadow: 0 10px 60px rgba(31,41,55,0.17);
+  background: #fff;
+  font-family: 'Inter', sans-serif;
+}
+.modal-box-editar-chatbot-exclusivo h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 26px;
+  color: #2e2e2e;
+  letter-spacing: 0.01em;
+}
+
+.grid-row {
+  display: grid;
+  grid-template-columns: 1fr 2.2fr;
+  gap: 24px;
+  margin-bottom: 15px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+.form-group-descricao input[type="text"] {
+  min-width: 330px;
+  width: 100%;
+  min-height: 46px;
+  font-size: 1.08rem;
+  padding: 12px 15px;
+}
+.form-group-categorias {
+  margin: 20px 0 10px 0;
+}
+.categorias-row {
+  display: flex;
+  gap: 28px;
+  flex-wrap: nowrap;
+  align-items: center;
+  margin-top: 6px;
+}
+.categorias-row label {
+  white-space: nowrap;
+  font-size: 1.02em;
+}
+
+.modal-box-adicionar-faq-exclusivo {
+  max-width: 600px;
+  min-width: 300px;
+  width: 98vw;
+  border-radius: 22px;
+  box-shadow: 0 10px 60px rgba(31,41,55,0.18);
+  background: #fff;
+  font-family: 'Inter', sans-serif;
+  padding: 38px 34px 28px 34px;
+}
+.modal-box-adicionar-faq-exclusivo h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 26px;
+  color: #2e2e2e;
+  letter-spacing: 0.01em;
+}
+
+.modal-box-confirmacao {
+  max-width: 400px;
+  border: 2px solid #d4af37;
+  background: #f9f9ee;
+  box-shadow: 0 6px 28px rgba(170, 140, 15, 0.11);
+  text-align: center;
+  padding: 34px 26px 24px 26px;
+  border-radius: 16px;
+}
+.modal-box-confirmacao p {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: #222;
+}
+.modal-box-confirmacao .modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.modal-box-confirmacao button {
+  min-width: 90px;
+  padding: 11px 0;
+  border-radius: 7px;
   border: none;
+  background: #d4af37;
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.17s;
+  margin: 0;
+}
+.modal-box-confirmacao button:last-child {
+  background: #f7f7f7;
+  color: #686868;
+  border: 1px solid #ccc;
+}
+.modal-box-confirmacao button:hover:not(:last-child) {
+  background: #e0c565;
+}
+.modal-box-confirmacao button:last-child:hover {
+  background: #f2f2ea;
+  color: #d4af37;
+}
+
+.btn-cancelar-adicionar-faq {
+  background: #ff5e5e !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 7px !important;
+  font-weight: 600 !important;
+  font-size: 17px !important;
+  min-width: 80px !important;
+  height: 46px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s;
+  box-shadow: 0 1px 5px rgba(255,94,94,0.08);
+}
+
+.btn-cancelar-adicionar-faq:hover,
+.btn-cancelar-adicionar-faq:focus {
+  background: #e03939 !important;
+  color: #fff !important;
 }

@@ -90,8 +90,8 @@
   </button>
 
   <!-- Modal de confirmação -->
-  <div id="modalConfirmacao" class="modal-overlay" style="display: none;">
-    <div class="modal-box">
+  <div id="modalConfirmacao" class="modal-overlay modal-overlay-confirmacao" style="display: none;">
+    <div class="modal-box modal-box-confirmacao">
       <p>Tem a certeza que quer eliminar esta FAQ?</p>
       <div class="modal-buttons">
         <button id="confirmarEliminacao">Sim</button>
@@ -101,8 +101,8 @@
   </div>
 
   <!-- Modal de Editar FAQ -->
-  <div id="modalEditarFAQ" class="modal-overlay" style="display: none;">
-    <div class="modal-box">
+  <div id="modalEditarFAQ" class="modal-overlay modal-overlay-editar-faq" style="display: none;">
+    <div class="modal-box modal-box-editar-faq">
       <h2 style="margin-bottom: 22px;">Editar FAQ</h2>
       <form id="formEditarFAQ" autocomplete="off">
         <label for="editarPergunta">Pergunta</label>
@@ -121,7 +121,7 @@
         <div id="editarCategoriasContainer" class="categorias-scroll"></div>
 
         <div class="btn-bar" style="margin-top: 30px;">
-          <button type="submit" class="btn-salvar-faq" id="btnGuardarFAQ">Guardar</button>
+          <button type="submit" class="btn-guardar-faq" id="btnGuardarFAQ">Guardar</button>
           <button type="button" class="btn-cancelar" id="btnCancelarFAQ">Cancelar</button>
         </div>
         <div id="editarStatusFAQ" style="margin-top:14px; font-weight: bold;"></div>

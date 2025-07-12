@@ -111,8 +111,14 @@ async function carregarTabelaFAQsBackoffice() {
                 return `<a href="${link}" target="_blank">${link.length > 35 ? link.slice(0, 32) + "..." : link}</a>`;
               }).join("<br>");
             }
-            let flag = (faq.idioma === "pt" || faq.idioma === "Português") ?
-              '<img src="images/pt.jpg" style="height:20px" title="Português">' : (faq.idioma || "-");
+            let flag = "-";
+            if (faq.idioma === "pt" || faq.idioma.toLowerCase() === "português") {
+              flag = '<img src="images/pt.jpg" style="height:20px" title="Português">';
+            } else if (faq.idioma === "en" || faq.idioma.toLowerCase() === "inglês" || faq.idioma.toLowerCase() === "english") {
+              flag = '<img src="images/en.png" style="height:20px" title="English">';
+            } else if (faq.idioma) {
+              flag = faq.idioma;
+            }
             return `
               <tr>
                 <td>${chatbotsMap[faq.chatbot_id] || "-"}</td>
@@ -398,9 +404,12 @@ async function editarFAQ(faq_id) {
   }
 }
 
-document.getElementById("btnCancelarFAQ").onclick = function() {
-  document.getElementById("modalEditarFAQ").style.display = "none";
-};
+const btnCancelar = document.getElementById("btnCancelarFAQ");
+if (btnCancelar) {
+  btnCancelar.onclick = function() {
+    document.getElementById("modalEditarFAQ").style.display = "none";
+  };
+}  
 
 document.getElementById("formEditarFAQ").onsubmit = async function(e) {
   e.preventDefault();

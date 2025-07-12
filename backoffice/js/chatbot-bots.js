@@ -1,5 +1,5 @@
-async function carregarBots() {
-  const container = document.getElementById("botItemContainer");
+async function carregarBots() { 
+  const container = document.getElementById("botsTabelaContainer");
   if (!container) return;
   container.innerHTML = "<p>A carregar bots...</p>";
   try {
@@ -60,6 +60,7 @@ function criarBotHTML(bot, allBots) {
       <div class="bot-dropdown" style="display: none;">
         <button class="bot-ativo-btn" onclick="definirAtivo(event, ${bot.chatbot_id})">Ficar Ativo</button>
         <button class="bot-editar-btn" onclick="event.stopPropagation(); abrirModalEditarChatbot(${bot.chatbot_id});" style="margin-left: 10px;">Atualizar</button>
+        <button class="bot-eliminar-btn" onclick="event.stopPropagation(); abrirModalEliminarBot(${bot.chatbot_id});" style="margin-left: 10px; background: #ea4d4d; color: #fff;">Eliminar</button>
         <h3>Escolha a fonte para as respostas do chatbot</h3>
         <div class="resources">
           <div class="card" data-fonte="faq" onclick="selecionarFonte('faq', this.closest('.bot-dropdown'))">
@@ -211,12 +212,6 @@ function definirAtivo(event, chatbotId) {
       carregarFAQsDoBotSelecionado();
   }
 }
-
-window.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("botItemContainer")) {
-    carregarBots();
-  }
-});
 
 window.carregarBots = carregarBots;
 window.toggleBotDropdown = toggleBotDropdown;

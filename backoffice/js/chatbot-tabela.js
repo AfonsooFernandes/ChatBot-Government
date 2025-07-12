@@ -1,3 +1,46 @@
+let botIdAEliminar = null;
+
+window.abrirModalEliminarBot = function(chatbot_id) {
+  botIdAEliminar = chatbot_id;
+  const modal = document.getElementById('modalConfirmarEliminarBot');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.fecharModalEliminarBot = function() {
+  botIdAEliminar = null;
+  const modal = document.getElementById('modalConfirmarEliminarBot');
+  if (modal) modal.style.display = 'none';
+};
+
+document.addEventListener("DOMContentLoaded", function () {
+  const btnSim = document.getElementById('btnConfirmarEliminarBot');
+  const btnNao = document.getElementById('btnCancelarEliminarBot');
+  if (btnSim) {
+    btnSim.onclick = async function () {
+      if (botIdAEliminar !== null) {
+        await eliminarChatbotConfirmado(botIdAEliminar);
+      }
+      window.fecharModalEliminarBot();
+    };
+  }
+  if (btnNao) {
+    btnNao.onclick = window.fecharModalEliminarBot;
+  }
+});
+
+async function eliminarChatbotConfirmado(chatbot_id) {
+  try {
+    const res = await fetch(`http://localhost:5000/chatbots/${chatbot_id}`, { method: "DELETE" });
+    if (res.ok) {
+      carregarTabelaBots();
+    } else {
+      alert("Erro ao eliminar o chatbot!");
+    }
+  } catch (e) {
+    alert("Erro ao comunicar com o servidor.");
+  }
+}
+
 async function carregarTabelaBots() {
   const container = document.getElementById("botsTabelaContainer");
   if (!container) return;
@@ -59,7 +102,7 @@ async function carregarTabelaBots() {
                   ${isAtivo(bot.chatbot_id) ? "Ativo" : "Tornar Ativo"}
                 </button>
                 <button class="btn-editar" onclick="abrirModalAtualizar(${bot.chatbot_id})">Atualizar</button>
-                <button class="btn-eliminar" onclick="eliminarChatbot(${bot.chatbot_id}, this)">Eliminar</button>
+                <button class="btn-eliminar" onclick="abrirModalEliminarBot(${bot.chatbot_id})">Eliminar</button>
                 <button class="btn-adicionar-faq" onclick="abrirModalAdicionarFAQ(${bot.chatbot_id})">Ad+</button>
               </td>
             </tr>
@@ -79,11 +122,9 @@ function aplicarFiltrosBots(bots) {
 
   return bots.filter(bot => {
     if (nomeFiltro && !(bot.nome || "").toLowerCase().includes(nomeFiltro)) return false;
-
     const ativo = isAtivo(bot.chatbot_id);
     if (estadoFiltro === "ativo" && !ativo) return false;
     if (estadoFiltro === "nao_publicado" && ativo) return false;
-
     if (dataFiltro) {
       const dataBot = bot.data_criacao ? new Date(bot.data_criacao) : null;
       const dataSelecionada = new Date(dataFiltro + "T00:00:00");
@@ -147,23 +188,6 @@ window.abrirModalAtualizar = async function(chatbot_id) {
     document.getElementById("modalEditarChatbot").style.display = "flex";
   } catch (e) {
     alert("Erro ao carregar dados do chatbot.");
-  }
-};
-
-window.eliminarChatbot = async function(chatbot_id, btn) {
-  if (!confirm("Tem a certeza que deseja eliminar este chatbot?")) return;
-  btn.disabled = true;
-  try {
-    const res = await fetch(`http://localhost:5000/chatbots/${chatbot_id}`, { method: "DELETE" });
-    if (res.ok) {
-      carregarTabelaBots();
-    } else {
-      alert("Erro ao eliminar o chatbot!");
-      btn.disabled = false;
-    }
-  } catch (e) {
-    alert("Erro ao comunicar com o servidor.");
-    btn.disabled = false;
   }
 };
 
