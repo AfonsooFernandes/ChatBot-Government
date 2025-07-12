@@ -20,8 +20,6 @@
         <li id="menuContexto" onclick="window.location.href='contexto.html'">Contexto</li>
         <li id="menuRecursos" class="active" onclick="window.location.href='recursos.html'">Recursos</li>
         <li id="menuRespostas" onclick="window.location.href='respostas.html'">Respostas</li>
-        <li>Comportamento</li>
-        <li>Fallbacks</li>
       </ul>
     </aside>
     <div class="content">
@@ -103,14 +101,7 @@
         </div>
         <div class="form-group-categorias">
           <label>Categorias:</label>
-          <div class="categorias-row" id="editarCategoriasChatbot">
-            <label><input type="radio" name="categoria" value="educacao"> Educação</label>
-            <label><input type="radio" name="categoria" value="acao_social"> Ação Social</label>
-            <label><input type="radio" name="categoria" value="habitacao"> Habitação</label>
-            <label><input type="radio" name="categoria" value="cultura"> Cultura</label>
-            <label><input type="radio" name="categoria" value="desporto"> Desporto</label>
-            <label><input type="radio" name="categoria" value="ambiente"> Ambiente</label>
-          </div>
+          <div class="categorias-row" id="editarCategoriasChatbot"></div>
         </div>
         <div class="btn-bar-editar-bot">
           <button type="submit" class="btn-atualizar-editar-bot">Atualizar</button>
@@ -131,6 +122,11 @@
         <textarea name="resposta" placeholder="Resposta" required></textarea>
         <select name="categoria_id" id="faqCategoriaSelect" required>
           <option value="">Escolha a categoria</option>
+        </select>
+        <select name="idioma" id="faqIdiomaSelect" required>
+          <option value="">Escolha o idioma</option>
+          <option value="pt">Português</option>
+          <option value="en">Inglês</option>
         </select>
         <input type="text" name="links_documentos" placeholder="Links de Documentos (separados por vírgula)">
         <input type="text" name="relacionadas" placeholder="IDs de FAQs relacionadas (separados por vírgula)">

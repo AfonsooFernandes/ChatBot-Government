@@ -166,21 +166,23 @@ window.abrirModalAtualizar = async function(chatbot_id) {
       alert("Chatbot não encontrado!");
       return;
     }
+
     document.getElementById("editarNomeChatbot").value = bot.nome || "";
     document.getElementById("editarDescricaoChatbot").value = bot.descricao || "";
     document.getElementById("editarDataCriacao").value = bot.data_criacao ? new Date(bot.data_criacao).toLocaleDateString('pt-PT') : "";
     document.getElementById("editarFonteResposta").value = bot.fonte || "faq";
     document.getElementById("editarChatbotForm").setAttribute("data-edit-id", chatbot_id);
 
+    const botCategorias = Array.isArray(bot.categorias) ? bot.categorias.map(c => String(c)) : [];
+
     const catDiv = document.getElementById("editarCategoriasChatbot");
     catDiv.innerHTML = "<span style='color:#888'>A carregar categorias...</span>";
     const resCat = await fetch("http://localhost:5000/categorias");
     const categorias = await resCat.json();
 
-    let categoriaAtual = bot.categoria_id || "";
     catDiv.innerHTML = categorias.map(cat =>
       `<label style="display:flex; align-items:center; gap:4px;">
-        <input type="radio" name="categoria" value="${cat.categoria_id}" ${categoriaAtual == cat.categoria_id ? "checked" : ""}>
+        <input type="checkbox" name="categoria" value="${cat.categoria_id}" ${botCategorias.includes(String(cat.categoria_id)) ? "checked" : ""}>
         ${cat.nome}
       </label>`
     ).join("");
@@ -237,13 +239,14 @@ document.addEventListener("DOMContentLoaded", function() {
     const nome = document.getElementById("editarNomeChatbot").value.trim();
     const descricao = document.getElementById("editarDescricaoChatbot").value.trim();
     const fonte = document.getElementById("editarFonteResposta").value;
-    const categoria_id = form.querySelector('input[name="categoria"]:checked')?.value || "";
+
+    const categorias = Array.from(form.querySelectorAll('input[name="categoria"]:checked')).map(cb => Number(cb.value));
 
     try {
       const res = await fetch(`http://localhost:5000/chatbots/${chatbot_id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, descricao, fonte, categoria_id })
+        body: JSON.stringify({ nome, descricao, fonte, categorias })
       });
       if (res.ok) {
         document.getElementById("modalEditarChatbot").style.display = "none";

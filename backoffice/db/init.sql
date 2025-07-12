@@ -19,8 +19,14 @@ CREATE TABLE IF NOT EXISTS Chatbot (
     chatbot_id SERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL UNIQUE,
     descricao TEXT,
-    categoria_id INT REFERENCES Categoria(categoria_id) ON DELETE SET NULL,
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabela: ChatbotCategoria
+CREATE TABLE IF NOT EXISTS ChatbotCategoria (
+    chatbot_id INT REFERENCES Chatbot(chatbot_id) ON DELETE CASCADE,
+    categoria_id INT REFERENCES Categoria(categoria_id) ON DELETE CASCADE,
+    PRIMARY KEY (chatbot_id, categoria_id)
 );
 
 -- Tabela: FAQ
@@ -73,14 +79,5 @@ CREATE TABLE IF NOT EXISTS FonteResposta (
     id SERIAL PRIMARY KEY,
     chatbot_id INT REFERENCES Chatbot(chatbot_id) ON DELETE CASCADE,
     fonte TEXT NOT NULL,
-    UNIQUE(chatbot_id) 
+    UNIQUE(chatbot_id)
 );
-
--- Inserções de chatbots
-INSERT INTO Chatbot (nome, descricao)
-VALUES ('Assistente Municipal', 'Chatbot para todos os serviços municipais')
-ON CONFLICT (nome) DO NOTHING;
-
-INSERT INTO Chatbot (nome, descricao)
-VALUES ('Bot Secundário', 'Segundo chatbot de apoio aos serviços da Câmara')
-ON CONFLICT (nome) DO NOTHING;

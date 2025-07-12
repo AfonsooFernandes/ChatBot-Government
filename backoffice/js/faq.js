@@ -411,48 +411,53 @@ if (btnCancelar) {
   };
 }  
 
-document.getElementById("formEditarFAQ").onsubmit = async function(e) {
-  e.preventDefault();
-  const status = document.getElementById("editarStatusFAQ");
-  status.textContent = "";
+const formEditarFAQ = document.getElementById("formEditarFAQ");
+if (formEditarFAQ) {
+  formEditarFAQ.onsubmit = async function(e) {
+    e.preventDefault();
+    const status = document.getElementById("editarStatusFAQ");
+    status.textContent = "";
 
-  if (!faqAEditar) return;
+    if (!faqAEditar) return;
 
-  const pergunta = document.getElementById('editarPergunta').value.trim();
-  const resposta = document.getElementById('editarResposta').value.trim();
-  const idioma = document.getElementById('editarIdioma').value;
-  const recomendado = document.getElementById('editarRecomendado') ? document.getElementById('editarRecomendado').checked : false;
+    const pergunta = document.getElementById('editarPergunta').value.trim();
+    const resposta = document.getElementById('editarResposta').value.trim();
+    const idioma = document.getElementById('editarIdioma').value;
+    const recomendado = document.getElementById('editarRecomendado') ? document.getElementById('editarRecomendado').checked : false;
 
-  const categoriasSel = Array.from(document.querySelectorAll('#editarCategoriasContainer input[type="checkbox"]:checked'))
-    .map(cb => parseInt(cb.value));
+    const categoriasSel = Array.from(document.querySelectorAll('#editarCategoriasContainer input[type="checkbox"]:checked'))
+      .map(cb => parseInt(cb.value));
 
-  try {
-    const res = await fetch(`http://localhost:5000/faqs/${faqAEditar.faq_id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        pergunta, resposta, idioma,
-        recomendado,
-        categorias: categoriasSel
-      })
-    });
-    const out = await res.json();
-    if (out.success) {
-      status.textContent = "✅ FAQ atualizada com sucesso!";
-      status.style.color = "green";
-      setTimeout(() => {
-        document.getElementById("modalEditarFAQ").style.display = "none";
-        mostrarRespostas();
-      }, 800);
-    } else {
-      status.textContent = out.error || "Erro ao atualizar.";
+    try {
+      const res = await fetch(`http://localhost:5000/faqs/${faqAEditar.faq_id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pergunta,
+          resposta,
+          idioma,
+          recomendado,
+          categorias: categoriasSel
+        })
+      });
+      const out = await res.json();
+      if (out.success) {
+        status.textContent = "✅ FAQ atualizada com sucesso!";
+        status.style.color = "green";
+        setTimeout(() => {
+          document.getElementById("modalEditarFAQ").style.display = "none";
+          mostrarRespostas();
+        }, 800);
+      } else {
+        status.textContent = out.error || "Erro ao atualizar.";
+        status.style.color = "red";
+      }
+    } catch (err) {
+      status.textContent = "Erro de comunicação com o servidor.";
       status.style.color = "red";
     }
-  } catch (err) {
-    status.textContent = "Erro de comunicação com o servidor.";
-    status.style.color = "red";
-  }
-};
+  };
+}
 
 async function eliminarFAQ(faq_id) {
   try {

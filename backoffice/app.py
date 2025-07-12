@@ -167,9 +167,12 @@ def get_chatbots():
     cur = conn.cursor()
     try:
         cur.execute("""
-            SELECT c.chatbot_id, c.nome, c.descricao, c.data_criacao, fr.fonte
+            SELECT c.chatbot_id, c.nome, c.descricao, c.data_criacao, fr.fonte,
+                   array_remove(array_agg(cc.categoria_id), NULL) as categorias
             FROM Chatbot c
             LEFT JOIN FonteResposta fr ON fr.chatbot_id = c.chatbot_id
+            LEFT JOIN ChatbotCategoria cc ON cc.chatbot_id = c.chatbot_id
+            GROUP BY c.chatbot_id, c.nome, c.descricao, c.data_criacao, fr.fonte
             ORDER BY c.chatbot_id ASC
         """)
         data = cur.fetchall()
@@ -179,7 +182,8 @@ def get_chatbots():
                 "nome": row[1],
                 "descricao": row[2],
                 "data_criacao": row[3],
-                "fonte": row[4] if row[4] else "faq"
+                "fonte": row[4] if row[4] else "faq",
+                "categorias": row[5] if row[5] is not None else []
             }
             for row in data
         ])
@@ -194,7 +198,7 @@ def criar_chatbot():
     data = request.get_json()
     nome = data.get("nome", "").strip()
     descricao = data.get("descricao", "").strip()
-    categoria_id = data.get("categoria_id")
+    categorias = data.get("categorias", [])
     if not nome:
         return jsonify({"success": False, "error": "Nome obrigatório."}), 400
     try:
@@ -202,17 +206,18 @@ def criar_chatbot():
         if cur.fetchone():
             return jsonify({"success": False, "error": "Já existe um chatbot com esse nome."}), 409
 
-        if categoria_id:
-            cur.execute(
-                "INSERT INTO Chatbot (nome, descricao, categoria_id) VALUES (%s, %s, %s) RETURNING chatbot_id",
-                (nome, descricao, categoria_id)
-            )
-        else:
-            cur.execute(
-                "INSERT INTO Chatbot (nome, descricao) VALUES (%s, %s) RETURNING chatbot_id",
-                (nome, descricao)
-            )
+        cur.execute(
+            "INSERT INTO Chatbot (nome, descricao) VALUES (%s, %s) RETURNING chatbot_id",
+            (nome, descricao)
+        )
         chatbot_id = cur.fetchone()[0]
+
+        for categoria_id in categorias:
+            cur.execute(
+                "INSERT INTO ChatbotCategoria (chatbot_id, categoria_id) VALUES (%s, %s)",
+                (chatbot_id, categoria_id)
+            )
+
         cur.execute(
             "INSERT INTO FonteResposta (chatbot_id, fonte) VALUES (%s, %s)",
             (chatbot_id, "faq")
@@ -223,7 +228,7 @@ def criar_chatbot():
         conn.rollback()
         print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
-    
+
 @app.route("/chatbots/<int:chatbot_id>", methods=["PUT"])
 def atualizar_chatbot(chatbot_id):
     cur = conn.cursor()
@@ -232,10 +237,20 @@ def atualizar_chatbot(chatbot_id):
         nome = data.get("nome", "").strip()
         descricao = data.get("descricao", "").strip()
         fonte = data.get("fonte", "faq")
+        categorias = data.get("categorias", [])
         if not nome:
             return jsonify({"success": False, "error": "O nome do chatbot é obrigatório."}), 400
 
-        cur.execute("UPDATE Chatbot SET nome=%s, descricao=%s WHERE chatbot_id=%s", (nome, descricao, chatbot_id))
+        cur.execute(
+            "UPDATE Chatbot SET nome=%s, descricao=%s WHERE chatbot_id=%s",
+            (nome, descricao, chatbot_id)
+        )
+        cur.execute("DELETE FROM ChatbotCategoria WHERE chatbot_id=%s", (chatbot_id,))
+        for categoria_id in categorias:
+            cur.execute(
+                "INSERT INTO ChatbotCategoria (chatbot_id, categoria_id) VALUES (%s, %s)",
+                (chatbot_id, categoria_id)
+            )
         cur.execute("SELECT 1 FROM FonteResposta WHERE chatbot_id=%s", (chatbot_id,))
         if cur.fetchone():
             cur.execute("UPDATE FonteResposta SET fonte=%s WHERE chatbot_id=%s", (fonte, chatbot_id))

@@ -573,3 +573,26 @@ form button:hover,
   color: #232323;
   letter-spacing: -0.01em;
 }
+
+.btn-cancelar-novo-bot {
+  background: #ff5e5e !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 7px !important;
+  font-weight: 600 !important;
+  font-size: 17px !important;
+  min-width: 80px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s;
+  box-shadow: 0 1px 5px rgba(255,94,94,0.08);
+}
+
+.btn-cancelar-novo-bot:hover,
+.btn-cancelar-novo-bot:focus {
+  background: #e03939 !important;
+  color: #fff !important;
+}
