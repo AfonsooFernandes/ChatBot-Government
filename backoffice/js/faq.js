@@ -227,28 +227,6 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId) {
     });
 }
 
-async function responderComCategoria(categoria) {
-  const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
-  if (!chatbotId || isNaN(chatbotId)) {
-    adicionarMensagem("bot", "⚠️ Nenhum chatbot ativo. Por favor, selecione um chatbot ativo no menu de recursos.");
-    return;
-  }
-  try {
-    const res = await fetch(`http://localhost:5000/faq-categoria/${encodeURIComponent(categoria)}?chatbot_id=${chatbotId}`);
-    const data = await res.json();
-
-    if (data.success) {
-      adicionarMensagem("user", `📂 Categoria: ${categoria}`);
-      adicionarMensagem("bot", data.resposta);
-      if (data.pergunta) obterPerguntasSemelhantes(data.pergunta, chatbotId);
-    } else {
-      adicionarMensagem("bot", data.erro || `❌ Nenhuma FAQ encontrada para a categoria '${categoria}' no Bot ${chatbotId}.`);
-    }
-  } catch (err) {
-    adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor. Verifique se o servidor está ativo.");
-  }
-}
-
 document.querySelectorAll(".faqForm").forEach(faqForm => {
   const statusDiv = document.createElement("div");
   statusDiv.className = "faqStatus";
@@ -477,7 +455,6 @@ window.eliminarFAQ = eliminarFAQ;
 window.responderPergunta = responderPergunta;
 window.obterPerguntasSemelhantes = obterPerguntasSemelhantes;
 window.pedirConfirmacao = pedirConfirmacao;
-window.responderComCategoria = responderComCategoria;
 
 document.addEventListener("DOMContentLoaded", () => {
   carregarChatbots();

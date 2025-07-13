@@ -12,22 +12,6 @@ window.fecharModalEliminarBot = function() {
   if (modal) modal.style.display = 'none';
 };
 
-document.addEventListener("DOMContentLoaded", function () {
-  const btnSim = document.getElementById('btnConfirmarEliminarBot');
-  const btnNao = document.getElementById('btnCancelarEliminarBot');
-  if (btnSim) {
-    btnSim.onclick = async function () {
-      if (botIdAEliminar !== null) {
-        await eliminarChatbotConfirmado(botIdAEliminar);
-      }
-      window.fecharModalEliminarBot();
-    };
-  }
-  if (btnNao) {
-    btnNao.onclick = window.fecharModalEliminarBot;
-  }
-});
-
 async function eliminarChatbotConfirmado(chatbot_id) {
   try {
     const res = await fetch(`http://localhost:5000/chatbots/${chatbot_id}`, { method: "DELETE" });
@@ -54,6 +38,7 @@ async function carregarTabelaBots() {
       return;
     }
 
+    // Carregar a fonte de cada bot
     for (const bot of bots) {
       try {
         const fonteRes = await fetch(`http://localhost:5000/fonte/${bot.chatbot_id}`);
@@ -192,18 +177,6 @@ window.abrirModalAtualizar = async function(chatbot_id) {
   }
 };
 
-window.addEventListener("DOMContentLoaded", function() {
-  carregarTabelaBots();
-
-  ["filtroNomeBot", "filtroEstadoBot", "filtroDataCriacaoBot"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener("input", carregarTabelaBots);
-      el.addEventListener("change", carregarTabelaBots);
-    }
-  });
-});
-
 window.abrirModalAdicionarFAQ = async function(chatbot_id) {
   document.getElementById('faqChatbotId').value = chatbot_id;
   document.getElementById('docxChatbotId').value = chatbot_id;
@@ -235,3 +208,73 @@ window.fecharModalAdicionarFAQ = function() {
 window.fecharModalEditarChatbot = function() {
   document.getElementById("modalEditarChatbot").style.display = "none";
 };
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Botões de Eliminar
+  const btnSim = document.getElementById('btnConfirmarEliminarBot');
+  const btnNao = document.getElementById('btnCancelarEliminarBot');
+  if (btnSim) {
+    btnSim.onclick = async function () {
+      if (botIdAEliminar !== null) {
+        await eliminarChatbotConfirmado(botIdAEliminar);
+      }
+      window.fecharModalEliminarBot();
+    };
+  }
+  if (btnNao) {
+    btnNao.onclick = window.fecharModalEliminarBot;
+  }
+
+  carregarTabelaBots();
+
+  ["filtroNomeBot", "filtroEstadoBot", "filtroDataCriacaoBot"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("input", carregarTabelaBots);
+      el.addEventListener("change", carregarTabelaBots);
+    }
+  });
+
+  const editarForm = document.getElementById("editarChatbotForm");
+  if (editarForm) {
+    editarForm.onsubmit = async function(e) {
+      e.preventDefault();
+      const chatbot_id = this.getAttribute("data-edit-id");
+      const nome = document.getElementById("editarNomeChatbot").value.trim();
+      const descricao = document.getElementById("editarDescricaoChatbot").value.trim();
+      const fonte = document.getElementById("editarFonteResposta").value;
+      const categorias = Array.from(document.querySelectorAll('#editarCategoriasChatbot input[name="categoria"]:checked')).map(cb => cb.value);
+
+      if (!nome) {
+        alert("Nome obrigatório");
+        return;
+      }
+
+      const body = {
+        nome,
+        descricao,
+        fonte,
+        categorias
+      };
+
+      try {
+        const res = await fetch(`http://localhost:5000/chatbots/${chatbot_id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        if (res.ok) {
+          localStorage.setItem(`fonteSelecionada_bot${chatbot_id}`, fonte);
+
+          window.fecharModalEditarChatbot();
+          carregarTabelaBots();
+        } else {
+          const result = await res.json().catch(() => ({}));
+          alert("Erro ao atualizar chatbot: " + (result.error || result.erro || res.statusText));
+        }
+      } catch (err) {
+        alert("Erro ao atualizar chatbot: " + err.message);
+      }
+    };
+  }
+});
