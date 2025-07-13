@@ -35,6 +35,25 @@ FAQ_EMBEDDINGS_PATH = "faq_embeddings.pkl"
 embedding_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
 # ---------- FUNÇÕES DE EMBEDDING E FAISS ----------
+SAUDACOES = [
+    "olá", "ola", "bom dia", "boa tarde", "boa noite", "oi", "hello", "hi"
+]
+SAUDACOES_PERGUNTAS = [
+    "tudo bem", "como estás", "como está", "está tudo bem", "como vais", "tá bem"
+]
+RESPOSTA_SAUDACAO = "Olá! 👋 Como posso ajudar? Se tiver alguma dúvida, basta perguntar!"
+RESPOSTA_TUDO_BEM = "Estou sempre pronto a ajudar! 😊 Em que posso ser útil?"
+
+def detectar_saudacao(pergunta):
+    texto = pergunta.lower()
+    for saud in SAUDACOES:
+        if saud in texto:
+            return RESPOSTA_SAUDACAO
+    for p in SAUDACOES_PERGUNTAS:
+        if p in texto:
+            return RESPOSTA_TUDO_BEM
+    return None
+
 def get_faqs_from_db(chatbot_id=None):
     cur = conn.cursor()
     if chatbot_id:
@@ -117,14 +136,12 @@ def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id):
     for pergunta, resposta in faqs:
         pergunta_bd = pergunta.strip().lower()
         if pergunta_normalizada == pergunta_bd:
-            print(f"✅ Match exato com: '{pergunta}'")
             return {"pergunta": pergunta, "resposta": resposta, "score": 100}
         score = fuzz.ratio(pergunta_normalizada, pergunta_bd)
         if score > maior_score:
             maior_score = score
             melhor_pergunta = pergunta
             melhor_resposta = resposta
-    print(f"➡️ Melhor correspondência: '{melhor_pergunta}' (score: {maior_score})")
     if maior_score >= 50:
         return {"pergunta": melhor_pergunta, "resposta": melhor_resposta, "score": maior_score}
     else:
@@ -138,9 +155,7 @@ def eliminar_chatbot(chatbot_id):
         cur.execute("DELETE FROM FAQ_Relacionadas WHERE faq_id IN (SELECT faq_id FROM FAQ WHERE chatbot_id = %s)", (chatbot_id,))
         cur.execute("DELETE FROM FAQ_Documento WHERE faq_id IN (SELECT faq_id FROM FAQ WHERE chatbot_id = %s)", (chatbot_id,))
         cur.execute("DELETE FROM FAQ WHERE chatbot_id = %s", (chatbot_id,))
-
         cur.execute("DELETE FROM FonteResposta WHERE chatbot_id = %s", (chatbot_id,))
-
         cur.execute("DELETE FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
         conn.commit()
         return jsonify({"success": True})
@@ -148,7 +163,7 @@ def eliminar_chatbot(chatbot_id):
         conn.rollback()
         print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 50
-    
+
 @app.route("/categorias", methods=["GET"])
 def get_categorias():
     cur = conn.cursor()
@@ -346,7 +361,7 @@ def get_faqs():
         conn.rollback()
         print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
-    
+
 @app.route("/faqs/<int:faq_id>", methods=["GET"])
 def get_faq_by_id(faq_id):
     cur = conn.cursor()
@@ -416,7 +431,7 @@ def update_faq(faq_id):
         idioma = data.get("idioma", "pt").strip()
         categorias = data.get("categorias", [])
 
-        categoria_id = categorias[0] if categorias else None 
+        categoria_id = categorias[0] if categorias else None
 
         cur.execute("""
             UPDATE FAQ SET pergunta=%s, resposta=%s, idioma=%s, categoria_id=%s
@@ -599,7 +614,7 @@ def upload_faq_docx():
         conn.rollback()
         print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
-    
+
 @app.route("/upload-faq-docx-multiplos", methods=["POST"])
 def upload_faq_docx_multiplos():
     cur = conn.cursor()
@@ -696,7 +711,7 @@ def upload_faq_docx_multiplos():
     build_faiss_index()
     global faiss_index, faqs_db, faq_embeddings
     faiss_index, faqs_db, faq_embeddings = load_faiss_index()
-    return jsonify({"success": True, "inseridas": total_inseridas, "erros": erros})    
+    return jsonify({"success": True, "inseridas": total_inseridas, "erros": erros})
 
 @app.route("/faqs/detalhes", methods=["GET"])
 def get_faqs_detalhes():
@@ -741,6 +756,15 @@ def obter_resposta():
     if not pergunta or not chatbot_id:
         return jsonify({"success": False, "erro": "Pergunta ou chatbot_id não fornecido."}), 400
     try:
+        saudacao = detectar_saudacao(pergunta)
+        if saudacao:
+            return jsonify({
+                "success": True,
+                "fonte": "SAUDACAO",
+                "resposta": saudacao,
+                "faq_id": None,
+                "categoria_id": None
+            })
         if fonte == "faq":
             resultado = obter_faq_mais_semelhante(pergunta, chatbot_id)
             if resultado:
@@ -832,7 +856,7 @@ def perguntas_semelhantes():
     except Exception as e:
         print(traceback.format_exc())
         return jsonify({"success": False, "erro": str(e)}), 500
-    
+
 @app.route("/chatbot/<int:chatbot_id>", methods=["GET"])
 def obter_nome_chatbot(chatbot_id):
     cur = conn.cursor()
