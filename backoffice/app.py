@@ -832,6 +832,19 @@ def perguntas_semelhantes():
     except Exception as e:
         print(traceback.format_exc())
         return jsonify({"success": False, "erro": str(e)}), 500
+    
+@app.route("/chatbot/<int:chatbot_id>", methods=["GET"])
+def obter_nome_chatbot(chatbot_id):
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT nome FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
+        row = cur.fetchone()
+        if row:
+            return jsonify({"success": True, "nome": row[0]})
+        return jsonify({"success": False, "erro": "Chatbot não encontrado."}), 404
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({"success": False, "erro": str(e)}), 500
 
 @app.route("/rebuild-faiss", methods=["POST"])
 def rebuild_faiss():

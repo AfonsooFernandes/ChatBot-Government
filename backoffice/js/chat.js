@@ -3,13 +3,69 @@ function getIdiomaAtual() {
 }
 
 // Adiciona mensagem ao chat
-function adicionarMensagem(tipo, texto) {
+function adicionarMensagem(tipo, texto, avatarUrl = null) {
   const chat = document.getElementById("chatBody");
-  const div = document.createElement("div");
-  div.className = `message ${tipo}`;
-  div.textContent = texto;
-  chat.appendChild(div);
+  let wrapper;
+
+  if (tipo === "bot" && avatarUrl) {
+    wrapper = document.createElement("div");
+    wrapper.className = "message-wrapper bot";
+
+    const avatarDiv = document.createElement("div");
+    avatarDiv.className = "bot-avatar-outer";
+    const avatar = document.createElement("img");
+    avatar.src = avatarUrl;
+    avatar.alt = "Bot";
+    avatar.className = "bot-avatar";
+    avatarDiv.appendChild(avatar);
+
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "message bot";
+    msgDiv.style.whiteSpace = "pre-line";
+    msgDiv.textContent = texto;
+
+    wrapper.appendChild(avatarDiv);
+    wrapper.appendChild(msgDiv);
+  } else {
+    wrapper = document.createElement("div");
+    wrapper.className = "message-wrapper " + tipo;
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `message ${tipo}`;
+    msgDiv.textContent = texto;
+    wrapper.appendChild(msgDiv);
+  }
+
+  chat.appendChild(wrapper);
   chat.scrollTop = chat.scrollHeight;
+}
+
+async function apresentarMensagemInicial() {
+  const chatBody = document.getElementById("chatBody");
+  chatBody.innerHTML = "";
+
+  let nomeBot = "...";
+  const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
+
+  if (chatbotId && !isNaN(chatbotId)) {
+    try {
+      const res = await fetch(`http://localhost:5000/chatbot/${chatbotId}`);
+      const data = await res.json();
+      if (data.success && data.nome) {
+        nomeBot = data.nome;
+      }
+    } catch (e) {
+      const botsData = JSON.parse(localStorage.getItem("chatbotsData") || "[]");
+      const bot = botsData.find(b => b.chatbot_id === chatbotId || b.chatbot_id === String(chatbotId));
+      if (bot && bot.nome) nomeBot = bot.nome;
+    }
+  }
+
+  const msg =
+`Olá!
+Eu sou o ${nomeBot}, o seu assistente virtual.  
+Faça uma pergunta de cada vez que eu procurarei esclarecer todas as suas dúvidas.`;
+
+  adicionarMensagem("bot", msg, "images/chatbot-icon.png");
 }
 
 // Envia a pergunta do utilizador
@@ -28,16 +84,15 @@ function enviarPergunta() {
 function responderPergunta(pergunta) {
   const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
   if (!chatbotId || isNaN(chatbotId)) {
-    return adicionarMensagem("bot", "⚠️ Nenhum chatbot está ativo. Por favor, selecione um chatbot ativo no menu de recursos.");
+    return adicionarMensagem(
+      "bot",
+      "⚠️ Nenhum chatbot está ativo. Por favor, selecione um chatbot ativo no menu de recursos.",
+      "images/chatbot-icon.png"
+    );
   }
 
   const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
   const idioma = getIdiomaAtual();
-
-  console.log(" Enviando pergunta:", pergunta);
-  console.log(" Chatbot Ativo:", chatbotId);
-  console.log(" Fonte:", fonte);
-  console.log(" Idioma:", idioma);
 
   fetch("http://localhost:5000/obter-resposta", {
     method: "POST",
@@ -52,51 +107,23 @@ function responderPergunta(pergunta) {
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        adicionarMensagem("bot", data.resposta);
+        adicionarMensagem("bot", data.resposta, "images/chatbot-icon.png");
         obterPerguntasSemelhantes(pergunta, chatbotId, idioma);
       } else {
-        adicionarMensagem("bot", data.erro || "❌ Nenhuma resposta encontrada para a pergunta fornecida.");
+        adicionarMensagem(
+          "bot",
+          data.erro || "❌ Nenhuma resposta encontrada para a pergunta fornecida.",
+          "images/chatbot-icon.png"
+        );
       }
     })
     .catch(() => {
-      adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor. Verifique se o servidor está ativo.");
+      adicionarMensagem(
+        "bot",
+        "❌ Erro ao comunicar com o servidor. Verifique se o servidor está ativo.",
+        "images/chatbot-icon.png"
+      );
     });
-}
-
-// Envia uma pergunta baseada numa categoria
-function perguntarCategoria(categoria) {
-  const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
-  if (!chatbotId || isNaN(chatbotId)) {
-    return adicionarMensagem("bot", "⚠️ Nenhum chatbot está ativo. Por favor, selecione um chatbot ativo no menu de recursos.");
-  }
-
-  adicionarMensagem("user", categoria);
-
-  const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
-  const idioma = getIdiomaAtual();
-
-  if (fonte === "faq") {
-    fetch(`http://localhost:5000/faq-categoria/${encodeURIComponent(categoria)}?chatbot_id=${chatbotId}&idioma=${idioma}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.pergunta && data.resposta) {
-          adicionarMensagem("bot", data.pergunta);
-          setTimeout(() => adicionarMensagem("bot", data.resposta), 600);
-        } else {
-          adicionarMensagem("bot", `❌ Não foi possível obter uma FAQ para a categoria '${categoria}'.`);
-        }
-      })
-      .catch(() => {
-        adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor. Verifique se o servidor está ativo.");
-      });
-  } else if (fonte === "faiss") {
-    responderPergunta(categoria);
-  } else {
-    adicionarMensagem(
-      "bot",
-      "⚠️ Apenas as fontes 'Baseado em Regras (FAQ)' e 'Só FAISS' suportam categorias neste momento."
-    );
-  }
 }
 
 // Mostra sugestões de perguntas semelhantes
@@ -123,8 +150,13 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
         const chat = document.getElementById("chatBody");
 
         const divTitulo = document.createElement("div");
-        divTitulo.className = "message bot";
-        divTitulo.textContent = "📌 Perguntas semelhantes:";
+        divTitulo.className = "message-wrapper bot";
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "message bot";
+        msgDiv.style.display = "block";
+        msgDiv.textContent = "📌 Perguntas semelhantes:";
+        divTitulo.appendChild(document.createElement("div"));
+        divTitulo.appendChild(msgDiv);
         chat.appendChild(divTitulo);
 
         const btnContainer = document.createElement("div");
@@ -156,7 +188,7 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
 window.setIdiomaAtivo = function(idioma) {
   localStorage.setItem("idiomaAtivo", idioma);
 };
-
-window.perguntarCategoria = perguntarCategoria;
+window.apresentarMensagemInicial = apresentarMensagemInicial;
 window.enviarPergunta = enviarPergunta;
 window.responderPergunta = responderPergunta;
+window.perguntarCategoria = function(){};
