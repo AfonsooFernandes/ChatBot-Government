@@ -882,23 +882,29 @@ def perguntas_semelhantes():
     dados = request.get_json()
     pergunta_atual = dados.get("pergunta", "")
     chatbot_id = dados.get("chatbot_id")
+    idioma = dados.get("idioma", "pt")
     try:
         cur.execute("""
-            SELECT f.categoria_id
-            FROM FAQ f
-            WHERE LOWER(f.pergunta) = LOWER(%s) AND f.chatbot_id = %s
-        """, (pergunta_atual.strip().lower(), chatbot_id))
+            SELECT categoria_id
+            FROM FAQ
+            WHERE LOWER(pergunta) = LOWER(%s) AND chatbot_id = %s AND idioma = %s
+        """, (pergunta_atual.strip().lower(), chatbot_id, idioma))
         categoria_row = cur.fetchone()
-        if not categoria_row:
+        if not categoria_row or categoria_row[0] is None:
             return jsonify({"success": True, "sugestoes": []})
+
         categoria_id = categoria_row[0]
         cur.execute("""
             SELECT pergunta
             FROM FAQ
-            WHERE categoria_id = %s AND LOWER(pergunta) != LOWER(%s) AND chatbot_id = %s
+            WHERE categoria_id = %s
+              AND recomendado = TRUE
+              AND LOWER(pergunta) != LOWER(%s)
+              AND chatbot_id = %s
+              AND idioma = %s
             ORDER BY RANDOM()
             LIMIT 2
-        """, (categoria_id, pergunta_atual.strip().lower(), chatbot_id))
+        """, (categoria_id, pergunta_atual.strip().lower(), chatbot_id, idioma))
         sugestoes = [row[0] for row in cur.fetchall()]
         return jsonify({"success": True, "sugestoes": sugestoes})
     except Exception as e:
