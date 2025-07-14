@@ -468,6 +468,26 @@ form button:hover,
   word-break: break-all;
 }
 
+.faq-tabela-backoffice td.col-pdf {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+.faq-tabela-backoffice td.col-pdf a {
+  display: inline-block;
+  margin: 0 auto;
+  text-decoration: none;
+}
+.faq-tabela-backoffice td.col-pdf img {
+  display: block;
+  margin: 0 auto;
+  box-shadow: none;
+  border: none;
+}
+.faq-tabela-backoffice td.col-pdf > * {
+  vertical-align: middle;
+  text-align: center;
+}
+
 .btn-remover {
   padding: 7px 15px;
   font-size: 14px;
@@ -664,5 +684,25 @@ form button:hover,
 }
 
 .bots-tabela td.cor {
+  text-align: center;
+}
+
+.faq-tabela-backoffice td.col-pdf {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+.faq-tabela-backoffice td.col-pdf a {
+  display: inline-block;
+  margin: 0 auto;
+  text-decoration: none;
+}
+.faq-tabela-backoffice td.col-pdf img {
+  display: block;
+  margin: 0 auto;
+  box-shadow: none;
+  border: none;
+}
+.faq-tabela-backoffice td.col-pdf > * {
+  vertical-align: middle;
   text-align: center;
 }

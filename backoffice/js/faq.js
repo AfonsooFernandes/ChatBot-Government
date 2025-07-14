@@ -109,8 +109,12 @@ async function carregarTabelaFAQsBackoffice() {
               docLinks = faq.links_documentos.split(",").map(link => {
                 link = link.trim();
                 if (!link) return "";
-                return `<a href="${link}" target="_blank">${link.length > 35 ? link.slice(0, 32) + "..." : link}</a>`;
-              }).join("<br>");
+                return `
+                  <a href="${link}" target="_blank" style="display:inline-block;">
+                    <img src="images/pdf-icon.png" alt="PDF" title="Abrir documento PDF" style="width:26px;vertical-align:middle;">
+                  </a>
+                `;
+              }).join(" ");
             }
             let flag = "-";
             if (faq.idioma === "pt" || faq.idioma?.toLowerCase() === "português") {
@@ -128,7 +132,7 @@ async function carregarTabelaFAQsBackoffice() {
                 <td>${chatbotsMap[faq.chatbot_id] || "-"}</td>
                 <td>${faq.designacao || "-"}</td>
                 <td>${faq.pergunta || "-"}</td>
-                <td>${docLinks || "-"}</td>
+                <td class="col-pdf">${docLinks || "-"}</td>
                 <td>${flag}</td>
                 <td>${faq.categoria_nome || categoriasMap[faq.categoria_id] || "-"}</td>
                 <td style="text-align:center;">${recomendacao}</td>
