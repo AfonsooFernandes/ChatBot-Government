@@ -203,12 +203,12 @@ def get_chatbots():
     cur = conn.cursor()
     try:
         cur.execute("""
-            SELECT c.chatbot_id, c.nome, c.descricao, c.data_criacao, fr.fonte,
+            SELECT c.chatbot_id, c.nome, c.descricao, c.data_criacao, c.cor, fr.fonte,
                    array_remove(array_agg(cc.categoria_id), NULL) as categorias
             FROM Chatbot c
             LEFT JOIN FonteResposta fr ON fr.chatbot_id = c.chatbot_id
             LEFT JOIN ChatbotCategoria cc ON cc.chatbot_id = c.chatbot_id
-            GROUP BY c.chatbot_id, c.nome, c.descricao, c.data_criacao, fr.fonte
+            GROUP BY c.chatbot_id, c.nome, c.descricao, c.data_criacao, c.cor, fr.fonte
             ORDER BY c.chatbot_id ASC
         """)
         data = cur.fetchall()
@@ -218,8 +218,9 @@ def get_chatbots():
                 "nome": row[1],
                 "descricao": row[2],
                 "data_criacao": row[3],
-                "fonte": row[4] if row[4] else "faq",
-                "categorias": row[5] if row[5] is not None else []
+                "cor": row[4] if row[4] else "#d4af37",
+                "fonte": row[5] if row[5] else "faq",
+                "categorias": row[6] if row[6] is not None else []
             }
             for row in data
         ])
@@ -234,6 +235,7 @@ def criar_chatbot():
     nome = data.get("nome", "").strip()
     descricao = data.get("descricao", "").strip()
     categorias = data.get("categorias", [])
+    cor = data.get("cor", "").strip() or "#d4af37"
     if not nome:
         return jsonify({"success": False, "error": "Nome obrigatório."}), 400
     try:
@@ -242,8 +244,8 @@ def criar_chatbot():
             return jsonify({"success": False, "error": "Já existe um chatbot com esse nome."}), 409
 
         cur.execute(
-            "INSERT INTO Chatbot (nome, descricao) VALUES (%s, %s) RETURNING chatbot_id",
-            (nome, descricao)
+            "INSERT INTO Chatbot (nome, descricao, cor) VALUES (%s, %s, %s) RETURNING chatbot_id",
+            (nome, descricao, cor)
         )
         chatbot_id = cur.fetchone()[0]
 
@@ -272,12 +274,13 @@ def atualizar_chatbot(chatbot_id):
         descricao = data.get("descricao", "").strip()
         fonte = data.get("fonte", "faq")
         categorias = data.get("categorias", [])
+        cor = data.get("cor", "").strip() or "#d4af37"
         if not nome:
             return jsonify({"success": False, "error": "O nome do chatbot é obrigatório."}), 400
 
         cur.execute(
-            "UPDATE Chatbot SET nome=%s, descricao=%s WHERE chatbot_id=%s",
-            (nome, descricao, chatbot_id)
+            "UPDATE Chatbot SET nome=%s, descricao=%s, cor=%s WHERE chatbot_id=%s",
+            (nome, descricao, cor, chatbot_id)
         )
         cur.execute("DELETE FROM ChatbotCategoria WHERE chatbot_id=%s", (chatbot_id,))
         for categoria_id in categorias:
@@ -905,10 +908,10 @@ def perguntas_semelhantes():
 def obter_nome_chatbot(chatbot_id):
     cur = conn.cursor()
     try:
-        cur.execute("SELECT nome FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
+        cur.execute("SELECT nome, cor FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
         row = cur.fetchone()
         if row:
-            return jsonify({"success": True, "nome": row[0]})
+            return jsonify({"success": True, "nome": row[0], "cor": row[1] or "#d4af37"})
         return jsonify({"success": False, "erro": "Chatbot não encontrado."}), 404
     except Exception as e:
         return jsonify({"success": False, "erro": str(e)}), 500

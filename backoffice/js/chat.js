@@ -1,3 +1,17 @@
+function shadeColor(color, percent) {
+  let R = parseInt(color.substring(1,3),16);
+  let G = parseInt(color.substring(3,5),16);
+  let B = parseInt(color.substring(5,7),16);
+  R = Math.round(R * (100 + percent) / 100);
+  G = Math.round(G * (100 + percent) / 100);
+  B = Math.round(B * (100 + percent) / 100);
+  R = (R < 255) ? R : 255; G = (G < 255) ? G : 255; B = (B < 255) ? B : 255;
+  let RR = ((R.toString(16).length==1)?"0":"") + R.toString(16);
+  let GG = ((G.toString(16).length==1)?"0":"") + G.toString(16);
+  let BB = ((B.toString(16).length==1)?"0":"") + B.toString(16);
+  return "#" + RR + GG + BB;
+}
+
 function getIdiomaAtual() {
   return localStorage.getItem("idiomaAtivo") || "pt";
 }
@@ -32,6 +46,7 @@ function gerarDataHoraFormatada() {
 async function atualizarNomeChatHeader() {
   const headerNome = document.getElementById('chatHeaderNomeBot');
   let nomeBot = "...";
+  let corBot = "#d4af37";
   const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
 
   if (chatbotId && !isNaN(chatbotId)) {
@@ -42,6 +57,10 @@ async function atualizarNomeChatHeader() {
         nomeBot = data.nome;
         localStorage.setItem("nomeBot", nomeBot);
       }
+      if (data.success && data.cor) {
+        corBot = data.cor;
+        localStorage.setItem("corChatbot", corBot);
+      }
     } catch (e) {
       const botsData = JSON.parse(localStorage.getItem("chatbotsData") || "[]");
       const bot = botsData.find(b => b.chatbot_id === chatbotId || b.chatbot_id === String(chatbotId));
@@ -49,10 +68,18 @@ async function atualizarNomeChatHeader() {
         nomeBot = bot.nome;
         localStorage.setItem("nomeBot", nomeBot);
       }
+      if (bot && bot.cor) {
+        corBot = bot.cor;
+        localStorage.setItem("corChatbot", corBot);
+      }
     }
   }
   if (headerNome) {
     headerNome.textContent = nomeBot;
+  }
+  const chatHeader = document.querySelector('.chat-header');
+  if (chatHeader) {
+    chatHeader.style.background = corBot;
   }
   atualizarFonteBadge();
 }
@@ -119,6 +146,17 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
   msgDiv.className = `message ${tipo}`;
   msgDiv.style.whiteSpace = "pre-line";
   msgDiv.textContent = texto;
+
+  let corBot = localStorage.getItem("corChatbot") || "#d4af37";
+  if (tipo === "bot") {
+    msgDiv.style.backgroundColor = corBot;
+    msgDiv.style.color = "#fff";
+  }
+  if (tipo === "user") {
+    msgDiv.style.backgroundColor = shadeColor(corBot, -18);
+    msgDiv.style.color = "#fff";
+  }
+
   bubbleCol.appendChild(msgDiv);
 
   if (!timestamp) timestamp = gerarDataHoraFormatada();
@@ -184,6 +222,7 @@ async function apresentarMensagemInicial() {
   if (initialMessageShown) return;
 
   let nomeBot = "...";
+  let corBot = "#d4af37";
   const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
 
   if (chatbotId && !isNaN(chatbotId)) {
@@ -194,6 +233,10 @@ async function apresentarMensagemInicial() {
         nomeBot = data.nome;
         localStorage.setItem("nomeBot", nomeBot);
       }
+      if (data.success && data.cor) {
+        corBot = data.cor;
+        localStorage.setItem("corChatbot", corBot);
+      }
     } catch (e) {
       const botsData = JSON.parse(localStorage.getItem("chatbotsData") || "[]");
       const bot = botsData.find(b => b.chatbot_id === chatbotId || b.chatbot_id === String(chatbotId));
@@ -201,9 +244,14 @@ async function apresentarMensagemInicial() {
         nomeBot = bot.nome;
         localStorage.setItem("nomeBot", nomeBot);
       }
+      if (bot && bot.cor) {
+        corBot = bot.cor;
+        localStorage.setItem("corChatbot", corBot);
+      }
     }
   } else {
     localStorage.setItem("nomeBot", "Assistente Municipal");
+    localStorage.setItem("corChatbot", "#d4af37");
   }
 
   const msg =

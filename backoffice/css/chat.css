@@ -182,20 +182,19 @@
   font-size: 15px;
   position: relative;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  color: #2c3e50;
+  color: #fff;
   word-break: break-word;
   background: #fff;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 .message.user {
-  background-color: #c19a2f;
   align-self: flex-end;
   border-top-right-radius: 0;
   margin-left: 50px;
 }
 
 .message.bot {
-  background-color: #e0c565;
   align-self: flex-start;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;

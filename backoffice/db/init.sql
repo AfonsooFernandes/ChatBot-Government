@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS Chatbot (
     chatbot_id SERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL UNIQUE,
     descricao TEXT,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    cor VARCHAR(16) NOT NULL DEFAULT '#d4af37'
 );
 
 -- Tabela: ChatbotCategoria

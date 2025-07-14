@@ -65,6 +65,7 @@ async function carregarTabelaBots() {
             <th>Data de Criação</th>
             <th>Estado</th>
             <th>Fonte</th>
+            <th>Cor</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -81,6 +82,9 @@ async function carregarTabelaBots() {
               </td>
               <td>
                 <span class="fonte-indicador">${obterNomeFonte(bot.fonte)}</span>
+              </td>
+              <td class="cor">
+                <span class="cor-bot-preview" style="background:${bot.cor || '#d4af37'}"></span>
               </td>
               <td>
                 <button class="btn-ativo" onclick="tornarBotAtivo(${bot.chatbot_id}, this)">
@@ -157,6 +161,11 @@ window.abrirModalAtualizar = async function(chatbot_id) {
     document.getElementById("editarDataCriacao").value = bot.data_criacao ? new Date(bot.data_criacao).toLocaleDateString('pt-PT') : "";
     document.getElementById("editarFonteResposta").value = bot.fonte || "faq";
     document.getElementById("editarChatbotForm").setAttribute("data-edit-id", chatbot_id);
+
+    const inputCor = document.getElementById("editarCorChatbot");
+    if (inputCor) {
+      inputCor.value = bot.cor || "#d4af37";
+    }
 
     const botCategorias = Array.isArray(bot.categorias) ? bot.categorias.map(c => String(c)) : [];
     const catDiv = document.getElementById("editarCategoriasChatbot");
@@ -244,6 +253,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const descricao = document.getElementById("editarDescricaoChatbot").value.trim();
       const fonte = document.getElementById("editarFonteResposta").value;
       const categorias = Array.from(document.querySelectorAll('#editarCategoriasChatbot input[name="categoria"]:checked')).map(cb => cb.value);
+      const cor = (document.getElementById("editarCorChatbot").value || "#d4af37").trim();
 
       if (!nome) {
         alert("Nome obrigatório");
@@ -254,7 +264,8 @@ document.addEventListener("DOMContentLoaded", function () {
         nome,
         descricao,
         fonte,
-        categorias
+        categorias,
+        cor
       };
 
       try {
