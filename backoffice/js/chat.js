@@ -307,7 +307,9 @@ function responderPergunta(pergunta) {
     .then(data => {
       if (data.success) {
         adicionarMensagem("bot", data.resposta, "images/chatbot-icon.png", localStorage.getItem("nomeBot"));
-        obterPerguntasSemelhantes(pergunta, chatbotId, idioma);
+
+        const perguntaFaq = data.pergunta_faq || pergunta;
+        obterPerguntasSemelhantes(perguntaFaq, chatbotId, idioma);
       } else {
         adicionarMensagem(
           "bot",
@@ -341,64 +343,73 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
       idioma: idioma
     })
   })
-  .then(res => res.json())
-  .then(data => {
-    document.querySelectorAll('.sugestoes-similares').forEach(el => el.remove());
+    .then(res => res.json())
+    .then(data => {
+      document.querySelectorAll('.sugestoes-similares').forEach(el => el.remove());
 
-    if (data.success && Array.isArray(data.sugestoes) && data.sugestoes.length > 0) {
-      const chat = document.getElementById("chatBody");
+      if (data.success && Array.isArray(data.sugestoes) && data.sugestoes.length > 0) {
+        const chat = document.getElementById("chatBody");
 
-      const sugestoesWrapper = document.createElement("div");
-      sugestoesWrapper.className = "sugestoes-similares";
+        const sugestoesWrapper = document.createElement("div");
+        sugestoesWrapper.className = "sugestoes-similares";
 
-      const divTitulo = document.createElement("div");
-      divTitulo.className = "message-wrapper bot";
-      const authorDiv = document.createElement("div");
-      authorDiv.className = "chat-author";
-      authorDiv.textContent = localStorage.getItem("nomeBot") || "Assistente Municipal";
-      divTitulo.appendChild(authorDiv);
+        const divTitulo = document.createElement("div");
+        divTitulo.className = "message-wrapper bot";
+        const authorDiv = document.createElement("div");
+        authorDiv.className = "chat-author";
+        authorDiv.textContent = localStorage.getItem("nomeBot") || "Assistente Municipal";
+        divTitulo.appendChild(authorDiv);
 
-      const msgDiv = document.createElement("div");
-      msgDiv.className = "message bot";
-      msgDiv.style.display = "block";
-      msgDiv.style.whiteSpace = "pre-line";
-      let corBot = localStorage.getItem("corChatbot") || "#d4af37";
-      msgDiv.style.backgroundColor = corBot;
-      msgDiv.style.color = "#fff";
-      msgDiv.textContent = "📌 Perguntas semelhantes:";
-      divTitulo.appendChild(msgDiv);
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "message bot";
+        msgDiv.style.display = "block";
+        msgDiv.style.whiteSpace = "pre-line";
+        let corBot = localStorage.getItem("corChatbot") || "#d4af37";
+        msgDiv.style.backgroundColor = corBot;
+        msgDiv.style.color = "#fff";
+        msgDiv.textContent = "📌 Perguntas que também podem interessar:";
+        divTitulo.appendChild(msgDiv);
 
-      const dataDiv = document.createElement("div");
-      dataDiv.className = "chat-timestamp";
-      dataDiv.textContent = formatarDataMensagem(new Date());
-      divTitulo.appendChild(dataDiv);
+        const dataDiv = document.createElement("div");
+        dataDiv.className = "chat-timestamp";
+        dataDiv.textContent = formatarDataMensagem(new Date());
+        divTitulo.appendChild(dataDiv);
 
-      sugestoesWrapper.appendChild(divTitulo);
+        sugestoesWrapper.appendChild(divTitulo);
 
-      const btnContainer = document.createElement("div");
-      btnContainer.style.display = "flex";
-      btnContainer.style.gap = "10px";
-      btnContainer.style.marginTop = "6px";
-      btnContainer.style.flexWrap = "wrap";
+        const btnContainer = document.createElement("div");
+        btnContainer.className = "suggested-questions-bar";
 
-      data.sugestoes.forEach(pergunta => {
-        const btn = document.createElement("button");
-        btn.className = "btn-similar";
-        btn.textContent = pergunta;
-        btn.onclick = () => {
-          adicionarMensagem("user", pergunta);
-          responderPergunta(pergunta);
-          sugestoesWrapper.remove();
-        };
-        btnContainer.appendChild(btn);
-      });
+        data.sugestoes.forEach(pergunta => {
+          const btn = document.createElement("button");
+          btn.className = "suggested-question-btn";
+          btn.textContent = pergunta;
+          btn.style.borderColor = corBot;
+          btn.style.color = corBot;
+          btn.style.background = corBot + "15";
+          btn.onmouseover = () => {
+            btn.style.background = corBot;
+            btn.style.color = "#fff";
+          };
+          btn.onmouseout = () => {
+            btn.style.background = corBot + "15";
+            btn.style.color = corBot;
+          };
+          btn.onclick = () => {
+            adicionarMensagem("user", pergunta);
+            responderPergunta(pergunta);
+            sugestoesWrapper.remove();
+          };
+          btnContainer.appendChild(btn);
+        });
 
-      sugestoesWrapper.appendChild(btnContainer);
-      chat.appendChild(sugestoesWrapper);
-      chat.scrollTop = chat.scrollHeight;
-    }
-  })
-  .catch(() => {});
+        sugestoesWrapper.appendChild(btnContainer);
+
+        chat.appendChild(sugestoesWrapper);
+        chat.scrollTop = chat.scrollHeight;
+      }
+    })
+    .catch(() => {});
 }
 
 async function mostrarPerguntasSugestivasDB() {

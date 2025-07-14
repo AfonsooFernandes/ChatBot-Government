@@ -101,6 +101,8 @@ faiss_index, faqs_db, faq_embeddings = load_faiss_index()
 
 def pesquisar_faiss(pergunta, chatbot_id=None, k=1, min_sim=0.7):
     pergunta = preprocess_text(pergunta)
+    results = []
+
     if chatbot_id:
         faqs = [f for f in faqs_db if f[3] == int(chatbot_id)]
         if not faqs:
@@ -113,34 +115,35 @@ def pesquisar_faiss(pergunta, chatbot_id=None, k=1, min_sim=0.7):
         query_emb = embedding_model.encode([pergunta])
         query_emb = query_emb / np.linalg.norm(query_emb, axis=1, keepdims=True)
         D, I = index.search(np.array(query_emb, dtype=np.float32), min(k, len(faqs)))
-        if D[0][0] < min_sim:
-            return []
-        results = []
-        for idx in I[0]:
-            faq_id, pergunta_faq, resposta_faq, chatbot_id_faq = faqs[idx]
+
+        for score, idx_faq in zip(D[0], I[0]):
+            if idx_faq == -1 or score < min_sim:
+                continue
+            faq_id, pergunta_faq, resposta_faq, chatbot_id_faq = faqs[idx_faq]
             results.append({
                 'faq_id': faq_id,
                 'pergunta': pergunta_faq,
                 'resposta': resposta_faq,
-                'score': float(D[0][idx])
+                'score': float(score)
             })
         return results
+
     else:
         if len(faqs_db) == 0:
             return []
         query_emb = embedding_model.encode([pergunta])
         query_emb = query_emb / np.linalg.norm(query_emb, axis=1, keepdims=True)
         D, I = faiss_index.search(np.array(query_emb, dtype=np.float32), min(k, len(faqs_db)))
-        if D[0][0] < min_sim:
-            return []
-        results = []
-        for idx in I[0]:
-            faq_id, pergunta_faq, resposta_faq, chatbot_id_faq = faqs_db[idx]
+
+        for score, idx_faq in zip(D[0], I[0]):
+            if idx_faq == -1 or score < min_sim:
+                continue
+            faq_id, pergunta_faq, resposta_faq, chatbot_id_faq = faqs_db[idx_faq]
             results.append({
                 'faq_id': faq_id,
                 'pergunta': pergunta_faq,
                 'resposta': resposta_faq,
-                'score': float(D[0][idx])
+                'score': float(score)
             })
         return results
 
@@ -777,7 +780,8 @@ def obter_resposta():
             "fonte": "SAUDACAO",
             "resposta": saudacao,
             "faq_id": None,
-            "categoria_id": None
+            "categoria_id": None,
+            "pergunta_faq": None
         })
 
     if not pergunta or (len(pergunta) < 4 and not any(char.isalpha() for char in pergunta)):
@@ -802,7 +806,8 @@ def obter_resposta():
                     "resposta": resultado["resposta"],
                     "faq_id": faq_id,
                     "categoria_id": categoria_id,
-                    "score": resultado["score"]
+                    "score": resultado["score"],
+                    "pergunta_faq": resultado["pergunta"]
                 })
             return jsonify({"success": False, "erro": "Pergunta não encontrada nas FAQs."})
 
@@ -814,7 +819,8 @@ def obter_resposta():
                     "fonte": "FAISS",
                     "resposta": faiss_resultados[0]['resposta'],
                     "faq_id": faiss_resultados[0]['faq_id'],
-                    "score": faiss_resultados[0]['score']
+                    "score": faiss_resultados[0]['score'],
+                    "pergunta_faq": faiss_resultados[0]['pergunta']
                 })
             else:
                 resultado = obter_faq_mais_semelhante(pergunta, chatbot_id, threshold=80)
@@ -831,7 +837,8 @@ def obter_resposta():
                         "resposta": resultado["resposta"],
                         "faq_id": faq_id,
                         "categoria_id": categoria_id,
-                        "score": resultado["score"]
+                        "score": resultado["score"],
+                        "pergunta_faq": resultado["pergunta"]
                     })
                 return jsonify({
                     "success": False,
@@ -853,7 +860,8 @@ def obter_resposta():
                     "resposta": resultado["resposta"],
                     "faq_id": faq_id,
                     "categoria_id": categoria_id,
-                    "score": resultado["score"]
+                    "score": resultado["score"],
+                    "pergunta_faq": resultado["pergunta"]
                 })
             else:
                 faiss_resultados = pesquisar_faiss(pergunta, chatbot_id=chatbot_id, k=1, min_sim=0.7)
@@ -863,7 +871,8 @@ def obter_resposta():
                         "fonte": "RAG",
                         "resposta": faiss_resultados[0]['resposta'],
                         "faq_id": faiss_resultados[0]['faq_id'],
-                        "score": faiss_resultados[0]['score']
+                        "score": faiss_resultados[0]['score'],
+                        "pergunta_faq": faiss_resultados[0]['pergunta']
                     })
                 else:
                     return jsonify({
