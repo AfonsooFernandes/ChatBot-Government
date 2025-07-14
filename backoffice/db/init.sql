@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS FAQ (
     resposta TEXT NOT NULL,
     idioma VARCHAR(20) NOT NULL,
     links_documentos TEXT,
+    recomendado BOOLEAN DEFAULT FALSE,
     UNIQUE (chatbot_id, designacao, pergunta, resposta, idioma)
 );
 

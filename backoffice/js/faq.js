@@ -98,6 +98,7 @@ async function carregarTabelaFAQsBackoffice() {
             <th>Documento</th>
             <th>Idioma</th>
             <th>Categorias da FAQ</th>
+            <th>Recomendações</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -112,13 +113,16 @@ async function carregarTabelaFAQsBackoffice() {
               }).join("<br>");
             }
             let flag = "-";
-            if (faq.idioma === "pt" || faq.idioma.toLowerCase() === "português") {
+            if (faq.idioma === "pt" || faq.idioma?.toLowerCase() === "português") {
               flag = '<img src="images/pt.jpg" style="height:20px" title="Português">';
-            } else if (faq.idioma === "en" || faq.idioma.toLowerCase() === "inglês" || faq.idioma.toLowerCase() === "english") {
+            } else if (faq.idioma === "en" || faq.idioma?.toLowerCase() === "inglês" || faq.idioma?.toLowerCase() === "english") {
               flag = '<img src="images/en.png" style="height:20px" title="English">';
             } else if (faq.idioma) {
               flag = faq.idioma;
             }
+            let recomendacao = faq.recomendado
+              ? '<span style="color:green;font-size:18px;">✅ Sim</span>'
+              : '<span style="color:#cc2424;font-size:18px;">❌ Não</span>';
             return `
               <tr>
                 <td>${chatbotsMap[faq.chatbot_id] || "-"}</td>
@@ -127,6 +131,7 @@ async function carregarTabelaFAQsBackoffice() {
                 <td>${docLinks || "-"}</td>
                 <td>${flag}</td>
                 <td>${faq.categoria_nome || categoriasMap[faq.categoria_id] || "-"}</td>
+                <td style="text-align:center;">${recomendacao}</td>
                 <td>
                   <button class="btn-remover" onclick="pedirConfirmacao(${faq.faq_id})">Remover</button>
                   <button class="btn-editar" onclick="editarFAQ(${faq.faq_id})">Editar</button>
@@ -245,7 +250,8 @@ document.querySelectorAll(".faqForm").forEach(faqForm => {
       pergunta: form.pergunta.value.trim(),
       resposta: form.resposta.value.trim(),
       documentos: form.documentos.value.trim(),
-      relacionadas: form.relacionadas.value.trim()
+      relacionadas: form.relacionadas.value.trim(),
+      recomendado: form.recomendado ? form.recomendado.checked : false
     };
 
     try {

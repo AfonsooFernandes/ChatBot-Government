@@ -436,35 +436,36 @@ form button:hover,
   font-family: 'Inter', sans-serif;
   font-size: 15px;
 }
-.faq-tabela-backoffice th, 
+
+.faq-tabela-backoffice th,
 .faq-tabela-backoffice td {
+  border: 1px solid #dedede;
   padding: 14px 14px;
   text-align: left;
+  vertical-align: middle;
 }
-.faq-tabela-backoffice thead {
+
+.faq-tabela-backoffice thead th {
   background: #d4af37;
   color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  font-size: 15px;
 }
+
 .faq-tabela-backoffice tbody tr:nth-child(even) {
   background: #f7f7f7;
 }
+
 .faq-tabela-backoffice tbody tr:hover {
   background: #ede9fe;
   transition: background 0.18s;
 }
+
 .faq-tabela-backoffice td a {
   color: #1461a7;
   text-decoration: underline;
   word-break: break-all;
-}
-.faq-tabela-backoffice th {
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  font-size: 15px;
-  border-bottom: 2px solid #ddd;
-}
-.faq-tabela-backoffice td {
-  border-bottom: 1px solid #ececec;
 }
 
 .btn-remover {

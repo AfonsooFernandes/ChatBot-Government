@@ -383,7 +383,7 @@ def get_faq_by_id(faq_id):
     try:
         cur.execute("""
             SELECT f.faq_id, f.chatbot_id, f.categoria_id, f.designacao, f.pergunta, f.resposta, f.idioma, f.links_documentos,
-                   c.nome as categoria_nome
+                   c.nome as categoria_nome, f.recomendado
             FROM FAQ f
             LEFT JOIN Categoria c ON f.categoria_id = c.categoria_id
             WHERE f.faq_id = %s
@@ -403,7 +403,8 @@ def get_faq_by_id(faq_id):
                 "resposta": faq[5],
                 "idioma": faq[6],
                 "links_documentos": faq[7],
-                "categoria_nome": faq[8]
+                "categoria_nome": faq[8],
+                "recomendado": faq[9]
             }
         })
     except Exception as e:
@@ -443,13 +444,14 @@ def update_faq(faq_id):
         resposta = data.get("resposta", "").strip()
         idioma = data.get("idioma", "pt").strip()
         categorias = data.get("categorias", [])
+        recomendado = data.get("recomendado", False)
 
         categoria_id = categorias[0] if categorias else None
 
         cur.execute("""
-            UPDATE FAQ SET pergunta=%s, resposta=%s, idioma=%s, categoria_id=%s
+            UPDATE FAQ SET pergunta=%s, resposta=%s, idioma=%s, categoria_id=%s, recomendado=%s
             WHERE faq_id=%s
-        """, (pergunta, resposta, idioma, categoria_id, faq_id))
+        """, (pergunta, resposta, idioma, categoria_id, recomendado, faq_id))
 
         conn.commit()
         build_faiss_index()
@@ -471,6 +473,7 @@ def add_faq():
             return jsonify({"success": False, "error": "O campo 'idioma' é obrigatório."}), 400
 
         links_documentos = data.get("links_documentos", "").strip()
+        recomendado = data.get("recomendado", False)
 
         cur.execute("""
             SELECT faq_id FROM FAQ
@@ -480,8 +483,8 @@ def add_faq():
             return jsonify({"success": False, "error": "Esta FAQ já está inserida."}), 409
 
         cur.execute("""
-            INSERT INTO FAQ (chatbot_id, categoria_id, designacao, pergunta, resposta, idioma, links_documentos)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO FAQ (chatbot_id, categoria_id, designacao, pergunta, resposta, idioma, links_documentos, recomendado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING faq_id
         """, (
             data["chatbot_id"],
@@ -490,7 +493,8 @@ def add_faq():
             data["pergunta"],
             data["resposta"],
             idioma,
-            links_documentos
+            links_documentos,
+            recomendado
         ))
         faq_id = cur.fetchone()[0]
 
@@ -728,7 +732,7 @@ def get_faqs_detalhes():
     try:
         cur.execute("""
             SELECT f.faq_id, f.chatbot_id, f.designacao, f.pergunta, f.resposta, f.idioma, f.links_documentos,
-                   f.categoria_id, c.nome AS categoria_nome, ch.nome AS chatbot_nome
+                   f.categoria_id, c.nome AS categoria_nome, ch.nome AS chatbot_nome, f.recomendado
             FROM FAQ f
             LEFT JOIN Categoria c ON f.categoria_id = c.categoria_id
             LEFT JOIN Chatbot ch ON f.chatbot_id = ch.chatbot_id
@@ -747,6 +751,7 @@ def get_faqs_detalhes():
                 "categoria_id": r[7],
                 "categoria_nome": r[8],
                 "chatbot_nome": r[9],
+                "recomendado": r[10]
             }
             for r in data
         ])
