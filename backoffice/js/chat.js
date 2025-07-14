@@ -352,47 +352,38 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
 
         const sugestoesWrapper = document.createElement("div");
         sugestoesWrapper.className = "sugestoes-similares";
+        sugestoesWrapper.style.marginTop = "10px";
+        sugestoesWrapper.style.marginBottom = "8px";
+        sugestoesWrapper.style.maxWidth = "540px";
 
-        const divTitulo = document.createElement("div");
-        divTitulo.className = "message-wrapper bot";
-        const authorDiv = document.createElement("div");
-        authorDiv.className = "chat-author";
-        authorDiv.textContent = localStorage.getItem("nomeBot") || "Assistente Municipal";
-        divTitulo.appendChild(authorDiv);
-
-        const msgDiv = document.createElement("div");
-        msgDiv.className = "message bot";
-        msgDiv.style.display = "block";
-        msgDiv.style.whiteSpace = "pre-line";
-        let corBot = localStorage.getItem("corChatbot") || "#d4af37";
-        msgDiv.style.backgroundColor = corBot;
-        msgDiv.style.color = "#fff";
-        msgDiv.textContent = "📌 Perguntas que também podem interessar:";
-        divTitulo.appendChild(msgDiv);
-
-        const dataDiv = document.createElement("div");
-        dataDiv.className = "chat-timestamp";
-        dataDiv.textContent = formatarDataMensagem(new Date());
-        divTitulo.appendChild(dataDiv);
-
-        sugestoesWrapper.appendChild(divTitulo);
+        const titulo = document.createElement("div");
+        titulo.className = "sugestoes-title";
+        titulo.style.fontWeight = "600";
+        titulo.style.fontSize = "15.5px";
+        titulo.style.color = "#c32b2b";
+        titulo.style.marginBottom = "7px";
+        titulo.textContent = "📌 Perguntas que também podem interessar:";
+        sugestoesWrapper.appendChild(titulo);
 
         const btnContainer = document.createElement("div");
         btnContainer.className = "suggested-questions-bar";
 
+        let corBot = localStorage.getItem("corChatbot") || "#d4af37";
         data.sugestoes.forEach(pergunta => {
           const btn = document.createElement("button");
           btn.className = "suggested-question-btn";
           btn.textContent = pergunta;
+
+          btn.style.background = "#fff";
           btn.style.borderColor = corBot;
           btn.style.color = corBot;
-          btn.style.background = corBot + "15";
+
           btn.onmouseover = () => {
             btn.style.background = corBot;
             btn.style.color = "#fff";
           };
           btn.onmouseout = () => {
-            btn.style.background = corBot + "15";
+            btn.style.background = "#fff";
             btn.style.color = corBot;
           };
           btn.onclick = () => {
@@ -404,7 +395,6 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
         });
 
         sugestoesWrapper.appendChild(btnContainer);
-
         chat.appendChild(sugestoesWrapper);
         chat.scrollTop = chat.scrollHeight;
       }
@@ -425,7 +415,6 @@ async function mostrarPerguntasSugestivasDB() {
     });
     const data = await res.json();
     if (data.success && data.faqs.length > 0) {
-      // Título
       const title = document.createElement("div");
       title.className = "sugestoes-title";
       title.textContent = "Possíveis perguntas:";

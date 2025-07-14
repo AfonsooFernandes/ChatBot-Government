@@ -146,25 +146,40 @@ def pesquisar_faiss(pergunta, chatbot_id=None, k=1, min_sim=0.7):
                 'score': float(score)
             })
         return results
+    
+def preprocess_text_for_matching(text):
+    """
+    Normaliza o texto para matching: minúsculas, remove acentos, pontuação e stopwords simples.
+    """
+    stop_words = {'a', 'o', 'e', 'de', 'para', 'com', 'em', 'que', 'quem', 'como', 'do', 'da', 'os', 'as', 'dos', 'das'}
+    text = unidecode(text.lower())
+    text = re.sub(r'[^\w\s]', '', text)
+    text = ' '.join(word for word in text.split() if word not in stop_words)
+    return text.strip()
 
 # ---------- SIMILARIDADE FUZZY ----------
-def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id, threshold=60):
+def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id, threshold=None):
     cur = conn.cursor()
     cur.execute("SELECT pergunta, resposta FROM FAQ WHERE chatbot_id = %s", (chatbot_id,))
     faqs = cur.fetchall()
-    pergunta_normalizada = pergunta_utilizador.strip().lower()
+    pergunta_norm = preprocess_text_for_matching(pergunta_utilizador)
     melhor_pergunta = None
     melhor_resposta = None
     maior_score = 0
+
+    if threshold is None:
+        threshold = 40 if len(pergunta_utilizador.split()) <= 5 else 60
+
     for pergunta, resposta in faqs:
-        pergunta_bd = pergunta.strip().lower()
-        if pergunta_normalizada == pergunta_bd:
+        pergunta_bd_norm = preprocess_text_for_matching(pergunta)
+        if pergunta_norm == pergunta_bd_norm:
             return {"pergunta": pergunta, "resposta": resposta, "score": 100}
-        score = fuzz.ratio(pergunta_normalizada, pergunta_bd)
+        score = fuzz.token_set_ratio(pergunta_norm, pergunta_bd_norm)
         if score > maior_score:
             maior_score = score
             melhor_pergunta = pergunta
             melhor_resposta = resposta
+
     if maior_score >= threshold:
         return {"pergunta": melhor_pergunta, "resposta": melhor_resposta, "score": maior_score}
     else:
