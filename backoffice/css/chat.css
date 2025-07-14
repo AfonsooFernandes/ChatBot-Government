@@ -9,10 +9,10 @@
   overflow: hidden;
   position: fixed;
   right: 10px;
-  bottom: 60px; 
+  bottom: 60px;
   z-index: 1001;
   box-shadow: -2px 0 6px rgba(0, 0, 0, 0.05);
-  display: none; 
+  display: none;
 }
 
 .chat-header {
@@ -25,17 +25,7 @@
   position: relative;
   min-height: unset;
   text-align: left;
-  gap: 12px;
-}
-
-#chatHeaderNomeBot {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: 0.1px;
-  color: #fff;
-  line-height: 1.2;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  gap: 14px;
 }
 
 .chat-header-avatar {
@@ -47,6 +37,50 @@
   background: #fff;
   object-fit: cover;
   box-shadow: 0 0 4px #d4af37;
+}
+
+.chat-header-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#chatHeaderNomeBot {
+  margin: 0 0 2px 0;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  color: #fff;
+  line-height: 1.2;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+#chatFonteBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  color: #fffbe7;
+  font-weight: 500;
+  padding: 2px 9px 2px 8px;
+  border-radius: 6px;
+  margin-top: 2px;
+  min-height: 20px;
+  width: fit-content;
+}
+
+#chatFonteBadge .badge-icon {
+  font-size: 14px;
+  margin-right: 3px;
+}
+
+#chatFonteBadge[data-tipo="imediata"] {
+  background: none;
+  color: #fffbe7;
+}
+#chatFonteBadge[data-tipo="ia"] {
+  background: none;
+  color: #fff;
 }
 
 .chat-close-btn {
@@ -68,7 +102,7 @@
 
 .chat-body {
   flex: 1;
-  padding: 20px;
+  padding: 40px 20px 20px 20px;
   background: #f9fafb;
   overflow-y: auto;
   display: flex;
@@ -76,24 +110,57 @@
   gap: 12px;
 }
 
-.message-wrapper.bot {
+.message-wrapper.bot,
+.message-wrapper.user {
   display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  gap: 10px;
-  margin-bottom: 4px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 10px;
+  position: relative;
 }
 
 .message-wrapper.user {
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.message-content {
   display: flex;
   flex-direction: row;
-  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  position: relative;
+}
+
+.chat-author {
+  font-size: 13px;
+  color: #888da8;
+  font-weight: 800;
+  margin-bottom: 4px;
+  margin-left: 58px;
+  margin-top: 2px;
+  text-align: left;
+  line-height: 1.1;
+  width: auto;
+}
+
+.message-wrapper.user .chat-author {
+  margin-left: 0;
+  margin-right: 8px;
+  text-align: right;
+}
+
+.message-wrapper.user .message-content {
+  flex-direction: row-reverse;
 }
 
 .bot-avatar-outer {
   display: flex;
   align-items: flex-end;
   height: 100%;
+  padding-top: 22px;
 }
 
 .bot-avatar {
@@ -103,7 +170,7 @@
   background: #fff;
   box-shadow: 0 0 2px #d4af37;
   object-fit: cover;
-  margin-bottom: 4px;
+  margin-bottom: 0;
 }
 
 .message {
@@ -117,6 +184,7 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   color: #2c3e50;
   word-break: break-word;
+  background: #fff;
 }
 
 .message.user {
@@ -131,7 +199,7 @@
   align-self: flex-start;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
-  border-bottom-left-radius: 0; 
+  border-bottom-left-radius: 0;
   border-bottom-right-radius: 16px;
   margin-right: 50px;
   position: relative;
@@ -251,4 +319,24 @@
 .chat-toggle-btn img {
   width: 30px;
   height: 30px;
+}
+
+.chat-timestamp {
+  font-size: 12px;
+  color: #888da8;
+  font-weight: 500;
+  margin-top: 7px;
+  margin-bottom: 2px;
+  margin-left: 4px;
+  margin-right: 0;
+  text-align: left;
+  line-height: 1.2;
+  display: block;
+  width: auto;
+}
+
+.message-wrapper.user .chat-timestamp {
+  margin-left: 0;
+  margin-right: 8px;
+  text-align: right;
 }

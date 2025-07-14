@@ -52,7 +52,6 @@
       </div>
     </div>
   </div>
-
   <!-- Modal Novo Chatbot -->
   <div id="modalNovoBot" class="modal-overlay modal-overlay-novo-bot" style="display: none;">
     <div class="modal-box modal-box-novo-bot-exclusivo">
@@ -71,7 +70,6 @@
       </form>
     </div>
   </div>
-
   <!-- Modal Editar Chatbot -->
   <div id="modalEditarChatbot" class="modal-overlay modal-overlay-editar-chatbot" style="display: none;">
     <div class="modal-box modal-box-editar-chatbot-exclusivo">
@@ -157,16 +155,17 @@
       </div>
     </div>
   </div>
-
   <!-- Chat Sidebar -->
   <div class="chat-sidebar" id="chatSidebar" style="display: none;">
     <div class="chat-header">
-      <button class="chat-close-btn">×</button>
+      <button class="chat-close-btn" onclick="fecharChat()">×</button>
       <img src="images/chatbot-icon.png" alt="Chatbot" class="chat-header-avatar">
-      <h3 id="chatHeaderNomeBot"></h3>
+      <div class="chat-header-info">
+        <h3 id="chatHeaderNomeBot"></h3>
+        <div id="chatFonteBadge"></div>
+      </div>
     </div>
-    <div class="chat-body" id="chatBody">
-    </div>
+    <div class="chat-body" id="chatBody"></div>
     <div class="chat-input">
       <input type="text" placeholder="Digite uma mensagem..." id="chatInput" onkeydown="if(event.key==='Enter') enviarPergunta()">
       <button onclick="enviarPergunta()" title="Enviar">➤</button>
