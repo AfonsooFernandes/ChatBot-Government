@@ -292,6 +292,7 @@ function responderPergunta(pergunta) {
 
   const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
   const idioma = getIdiomaAtual();
+  let corBot = localStorage.getItem("corChatbot") || "#d4af37";
 
   fetch("http://localhost:5000/obter-resposta", {
     method: "POST",
@@ -306,7 +307,24 @@ function responderPergunta(pergunta) {
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        adicionarMensagem("bot", data.resposta, "images/chatbot-icon.png", localStorage.getItem("nomeBot"));
+        let resposta = data.resposta || "";
+        if (data.documentos && Array.isArray(data.documentos) && data.documentos.length > 0) {
+          resposta += `
+            <div class="fonte-docs-wrapper" style="margin-top: 18px; display: flex; align-items: center; gap: 10px;">
+              <span class="fonte-label" style="font-weight: 600; margin-right: 7px; color: #fff;">Fonte:</span>
+              <a href="${data.documentos[0]}" target="_blank" rel="noopener" class="fonte-doc-link"
+                 style="background: #fff; color: ${corBot}; border-radius: 7px; padding: 6px 18px; text-decoration: none; font-weight: 600; border: 1.5px solid ${corBot}; transition: all 0.18s; font-size: 15px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;"
+                 onmouseover="this.style.background='${corBot}'; this.style.color='#fff'; this.style.borderColor='${corBot}';"
+                 onmouseout="this.style.background='#fff'; this.style.color='${corBot}'; this.style.borderColor='${corBot}';"
+                 title="Abrir fonte do documento em nova aba">
+                <span>Link</span>
+                <span style="font-size: 12px;">↗</span>
+              </a>
+            </div>
+          `;
+        }
+
+        adicionarMensagemComHTML("bot", resposta, "images/chatbot-icon.png", localStorage.getItem("nomeBot"));
 
         const perguntaFaq = data.pergunta_faq || pergunta;
         obterPerguntasSemelhantes(perguntaFaq, chatbotId, idioma);
@@ -327,6 +345,64 @@ function responderPergunta(pergunta) {
         localStorage.getItem("nomeBot")
       );
     });
+}
+
+function adicionarMensagemComHTML(tipo, html, avatarUrl = null, autor = null, timestamp = null) {
+  const chat = document.getElementById("chatBody");
+  let wrapper = document.createElement("div");
+  wrapper.className = "message-wrapper " + tipo;
+
+  const authorDiv = document.createElement("div");
+  authorDiv.className = "chat-author " + tipo;
+  authorDiv.textContent = tipo === "user" ? "Eu" : (autor || "Assistente Municipal");
+  wrapper.appendChild(authorDiv);
+
+  const messageContent = document.createElement("div");
+  messageContent.className = "message-content";
+
+  if (tipo === "bot" && avatarUrl) {
+    const avatarDiv = document.createElement("div");
+    avatarDiv.className = "bot-avatar-outer";
+    const avatar = document.createElement("img");
+    avatar.src = avatarUrl;
+    avatar.alt = "Bot";
+    avatar.className = "bot-avatar";
+    avatarDiv.appendChild(avatar);
+    messageContent.appendChild(avatarDiv);
+  }
+
+  const bubbleCol = document.createElement("div");
+  bubbleCol.style.display = "flex";
+  bubbleCol.style.flexDirection = "column";
+  bubbleCol.style.alignItems = tipo === "user" ? "flex-end" : "flex-start";
+
+  const msgDiv = document.createElement("div");
+  msgDiv.className = `message ${tipo}`;
+  msgDiv.style.whiteSpace = "pre-line";
+  msgDiv.innerHTML = html;
+
+  let corBot = localStorage.getItem("corChatbot") || "#d4af37";
+  if (tipo === "bot") {
+    msgDiv.style.backgroundColor = corBot;
+    msgDiv.style.color = "#fff";
+  }
+  if (tipo === "user") {
+    msgDiv.style.backgroundColor = shadeColor(corBot, -18);
+    msgDiv.style.color = "#fff";
+  }
+
+  bubbleCol.appendChild(msgDiv);
+
+  if (!timestamp) timestamp = gerarDataHoraFormatada();
+  const timestampDiv = document.createElement("div");
+  timestampDiv.className = "chat-timestamp";
+  timestampDiv.textContent = timestamp;
+  bubbleCol.appendChild(timestampDiv);
+
+  messageContent.appendChild(bubbleCol);
+  wrapper.appendChild(messageContent);
+  chat.appendChild(wrapper);
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {

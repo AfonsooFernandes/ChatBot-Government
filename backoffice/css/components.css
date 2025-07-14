@@ -739,3 +739,37 @@ form button:hover,
   letter-spacing: 0.01em;
   color: #c44242;
 }
+
+.fonte-docs-wrapper {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fonte-label {
+  font-weight: 600;
+  margin-right: 7px;
+}
+
+.fonte-doc-link {
+  background: #ffffff;
+  color: #1976d2;
+  border-radius: 7px;
+  padding: 6px 18px;
+  text-decoration: none;
+  font-weight: 600;
+  border: 1.5px solid #1976d2;
+  transition: all 0.18s;
+  font-size: 15px;
+  margin-left: 0;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.fonte-doc-link:hover {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1976d2;
+  text-decoration: none;
+}

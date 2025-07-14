@@ -796,7 +796,8 @@ def obter_resposta():
             "resposta": saudacao,
             "faq_id": None,
             "categoria_id": None,
-            "pergunta_faq": None
+            "pergunta_faq": None,
+            "documentos": []
         })
 
     if not pergunta or (len(pergunta) < 4 and not any(char.isalpha() for char in pergunta)):
@@ -815,6 +816,9 @@ def obter_resposta():
                 """, (resultado["pergunta"], chatbot_id))
                 row = cur.fetchone()
                 faq_id, categoria_id = row if row else (None, None)
+                cur.execute("SELECT link FROM FAQ_Documento WHERE faq_id = %s", (faq_id,))
+                docs = [r[0] for r in cur.fetchall()]
+
                 return jsonify({
                     "success": True,
                     "fonte": "FAQ",
@@ -822,20 +826,25 @@ def obter_resposta():
                     "faq_id": faq_id,
                     "categoria_id": categoria_id,
                     "score": resultado["score"],
-                    "pergunta_faq": resultado["pergunta"]
+                    "pergunta_faq": resultado["pergunta"],
+                    "documentos": docs
                 })
             return jsonify({"success": False, "erro": "Pergunta não encontrada nas FAQs."})
 
         elif fonte == "faiss":
             faiss_resultados = pesquisar_faiss(pergunta, chatbot_id=chatbot_id, k=1, min_sim=0.7)
             if faiss_resultados:
+                faq_id = faiss_resultados[0]['faq_id']
+                cur.execute("SELECT link FROM FAQ_Documento WHERE faq_id = %s", (faq_id,))
+                docs = [r[0] for r in cur.fetchall()]
                 return jsonify({
                     "success": True,
                     "fonte": "FAISS",
                     "resposta": faiss_resultados[0]['resposta'],
-                    "faq_id": faiss_resultados[0]['faq_id'],
+                    "faq_id": faq_id,
                     "score": faiss_resultados[0]['score'],
-                    "pergunta_faq": faiss_resultados[0]['pergunta']
+                    "pergunta_faq": faiss_resultados[0]['pergunta'],
+                    "documentos": docs
                 })
             else:
                 resultado = obter_faq_mais_semelhante(pergunta, chatbot_id, threshold=80)
@@ -846,6 +855,8 @@ def obter_resposta():
                     """, (resultado["pergunta"], chatbot_id))
                     row = cur.fetchone()
                     faq_id, categoria_id = row if row else (None, None)
+                    cur.execute("SELECT link FROM FAQ_Documento WHERE faq_id = %s", (faq_id,))
+                    docs = [r[0] for r in cur.fetchall()]
                     return jsonify({
                         "success": True,
                         "fonte": "FUZZY",
@@ -853,7 +864,8 @@ def obter_resposta():
                         "faq_id": faq_id,
                         "categoria_id": categoria_id,
                         "score": resultado["score"],
-                        "pergunta_faq": resultado["pergunta"]
+                        "pergunta_faq": resultado["pergunta"],
+                        "documentos": docs
                     })
                 return jsonify({
                     "success": False,
@@ -869,6 +881,8 @@ def obter_resposta():
                 """, (resultado["pergunta"], chatbot_id))
                 row = cur.fetchone()
                 faq_id, categoria_id = row if row else (None, None)
+                cur.execute("SELECT link FROM FAQ_Documento WHERE faq_id = %s", (faq_id,))
+                docs = [r[0] for r in cur.fetchall()]
                 return jsonify({
                     "success": True,
                     "fonte": "FAQ",
@@ -876,18 +890,23 @@ def obter_resposta():
                     "faq_id": faq_id,
                     "categoria_id": categoria_id,
                     "score": resultado["score"],
-                    "pergunta_faq": resultado["pergunta"]
+                    "pergunta_faq": resultado["pergunta"],
+                    "documentos": docs
                 })
             else:
                 faiss_resultados = pesquisar_faiss(pergunta, chatbot_id=chatbot_id, k=1, min_sim=0.7)
                 if faiss_resultados:
+                    faq_id = faiss_resultados[0]['faq_id']
+                    cur.execute("SELECT link FROM FAQ_Documento WHERE faq_id = %s", (faq_id,))
+                    docs = [r[0] for r in cur.fetchall()]
                     return jsonify({
                         "success": True,
                         "fonte": "RAG",
                         "resposta": faiss_resultados[0]['resposta'],
-                        "faq_id": faiss_resultados[0]['faq_id'],
+                        "faq_id": faq_id,
                         "score": faiss_resultados[0]['score'],
-                        "pergunta_faq": faiss_resultados[0]['pergunta']
+                        "pergunta_faq": faiss_resultados[0]['pergunta'],
+                        "documentos": docs
                     })
                 else:
                     return jsonify({
