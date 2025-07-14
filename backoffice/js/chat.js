@@ -2,6 +2,30 @@ function getIdiomaAtual() {
   return localStorage.getItem("idiomaAtivo") || "pt";
 }
 
+async function atualizarNomeChatHeader() {
+  const headerNome = document.getElementById('chatHeaderNomeBot');
+  let nomeBot = "...";
+  const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
+
+  if (chatbotId && !isNaN(chatbotId)) {
+    try {
+      const res = await fetch(`http://localhost:5000/chatbot/${chatbotId}`);
+      const data = await res.json();
+      if (data.success && data.nome) {
+        nomeBot = data.nome;
+      }
+    } catch (e) {
+      const botsData = JSON.parse(localStorage.getItem("chatbotsData") || "[]");
+      const bot = botsData.find(b => b.chatbot_id === chatbotId || b.chatbot_id === String(chatbotId));
+      if (bot && bot.nome) nomeBot = bot.nome;
+    }
+  }
+
+  if (headerNome) {
+    headerNome.textContent = nomeBot;
+  }
+}
+
 // Adiciona mensagem ao chat
 function adicionarMensagem(tipo, texto, avatarUrl = null) {
   const chat = document.getElementById("chatBody");
@@ -66,6 +90,8 @@ Eu sou o ${nomeBot}, o seu assistente virtual.
 Faça uma pergunta de cada vez que eu procurarei esclarecer todas as suas dúvidas.`;
 
   adicionarMensagem("bot", msg, "images/chatbot-icon.png");
+
+  atualizarNomeChatHeader();
 }
 
 // Envia a pergunta do utilizador
@@ -192,3 +218,4 @@ window.apresentarMensagemInicial = apresentarMensagemInicial;
 window.enviarPergunta = enviarPergunta;
 window.responderPergunta = responderPergunta;
 window.perguntarCategoria = function(){};
+window.atualizarNomeChatHeader = atualizarNomeChatHeader;

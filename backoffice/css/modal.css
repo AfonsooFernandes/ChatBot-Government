@@ -307,6 +307,7 @@
   justify-content: center;
   transition: background 0.18s;
   box-shadow: 0 1px 5px rgba(255,94,94,0.08);
+  cursor: pointer;
 }
 
 .btn-cancelar-adicionar-faq:hover,
