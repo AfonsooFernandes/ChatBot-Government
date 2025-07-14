@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     chatToggleBtn.addEventListener('click', () => {
       chatSidebar.style.display = 'flex';
       chatToggleBtn.style.display = 'none';
-      if (typeof apresentarMensagemInicial === "function") {
-        apresentarMensagemInicial();
+      if (typeof abrirChat === "function") {
+        abrirChat();
       }
     });
   }

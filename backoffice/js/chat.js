@@ -15,6 +15,20 @@ function formatarDataMensagem(date) {
   return `${dia} de ${mes} de ${ano} ${horas}:${minutos}`;
 }
 
+function gerarDataHoraFormatada() {
+  const agora = new Date();
+  return agora.toLocaleDateString("pt-PT", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
+    }) +
+    " " +
+    agora.toLocaleTimeString("pt-PT", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+}
+
 async function atualizarNomeChatHeader() {
   const headerNome = document.getElementById('chatHeaderNomeBot');
   let nomeBot = "...";
@@ -119,23 +133,55 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
   chat.scrollTop = chat.scrollHeight;
 }
 
-function gerarDataHoraFormatada() {
-  const agora = new Date();
-  return agora.toLocaleDateString("pt-PT", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric"
-    }) +
-    " " +
-    agora.toLocaleTimeString("pt-PT", {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+let autoMensagemTimeout = null;
+let autoFecharTimeout = null;
+let initialMessageShown = false;
+
+function iniciarTimerAutoMensagem() {
+  limparTimersAutoChat();
+  autoMensagemTimeout = setTimeout(() => {
+    enviarMensagemAutomatica();
+  }, 30000);
 }
+
+function enviarMensagemAutomatica() {
+  adicionarMensagem(
+    "bot",
+    "Se precisar de ajuda, basta escrever a sua pergunta!",
+    "images/chatbot-icon.png",
+    localStorage.getItem("nomeBot") || "Assistente Municipal"
+  );
+  autoFecharTimeout = setTimeout(() => {
+    fecharChat();
+  }, 15000);
+}
+
+function limparTimersAutoChat() {
+  if (autoMensagemTimeout) {
+    clearTimeout(autoMensagemTimeout);
+    autoMensagemTimeout = null;
+  }
+  if (autoFecharTimeout) {
+    clearTimeout(autoFecharTimeout);
+    autoFecharTimeout = null;
+  }
+}
+
+function abrirChat() {
+  document.getElementById('chatSidebar').style.display = 'flex';
+  apresentarMensagemInicial();
+  iniciarTimerAutoMensagem();
+}
+
+window.fecharChat = function() {
+  document.getElementById('chatSidebar').style.display = 'none';
+  limparTimersAutoChat();
+  initialMessageShown = false;
+};
 
 async function apresentarMensagemInicial() {
   const chatBody = document.getElementById("chatBody");
-  chatBody.innerHTML = "";
+  if (initialMessageShown) return;
 
   let nomeBot = "...";
   const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
@@ -166,6 +212,7 @@ Eu sou o ${nomeBot}, o seu assistente virtual.
 Faça uma pergunta de cada vez que eu procurarei esclarecer todas as suas dúvidas.`;
 
   adicionarMensagem("bot", msg, "images/chatbot-icon.png", nomeBot);
+  initialMessageShown = true;
 
   await atualizarNomeChatHeader();
 }
@@ -177,6 +224,8 @@ function enviarPergunta() {
 
   adicionarMensagem("user", texto);
   input.value = "";
+  limparTimersAutoChat();
+  iniciarTimerAutoMensagem();
 
   responderPergunta(texto);
 }
@@ -230,10 +279,7 @@ function responderPergunta(pergunta) {
 }
 
 function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
-  if (!chatbotId || isNaN(chatbotId)) {
-    console.warn("⚠️ Chatbot ID inválido para buscar perguntas semelhantes.");
-    return;
-  }
+  if (!chatbotId || isNaN(chatbotId)) return;
 
   if (!idioma) idioma = getIdiomaAtual();
 
@@ -293,9 +339,7 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
         chat.scrollTop = chat.scrollHeight;
       }
     })
-    .catch(() => {
-      console.warn("⚠️ Erro ao buscar perguntas semelhantes");
-    });
+    .catch(() => {});
 }
 
 window.setIdiomaAtivo = function(idioma) {

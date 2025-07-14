@@ -74,6 +74,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   if (window.location.pathname.includes("recursos.html") && chatbotId && typeof mostrarRespostas === "function") {
-  mostrarRespostas();
+    mostrarRespostas();
   }
 });
