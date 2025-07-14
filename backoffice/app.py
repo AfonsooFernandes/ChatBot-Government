@@ -903,6 +903,25 @@ def perguntas_semelhantes():
         return jsonify({"success": True, "sugestoes": sugestoes})
     except Exception as e:
         return jsonify({"success": False, "erro": str(e)}), 500
+    
+@app.route("/faqs-aleatorias", methods=["POST"])
+def faqs_aleatorias():
+    cur = conn.cursor()
+    dados = request.get_json()
+    idioma = dados.get("idioma", "pt")
+    n = int(dados.get("n", 3))
+    try:
+        cur.execute("""
+            SELECT pergunta
+            FROM FAQ
+            WHERE idioma = %s
+            ORDER BY RANDOM()
+            LIMIT %s
+        """, (idioma, n))
+        faqs = [row[0] for row in cur.fetchall()]
+        return jsonify({"success": True, "faqs": [{"pergunta": p} for p in faqs]})
+    except Exception as e:
+        return jsonify({"success": False, "erro": str(e)}), 500
 
 @app.route("/chatbot/<int:chatbot_id>", methods=["GET"])
 def obter_nome_chatbot(chatbot_id):

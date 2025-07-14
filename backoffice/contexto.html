@@ -61,24 +61,16 @@
     </div>
   </div>
 
-  <!-- Chat Sidebar -->
   <div class="chat-sidebar" id="chatSidebar" style="display: none;">
     <div class="chat-header">
-      <button class="chat-close-btn">×</button>
-      <img src="images/chatbot-icon.png" alt="bot">
-      <h3>CMVC - Serviços Municipalizados</h3>
-      <span>(Assistente Virtual)</span>
+      <button class="chat-close-btn" onclick="fecharChat()">×</button>
+      <img src="images/chatbot-icon.png" alt="Chatbot" class="chat-header-avatar">
+      <div class="chat-header-info">
+        <h3 id="chatHeaderNomeBot"></h3>
+        <div id="chatFonteBadge"></div>
+      </div>
     </div>
     <div class="chat-body" id="chatBody">
-      <div class="message intro">Olá! Está a conversar com o assistente virtual. <br>Escolha um tema ou escreva a sua pergunta.</div>
-      <div class="categories">
-        <button class="category-btn" onclick="perguntarCategoria('Educação')">Educação</button>
-        <button class="category-btn" onclick="perguntarCategoria('Ação Social')">Ação Social</button>
-        <button class="category-btn" onclick="perguntarCategoria('Habitação')">Habitação</button>
-        <button class="category-btn" onclick="perguntarCategoria('Cultura')">Cultura</button>
-        <button class="category-btn" onclick="perguntarCategoria('Desporto')">Desporto</button>
-        <button class="category-btn" onclick="perguntarCategoria('Ambiente')">Ambiente</button>
-      </div>
     </div>
     <div class="chat-input">
       <input type="text" placeholder="Digite uma mensagem..." id="chatInput" onkeydown="if(event.key==='Enter') enviarPergunta()">

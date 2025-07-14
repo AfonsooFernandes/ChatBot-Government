@@ -263,6 +263,7 @@ Faça uma pergunta de cada vez que eu procurarei esclarecer todas as suas dúvid
   initialMessageShown = true;
 
   await atualizarNomeChatHeader();
+  mostrarPerguntasSugestivasDB();
 }
 
 function enviarPergunta() {
@@ -355,8 +356,11 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
         const msgDiv = document.createElement("div");
         msgDiv.className = "message bot";
         msgDiv.style.display = "block";
+        msgDiv.style.whiteSpace = "pre-line";
+        let corBot = localStorage.getItem("corChatbot") || "#d4af37";
+        msgDiv.style.backgroundColor = corBot;
+        msgDiv.style.color = "#fff";
         msgDiv.textContent = "📌 Perguntas semelhantes:";
-        divTitulo.appendChild(document.createElement("div"));
         divTitulo.appendChild(msgDiv);
 
         const dataDiv = document.createElement("div");
@@ -388,6 +392,60 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
       }
     })
     .catch(() => {});
+}
+
+async function mostrarPerguntasSugestivasDB() {
+  const chat = document.getElementById("chatBody");
+  if (!chat) return;
+  const idioma = getIdiomaAtual();
+
+  try {
+    const res = await fetch("http://localhost:5000/faqs-aleatorias", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idioma: idioma, n: 3 })
+    });
+    const data = await res.json();
+    if (data.success && data.faqs.length > 0) {
+      // Título
+      const title = document.createElement("div");
+      title.className = "sugestoes-title";
+      title.textContent = "Possíveis perguntas:";
+      chat.appendChild(title);
+
+      const btnContainer = document.createElement("div");
+      btnContainer.className = "suggested-questions-bar";
+
+      const corBot = localStorage.getItem("corChatbot") || "#d4af37";
+
+      data.faqs.forEach(faq => {
+        const btn = document.createElement("button");
+        btn.className = "suggested-question-btn";
+        btn.textContent = faq.pergunta;
+        btn.style.background = corBot + "15";
+        btn.style.borderColor = corBot;
+        btn.style.color = corBot;
+        btn.onmouseover = () => {
+          btn.style.background = corBot;
+          btn.style.color = "#fff";
+        };
+        btn.onmouseout = () => {
+          btn.style.background = corBot + "15";
+          btn.style.color = corBot;
+        };
+        btn.onclick = () => {
+          adicionarMensagem("user", faq.pergunta);
+          responderPergunta(faq.pergunta);
+          btnContainer.remove();
+          title.remove();
+        };
+        btnContainer.appendChild(btn);
+      });
+
+      chat.appendChild(btnContainer);
+      chat.scrollTop = chat.scrollHeight;
+    }
+  } catch (e) {}
 }
 
 window.setIdiomaAtivo = function(idioma) {
