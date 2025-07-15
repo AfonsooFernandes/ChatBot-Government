@@ -38,7 +38,6 @@ async function carregarTabelaBots() {
       return;
     }
 
-    // Carregar a fonte de cada bot
     for (const bot of bots) {
       try {
         const fonteRes = await fetch(`http://localhost:5000/fonte/${bot.chatbot_id}`);
@@ -189,6 +188,7 @@ window.abrirModalAtualizar = async function(chatbot_id) {
 window.abrirModalAdicionarFAQ = async function(chatbot_id) {
   document.getElementById('faqChatbotId').value = chatbot_id;
   document.getElementById('docxChatbotId').value = chatbot_id;
+  document.getElementById('pdfChatbotId').value = chatbot_id;
 
   const select = document.getElementById("faqCategoriaSelect");
   select.innerHTML = '<option value="">Escolha a categoria</option>';
@@ -219,7 +219,6 @@ window.fecharModalEditarChatbot = function() {
 };
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Botões de Eliminar
   const btnSim = document.getElementById('btnConfirmarEliminarBot');
   const btnNao = document.getElementById('btnCancelarEliminarBot');
   if (btnSim) {

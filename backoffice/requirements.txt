@@ -6,5 +6,6 @@ fuzzywuzzy
 faiss-cpu
 sentence-transformers
 numpy
-scipy
-pickle5
+PyPDF2
+unidecode
+requests

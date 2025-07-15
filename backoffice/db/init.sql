@@ -83,3 +83,12 @@ CREATE TABLE IF NOT EXISTS FonteResposta (
     fonte TEXT NOT NULL,
     UNIQUE(chatbot_id)
 );
+
+-- Tabela: PDF_Documents
+CREATE TABLE IF NOT EXISTS PDF_Documents (
+    pdf_id SERIAL PRIMARY KEY,
+    chatbot_id INT REFERENCES Chatbot(chatbot_id) ON DELETE CASCADE,
+    filename VARCHAR(255) NOT NULL,
+    file_path TEXT NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

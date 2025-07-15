@@ -282,6 +282,14 @@ function responderPergunta(pergunta) {
     );
   }
 
+  if (window.awaitingRagConfirmation) {
+    adicionarMensagem(
+      "bot",
+      "Por favor, utilize o link acima para confirmar se pretende pesquisar nos documentos PDF."
+    );
+    return;
+  }
+
   const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
   const idioma = getIdiomaAtual();
   let corBot = localStorage.getItem("corChatbot") || "#d4af37";
@@ -317,9 +325,103 @@ function responderPergunta(pergunta) {
         }
 
         adicionarMensagemComHTML("bot", resposta, "images/chatbot-icon.png", localStorage.getItem("nomeBot"));
-
         const perguntaFaq = data.pergunta_faq || pergunta;
         obterPerguntasSemelhantes(perguntaFaq, chatbotId, idioma);
+        window.awaitingRagConfirmation = false;
+      }
+      else if (
+        data.prompt_rag ||
+        (data.erro && data.erro.toLowerCase().includes("deseja tentar encontrar uma resposta nos documentos pdf"))
+      ) {
+        window.awaitingRagConfirmation = true;
+
+        const chat = document.getElementById("chatBody");
+        let corBot = localStorage.getItem("corChatbot") || "#d4af37";
+        let wrapper = document.createElement("div");
+        wrapper.className = "message-wrapper bot";
+
+        const authorDiv = document.createElement("div");
+        authorDiv.className = "chat-author bot";
+        authorDiv.textContent = localStorage.getItem("nomeBot") || "Assistente Municipal";
+        wrapper.appendChild(authorDiv);
+
+        const messageContent = document.createElement("div");
+        messageContent.className = "message-content";
+        const bubbleCol = document.createElement("div");
+        bubbleCol.style.display = "flex";
+        bubbleCol.style.flexDirection = "column";
+        bubbleCol.style.alignItems = "flex-start";
+
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "message bot";
+        msgDiv.style.whiteSpace = "pre-line";
+        msgDiv.style.backgroundColor = corBot;
+        msgDiv.style.color = "#fff";
+        msgDiv.innerHTML = `Pergunta não encontrada nas FAQs.<br> 
+        <a id="confirmar-rag-link" href="#" style="
+          color: #fff; background: ${corBot}; border: 2px solid #fff; 
+          border-radius: 8px; padding: 5px 17px; font-weight: bold; 
+          text-decoration: underline; display: inline-block; margin-top: 7px; cursor: pointer;"
+        >Clique aqui para tentar encontrar uma resposta nos documentos PDF.</a>
+        <br><span style="font-size:13px; opacity:.86;">Pode demorar alguns segundos.</span>`;
+
+        bubbleCol.appendChild(msgDiv);
+
+        const timestampDiv = document.createElement("div");
+        timestampDiv.className = "chat-timestamp";
+        timestampDiv.textContent = gerarDataHoraFormatada();
+        bubbleCol.appendChild(timestampDiv);
+
+        messageContent.appendChild(bubbleCol);
+        wrapper.appendChild(messageContent);
+        chat.appendChild(wrapper);
+        chat.scrollTop = chat.scrollHeight;
+
+        setTimeout(() => {
+          const confirmarRag = document.getElementById("confirmar-rag-link");
+          if (confirmarRag) {
+            confirmarRag.onclick = function(e) {
+              e.preventDefault();
+              window.awaitingRagConfirmation = false;
+              confirmarRag.style.pointerEvents = "none";
+              confirmarRag.style.opacity = "0.6";
+              confirmarRag.textContent = "A procurar nos documentos PDF...";
+              fetch("http://localhost:5000/obter-resposta", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  pergunta,
+                  chatbot_id: chatbotId,
+                  fonte: "faq+raga",
+                  feedback: "try_rag",
+                  idioma
+                })
+              })
+                .then(res => res.json())
+                .then(ragData => {
+                  if (ragData.success) {
+                    adicionarMensagemComHTML("bot", ragData.resposta || "", "images/chatbot-icon.png", localStorage.getItem("nomeBot"));
+                  } else {
+                    adicionarMensagem(
+                      "bot",
+                      ragData.erro || "❌ Nenhuma resposta encontrada nos documentos PDF.",
+                      "images/chatbot-icon.png",
+                      localStorage.getItem("nomeBot")
+                    );
+                  }
+                })
+                .catch(() => {
+                  adicionarMensagem(
+                    "bot",
+                    "❌ Erro ao comunicar com o servidor (RAG).",
+                    "images/chatbot-icon.png",
+                    localStorage.getItem("nomeBot")
+                  );
+                });
+            };
+          }
+        }, 60);
+
       } else {
         adicionarMensagem(
           "bot",
@@ -327,6 +429,7 @@ function responderPergunta(pergunta) {
           "images/chatbot-icon.png",
           localStorage.getItem("nomeBot")
         );
+        window.awaitingRagConfirmation = false;
       }
     })
     .catch(() => {
@@ -336,6 +439,7 @@ function responderPergunta(pergunta) {
         "images/chatbot-icon.png",
         localStorage.getItem("nomeBot")
       );
+      window.awaitingRagConfirmation = false;
     });
 }
 

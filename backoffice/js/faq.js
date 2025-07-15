@@ -1,3 +1,6 @@
+let esperandoConfirmacaoRAG = false;
+window.awaitingRagConfirmation = false;
+
 function adicionarMensagem(tipo, texto) {
   const chat = document.getElementById("chatBody");
   if (!chat) return;
@@ -6,6 +9,106 @@ function adicionarMensagem(tipo, texto) {
   div.textContent = texto;
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
+}
+
+function mostrarPromptRAG(perguntaOriginal, chatbotId) {
+  window.perguntaRAG = perguntaOriginal;
+  window.chatbotIdRAG = chatbotId;
+  window.awaitingRagConfirmation = true;
+
+  const chat = document.getElementById("chatBody");
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "message-wrapper bot";
+
+  const authorDiv = document.createElement("div");
+  authorDiv.className = "chat-author bot";
+  authorDiv.textContent = "Assistente Municipal";
+  wrapper.appendChild(authorDiv);
+
+  const messageContent = document.createElement("div");
+  messageContent.className = "message-content";
+
+  const bubbleCol = document.createElement("div");
+  bubbleCol.style.display = "flex";
+  bubbleCol.style.flexDirection = "column";
+  bubbleCol.style.alignItems = "flex-start";
+
+  const msgDiv = document.createElement("div");
+  msgDiv.className = "message bot";
+  msgDiv.style.whiteSpace = "pre-line";
+  let corBot = localStorage.getItem("corChatbot") || "#d4af37";
+  msgDiv.style.backgroundColor = corBot;
+  msgDiv.style.color = "#fff";
+
+  msgDiv.innerHTML = `
+    Pergunta não encontrada nas FAQs.<br>
+    Deseja tentar encontrar uma resposta nos documentos PDF? 
+    <a href="#" id="linkPesquisarRAG" style="color:#ffe082;font-weight:bold;text-decoration:underline;margin-left:5px;">
+      Clique aqui para pesquisar
+    </a>
+  `;
+
+  bubbleCol.appendChild(msgDiv);
+
+  const timestampDiv = document.createElement("div");
+  timestampDiv.className = "chat-timestamp";
+  timestampDiv.textContent = gerarDataHoraFormatada();
+  bubbleCol.appendChild(timestampDiv);
+
+  messageContent.appendChild(bubbleCol);
+  wrapper.appendChild(messageContent);
+  chat.appendChild(wrapper);
+  chat.scrollTop = chat.scrollHeight;
+
+  setTimeout(() => {
+    const link = document.getElementById("linkPesquisarRAG");
+    if (link) {
+      link.onclick = function (e) {
+        e.preventDefault();
+        enviarPerguntaRAG();
+        link.textContent = "A pesquisar...";
+        link.style.pointerEvents = "none";
+        window.awaitingRagConfirmation = false;
+      }
+    }
+  }, 80);
+}
+
+function enviarPerguntaRAG() {
+  const pergunta = window.perguntaRAG;
+  const chatbotId = window.chatbotIdRAG;
+
+  fetch("http://localhost:5000/obter-resposta", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      pergunta,
+      chatbot_id: chatbotId,
+      fonte: "faq+raga",
+      feedback: "try_rag"
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      document.querySelectorAll('.rag-btn-bar').forEach(el => el.remove());
+      window.awaitingRagConfirmation = false;
+      if (data.success) {
+        adicionarMensagem("bot", data.resposta || "");
+      } else {
+        adicionarMensagem(
+          "bot",
+          data.erro || "❌ Nenhuma resposta encontrada nos documentos PDF."
+        );
+      }
+    })
+    .catch(() => {
+      window.awaitingRagConfirmation = false;
+      adicionarMensagem(
+        "bot",
+        "❌ Erro ao comunicar com o servidor (RAG)."
+      );
+    });
 }
 
 async function carregarChatbots() {
@@ -21,7 +124,6 @@ async function carregarChatbots() {
           chatbots.map(bot => `<option value="${String(bot.chatbot_id)}">${bot.nome}</option>`).join('');
 
         const estaEmFormulario = !!select.closest("form");
-
         if (!estaEmFormulario && chatbotIdSelecionado && !isNaN(parseInt(chatbotIdSelecionado))) {
           select.value = chatbotIdSelecionado;
         }
@@ -67,7 +169,6 @@ async function carregarTabelaFAQsBackoffice() {
 
     const chatbotsMap = {};
     chatbots.forEach(bot => chatbotsMap[bot.chatbot_id] = bot.nome);
-
     const categoriasMap = {};
     categorias.forEach(cat => categoriasMap[cat.categoria_id] = cat.nome);
 
@@ -172,7 +273,18 @@ function pedirConfirmacao(faq_id) {
 function responderPergunta(pergunta) {
   const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
   if (!chatbotId || isNaN(chatbotId)) {
-    adicionarMensagem("bot", "⚠️ Nenhum chatbot ativo. Por favor, selecione um chatbot ativo no menu de recursos.");
+    adicionarMensagem(
+      "bot",
+      "⚠️ Nenhum chatbot ativo. Por favor, selecione um chatbot ativo no menu de recursos."
+    );
+    return;
+  }
+
+  if (window.awaitingRagConfirmation) {
+    adicionarMensagem(
+      "bot",
+      "Por favor, utilize o link apresentado acima para confirmar se pretende pesquisar nos documentos PDF."
+    );
     return;
   }
 
@@ -187,11 +299,26 @@ function responderPergunta(pergunta) {
       if (data.success) {
         adicionarMensagem("bot", data.resposta);
         obterPerguntasSemelhantes(pergunta, chatbotId);
+        window.awaitingRagConfirmation = false;
+      } else if (
+        data.prompt_rag ||
+        (data.erro &&
+          data.erro.toLowerCase().includes("deseja tentar encontrar uma resposta nos documentos pdf"))
+      ) {
+        window.awaitingRagConfirmation = true;
+        mostrarPromptRAG(pergunta, chatbotId);
       } else {
         adicionarMensagem("bot", data.erro || "❌ Nenhuma resposta encontrada.");
+        window.awaitingRagConfirmation = false;
       }
     })
-    .catch(() => adicionarMensagem("bot", "❌ Erro ao comunicar com o servidor."));
+    .catch(() => {
+      adicionarMensagem(
+        "bot",
+        "❌ Erro ao comunicar com o servidor."
+      );
+      window.awaitingRagConfirmation = false;
+    });
 }
 
 function obterPerguntasSemelhantes(perguntaOriginal, chatbotId) {
@@ -309,27 +436,47 @@ document.querySelectorAll(".uploadForm").forEach(uploadForm => {
   uploadForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const uploadStatus = uploadForm.querySelector(".uploadStatus") || document.getElementById("uploadStatus");
+    const uploadStatus = 
+      uploadForm.querySelector(".uploadStatusPDF") ||
+      uploadForm.querySelector(".uploadStatus") ||
+      document.getElementById("uploadStatus");
+
+    if (!uploadStatus) {
+      alert("⚠️ Erro: Não foi encontrado nenhum elemento para mostrar o status do upload!");
+      return;
+    }
+
     const formData = new FormData(uploadForm);
+    let rota = "upload-faq-docx";
+    let isPDF = false;
 
-    const container = uploadForm.closest(".bot-dropdown");
-    const selectChatbot = container?.querySelector('select[name="chatbot_id"]');
-    const chatbotIdSelecionado = selectChatbot?.value;
+    const pdfInput = uploadForm.querySelector('input[type="file"][accept=".pdf"]');
+    const docxInput = uploadForm.querySelector('input[type="file"][accept=".docx"]');
 
-    if (!chatbotIdSelecionado) {
+    if (pdfInput && pdfInput.files.length > 0) {
+      rota = "upload-pdf";
+      isPDF = true;
+      formData.delete("file");
+      Array.from(pdfInput.files).forEach(file => formData.append("file", file));
+    } else if (docxInput && docxInput.files.length > 1) {
+      rota = "upload-faq-docx-multiplos";
+      formData.delete("files");
+      Array.from(docxInput.files).forEach(file => formData.append("files", file));
+    }
+
+    const chatbotId = uploadForm.querySelector('input[name="chatbot_id"]')?.value;
+    if (!chatbotId) {
       uploadStatus.innerHTML = "❌ Selecione um chatbot antes de enviar.";
       uploadStatus.style.color = "red";
       return;
     }
-
-    formData.append("chatbot_id", chatbotIdSelecionado);
+    formData.set("chatbot_id", chatbotId);
 
     try {
-      const res = await fetch("http://localhost:5000/upload-faq-docx", {
+      const res = await fetch(`http://localhost:5000/${rota}`, {
         method: "POST",
         body: formData
       });
-
       const resultado = await res.json();
 
       if (resultado.success) {
@@ -337,16 +484,13 @@ document.querySelectorAll(".uploadForm").forEach(uploadForm => {
         uploadStatus.style.color = "green";
         mostrarRespostas();
         uploadForm.reset();
-
-        if (chatbotIdSelecionado !== "todos") {
-          carregarTabelaFAQs(parseInt(chatbotIdSelecionado), true);
+        if (chatbotId !== "todos") {
+          carregarTabelaFAQs(parseInt(chatbotId), true);
         }
-
       } else {
         uploadStatus.innerHTML = `❌ Erro: ${resultado.error || "Erro ao carregar o documento."}`;
         uploadStatus.style.color = "red";
       }
-
     } catch (err) {
       uploadStatus.innerHTML = "❌ Erro de comunicação com o servidor.";
       uploadStatus.style.color = "red";
@@ -474,13 +618,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const filtroChatbot = document.getElementById("filtroChatbot");
   const filtroIdioma = document.getElementById("filtroIdioma");
 
-  if (pesquisaInput) {
-    pesquisaInput.addEventListener("input", carregarTabelaFAQsBackoffice);
-  }
-  if (filtroChatbot) {
-    filtroChatbot.addEventListener("change", carregarTabelaFAQsBackoffice);
-  }
-  if (filtroIdioma) {
-    filtroIdioma.addEventListener("change", carregarTabelaFAQsBackoffice);
-  }
+  if (pesquisaInput) pesquisaInput.addEventListener("input", carregarTabelaFAQsBackoffice);
+  if (filtroChatbot) filtroChatbot.addEventListener("change", carregarTabelaFAQsBackoffice);
+  if (filtroIdioma) filtroIdioma.addEventListener("change", carregarTabelaFAQsBackoffice);
 });

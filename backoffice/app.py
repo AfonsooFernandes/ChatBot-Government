@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2
 import docx
+import PyPDF2
 import logging
 from fuzzywuzzy import fuzz
 import faiss
@@ -11,6 +12,7 @@ import pickle
 import os
 import traceback
 import re
+import requests
 from unidecode import unidecode
 
 # ---------- LOGGING ----------
@@ -34,9 +36,13 @@ except Exception as e:
 
 INDEX_PATH = "faiss.index"
 FAQ_EMBEDDINGS_PATH = "faq_embeddings.pkl"
+PDF_STORAGE_PATH = "pdfs/"
 embedding_model = SentenceTransformer('all-MiniLM-L12-v2')
 
-# ---------- FUNÇÕES DE EMBEDDING E FAISS ----------
+if not os.path.exists(PDF_STORAGE_PATH):
+    os.makedirs(PDF_STORAGE_PATH)
+
+# ---------- EMBEDDINGS E FAISS ----------
 SAUDACOES = [
     "olá", "ola", "oi", "bom dia", "boa tarde", "boa noite", "oi", "hello", "hi"
 ]
@@ -45,6 +51,9 @@ SAUDACOES_PERGUNTAS = [
 ]
 RESPOSTA_SAUDACAO = "Olá! 👋 Como posso ajudar? Se tiver alguma dúvida, basta perguntar!"
 RESPOSTA_TUDO_BEM = "Estou sempre pronto a ajudar! 😊 Em que posso ser útil?"
+NEGATIVE_FEEDBACK = [
+    "não", "nao", "não está certo", "nao esta certo", "errado", "não é isso", "nao e isso"
+]
 
 def detectar_saudacao(pergunta):
     texto = pergunta.strip().lower()
@@ -57,6 +66,13 @@ def detectar_saudacao(pergunta):
         if p == texto:
             return RESPOSTA_TUDO_BEM
     return None
+
+def detectar_feedback_negativo(pergunta):
+    texto = preprocess_text(pergunta.strip().lower())
+    for feedback in NEGATIVE_FEEDBACK:
+        if fuzz.ratio(texto, preprocess_text(feedback)) > 80:
+            return True
+    return False
 
 def preprocess_text(text):
     text = unidecode(text.lower())
@@ -73,36 +89,68 @@ def get_faqs_from_db(chatbot_id=None):
         cur.execute("SELECT faq_id, pergunta, resposta, chatbot_id FROM FAQ")
     return cur.fetchall()
 
+def get_pdfs_from_db(chatbot_id=None):
+    cur = conn.cursor()
+    try:
+        if chatbot_id:
+            cur.execute("SELECT pdf_id, file_path FROM PDF_Documents WHERE chatbot_id = %s", (chatbot_id,))
+        else:
+            cur.execute("SELECT pdf_id, file_path FROM PDF_Documents")
+        return cur.fetchall()
+    finally:
+        cur.close()
+
 def build_faiss_index(chatbot_id=None):
-    faqs = get_faqs_from_db(chatbot_id)
-    perguntas = [preprocess_text(f[1]) for f in faqs]
-    if not perguntas:
-        emb_dim = 384
-        embeddings = np.zeros((1, emb_dim), dtype=np.float32)
-        index = faiss.IndexFlatIP(emb_dim)
-    else:
-        embeddings = embedding_model.encode(perguntas, show_progress_bar=True)
-        embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
-        index = faiss.IndexFlatIP(embeddings.shape[1])
-        index.add(np.array(embeddings, dtype=np.float32))
-    with open(FAQ_EMBEDDINGS_PATH, 'wb') as f:
-        pickle.dump({'faqs': faqs, 'embeddings': embeddings}, f)
-    faiss.write_index(index, INDEX_PATH)
+    cur = conn.cursor()
+    try:
+        if chatbot_id:
+            cur.execute("SELECT faq_id, pergunta, resposta, chatbot_id FROM FAQ WHERE chatbot_id = %s", (chatbot_id,))
+        else:
+            cur.execute("SELECT faq_id, pergunta, resposta, chatbot_id FROM FAQ")
+        faqs = cur.fetchall()
+        perguntas = [f[1] for f in faqs]
+        if not perguntas:
+            emb_dim = embedding_model.get_sentence_embedding_dimension()
+            embeddings = np.zeros((1, emb_dim), dtype=np.float32)
+            index = faiss.IndexFlatIP(emb_dim)
+        else:
+            embeddings = embedding_model.encode(perguntas, show_progress_bar=True)
+            embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+            index = faiss.IndexFlatIP(embeddings.shape[1])
+            index.add(np.array(embeddings, dtype=np.float32))
+        with open(FAQ_EMBEDDINGS_PATH, 'wb') as f:
+            pickle.dump({'faqs': faqs, 'embeddings': embeddings}, f)
+        faiss.write_index(index, INDEX_PATH)
+        logging.info(f"Índice FAISS para FAQs salvo em {INDEX_PATH}")
+    except Exception as e:
+        logging.error(f"Erro ao construir índice FAISS para FAQs: {e}")
+        raise
+    finally:
+        cur.close()
 
 def load_faiss_index():
-    index = faiss.read_index(INDEX_PATH)
-    with open(FAQ_EMBEDDINGS_PATH, 'rb') as f:
-        data = pickle.load(f)
-    return index, data['faqs'], data['embeddings']
+    try:
+        if not os.path.exists(INDEX_PATH) or not os.path.exists(FAQ_EMBEDDINGS_PATH):
+            logging.info("Índice FAISS ou embeddings de FAQs não encontrados. Reconstruindo...")
+            build_faiss_index()
+        index = faiss.read_index(INDEX_PATH)
+        with open(FAQ_EMBEDDINGS_PATH, 'rb') as f:
+            data = pickle.load(f)
+        return index, data['faqs'], data['embeddings']
+    except Exception as e:
+        logging.error(f"Erro ao carregar índice FAISS para FAQs: {e}")
+        logging.info("Reconstruindo índice FAISS para FAQs...")
+        build_faiss_index()
+        index = faiss.read_index(INDEX_PATH)
+        with open(FAQ_EMBEDDINGS_PATH, 'rb') as f:
+            data = pickle.load(f)
+        return index, data['faqs'], data['embeddings']
 
-if not (os.path.exists(INDEX_PATH) and os.path.exists(FAQ_EMBEDDINGS_PATH)):
-    build_faiss_index()
 faiss_index, faqs_db, faq_embeddings = load_faiss_index()
 
 def pesquisar_faiss(pergunta, chatbot_id=None, k=1, min_sim=0.7):
     pergunta = preprocess_text(pergunta)
     results = []
-
     if chatbot_id:
         faqs = [f for f in faqs_db if f[3] == int(chatbot_id)]
         if not faqs:
@@ -115,7 +163,6 @@ def pesquisar_faiss(pergunta, chatbot_id=None, k=1, min_sim=0.7):
         query_emb = embedding_model.encode([pergunta])
         query_emb = query_emb / np.linalg.norm(query_emb, axis=1, keepdims=True)
         D, I = index.search(np.array(query_emb, dtype=np.float32), min(k, len(faqs)))
-
         for score, idx_faq in zip(D[0], I[0]):
             if idx_faq == -1 or score < min_sim:
                 continue
@@ -127,14 +174,12 @@ def pesquisar_faiss(pergunta, chatbot_id=None, k=1, min_sim=0.7):
                 'score': float(score)
             })
         return results
-
     else:
         if len(faqs_db) == 0:
             return []
         query_emb = embedding_model.encode([pergunta])
         query_emb = query_emb / np.linalg.norm(query_emb, axis=1, keepdims=True)
         D, I = faiss_index.search(np.array(query_emb, dtype=np.float32), min(k, len(faqs_db)))
-
         for score, idx_faq in zip(D[0], I[0]):
             if idx_faq == -1 or score < min_sim:
                 continue
@@ -146,18 +191,51 @@ def pesquisar_faiss(pergunta, chatbot_id=None, k=1, min_sim=0.7):
                 'score': float(score)
             })
         return results
-    
+
+def pesquisar_pdf_ollama(pergunta, chatbot_id=None, modelo="llama3", max_chars=18000):
+    pdfs = get_pdfs_from_db(chatbot_id)
+    contexto_pdf = ""
+    for pdf_id, file_path in pdfs:
+        try:
+            with open(file_path, "rb") as f:
+                reader = PyPDF2.PdfReader(f)
+                for page in reader.pages:
+                    texto = page.extract_text()
+                    if texto:
+                        contexto_pdf += texto + "\n\n"
+        except Exception as e:
+            print(f"Erro lendo PDF: {file_path}", e)
+
+    contexto_pdf = contexto_pdf[:max_chars]
+    prompt = f"""Responda à pergunta abaixo UTILIZANDO APENAS o conteúdo extraído dos documentos PDF. Não invente informação. Seja objetivo.
+
+Pergunta: {pergunta}
+
+Conteúdo dos documentos:
+{contexto_pdf}
+"""
+    url = "http://localhost:11434/api/generate"
+    payload = {
+        "model": modelo,
+        "prompt": prompt,
+        "stream": False
+    }
+    try:
+        resp = requests.post(url, json=payload, timeout=120)
+        resp.raise_for_status()
+        resposta = resp.json().get("response", "").strip()
+        return resposta
+    except Exception as e:
+        print("Erro Ollama:", e)
+        return None
+
 def preprocess_text_for_matching(text):
-    """
-    Normaliza o texto para matching: minúsculas, remove acentos, pontuação e stopwords simples.
-    """
     stop_words = {'a', 'o', 'e', 'de', 'para', 'com', 'em', 'que', 'quem', 'como', 'do', 'da', 'os', 'as', 'dos', 'das'}
     text = unidecode(text.lower())
     text = re.sub(r'[^\w\s]', '', text)
     text = ' '.join(word for word in text.split() if word not in stop_words)
     return text.strip()
 
-# ---------- SIMILARIDADE FUZZY ----------
 def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id, threshold=None):
     cur = conn.cursor()
     cur.execute("SELECT pergunta, resposta FROM FAQ WHERE chatbot_id = %s", (chatbot_id,))
@@ -185,7 +263,6 @@ def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id, threshold=None):
     else:
         return None
 
-# ---------- CATEGORIAS ----------
 @app.route("/chatbots/<int:chatbot_id>", methods=["DELETE"])
 def eliminar_chatbot(chatbot_id):
     cur = conn.cursor()
@@ -194,6 +271,7 @@ def eliminar_chatbot(chatbot_id):
         cur.execute("DELETE FROM FAQ_Documento WHERE faq_id IN (SELECT faq_id FROM FAQ WHERE chatbot_id = %s)", (chatbot_id,))
         cur.execute("DELETE FROM FAQ WHERE chatbot_id = %s", (chatbot_id,))
         cur.execute("DELETE FROM FonteResposta WHERE chatbot_id = %s", (chatbot_id,))
+        cur.execute("DELETE FROM PDF_Documents WHERE chatbot_id = %s", (chatbot_id,))
         cur.execute("DELETE FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
         conn.commit()
         build_faiss_index()
@@ -215,7 +293,6 @@ def get_categorias():
         conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
 
-# ---------- CHATBOTS ----------
 @app.route("/chatbots", methods=["GET"])
 def get_chatbots():
     cur = conn.cursor()
@@ -553,6 +630,50 @@ def delete_faq(faq_id):
         conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/upload-pdf", methods=["POST"])
+def upload_pdf():
+    cur = conn.cursor()
+    if 'file' not in request.files:
+        return jsonify({"success": False, "error": "Ficheiro não enviado."}), 400
+
+    files = request.files.getlist('file')
+    chatbot_id = request.form.get("chatbot_id")
+    if not chatbot_id:
+        return jsonify({"success": False, "error": "Chatbot ID não fornecido."}), 400
+
+    uploaded_pdf_ids = []
+    try:
+        for file in files:
+            filename = file.filename
+            if not filename.lower().endswith('.pdf'):
+                return jsonify({"success": False, "error": "Apenas ficheiros PDF são permitidos."}), 400
+
+            file_path = os.path.join(PDF_STORAGE_PATH, filename)
+            file.save(file_path)
+            file.close()
+
+            with open(file_path, 'rb') as f:
+                reader = PyPDF2.PdfReader(f)
+                if reader.is_encrypted:
+                    return jsonify({"success": False, "error": f"O PDF '{filename}' está protegido por senha."}), 400
+                if not reader.pages:
+                    return jsonify({"success": False, "error": f"O PDF '{filename}' está vazio ou corrompido."}), 400
+
+            cur.execute(
+                "INSERT INTO PDF_Documents (chatbot_id, filename, file_path) VALUES (%s, %s, %s) RETURNING pdf_id",
+                (chatbot_id, filename, file_path)
+            )
+            pdf_id = cur.fetchone()[0]
+            uploaded_pdf_ids.append(pdf_id)
+
+        conn.commit()
+        return jsonify({"success": True, "pdf_ids": uploaded_pdf_ids, "message": "PDF(s) carregado(s) com sucesso."})
+    except PyPDF2.errors.PdfReadError:
+        return jsonify({"success": False, "error": "Erro ao ler o PDF. Verifique se o arquivo não está corrompido."}), 400
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route("/upload-faq-docx", methods=["POST"])
 def upload_faq_docx():
     cur = conn.cursor()
@@ -787,6 +908,21 @@ def obter_resposta():
     pergunta = dados.get("pergunta", "").strip()
     chatbot_id = dados.get("chatbot_id")
     fonte = dados.get("fonte", "faq")
+    idioma = dados.get("idioma", "pt")
+    feedback = dados.get("feedback", None)
+
+    print("DEBUG /obter-resposta:", {
+        "pergunta": pergunta,
+        "chatbot_id": chatbot_id,
+        "fonte": fonte,
+        "feedback": feedback,
+        "type_feedback": type(feedback)
+    })
+
+    try:
+        chatbot_id = int(chatbot_id)
+    except Exception:
+        return jsonify({"success": False, "erro": "Chatbot ID inválido."}), 400
 
     saudacao = detectar_saudacao(pergunta)
     if saudacao:
@@ -806,6 +942,13 @@ def obter_resposta():
             "erro": "Pergunta demasiado curta ou não reconhecida como válida."
         })
 
+    if fonte == "faq+raga" and (feedback is None or feedback == "") and pergunta.lower() in ["sim", "yes"]:
+        return jsonify({
+            "success": False,
+            "erro": "Por favor utilize os botões abaixo para confirmar.",
+            "prompt_rag": True
+        })
+
     try:
         if fonte == "faq":
             resultado = obter_faq_mais_semelhante(pergunta, chatbot_id)
@@ -818,7 +961,6 @@ def obter_resposta():
                 faq_id, categoria_id = row if row else (None, None)
                 cur.execute("SELECT link FROM FAQ_Documento WHERE faq_id = %s", (faq_id,))
                 docs = [r[0] for r in cur.fetchall()]
-
                 return jsonify({
                     "success": True,
                     "fonte": "FAQ",
@@ -829,7 +971,10 @@ def obter_resposta():
                     "pergunta_faq": resultado["pergunta"],
                     "documentos": docs
                 })
-            return jsonify({"success": False, "erro": "Pergunta não encontrada nas FAQs."})
+            return jsonify({
+                "success": False,
+                "erro": "Não foi encontrada nenhuma resposta para a sua pergunta nas FAQs da base de dados."
+            })
 
         elif fonte == "faiss":
             faiss_resultados = pesquisar_faiss(pergunta, chatbot_id=chatbot_id, k=1, min_sim=0.7)
@@ -873,51 +1018,44 @@ def obter_resposta():
                 })
 
         elif fonte == "faq+raga":
-            resultado = obter_faq_mais_semelhante(pergunta, chatbot_id)
-            if resultado:
-                cur.execute("""
-                    SELECT faq_id, categoria_id FROM FAQ
-                    WHERE LOWER(pergunta) = LOWER(%s) AND chatbot_id = %s
-                """, (resultado["pergunta"], chatbot_id))
-                row = cur.fetchone()
-                faq_id, categoria_id = row if row else (None, None)
-                cur.execute("SELECT link FROM FAQ_Documento WHERE faq_id = %s", (faq_id,))
-                docs = [r[0] for r in cur.fetchall()]
-                return jsonify({
-                    "success": True,
-                    "fonte": "FAQ",
-                    "resposta": resultado["resposta"],
-                    "faq_id": faq_id,
-                    "categoria_id": categoria_id,
-                    "score": resultado["score"],
-                    "pergunta_faq": resultado["pergunta"],
-                    "documentos": docs
-                })
-            else:
-                faiss_resultados = pesquisar_faiss(pergunta, chatbot_id=chatbot_id, k=1, min_sim=0.7)
-                if faiss_resultados:
-                    faq_id = faiss_resultados[0]['faq_id']
-                    cur.execute("SELECT link FROM FAQ_Documento WHERE faq_id = %s", (faq_id,))
-                    docs = [r[0] for r in cur.fetchall()]
+            print("DEBUG: Fonte = faq+raga | feedback =", repr(feedback))
+            if feedback and feedback.strip().lower() == "try_rag":
+                print("DEBUG: A tentar responder via RAG (PDF) via Ollama")
+                resposta_ollama = pesquisar_pdf_ollama(pergunta, chatbot_id=chatbot_id)
+                if resposta_ollama:
+                    pdfs = get_pdfs_from_db(chatbot_id)
+                    file_path = pdfs[0][1] if pdfs else None
                     return jsonify({
                         "success": True,
-                        "fonte": "RAG",
-                        "resposta": faiss_resultados[0]['resposta'],
-                        "faq_id": faq_id,
-                        "score": faiss_resultados[0]['score'],
-                        "pergunta_faq": faiss_resultados[0]['pergunta'],
-                        "documentos": docs
+                        "fonte": "RAG-OLLAMA",
+                        "resposta": resposta_ollama,
+                        "faq_id": None,
+                        "categoria_id": None,
+                        "score": None,
+                        "pergunta_faq": None,
+                        "documentos": [file_path] if file_path else []
                     })
                 else:
                     return jsonify({
                         "success": False,
-                        "erro": "Não encontrei nenhuma resposta suficientemente semelhante na base de dados (RAG/FAISS)."
+                        "erro": "Não foi possível encontrar uma resposta nos documentos PDF usando Ollama."
                     })
+            else:
+                print("DEBUG: feedback != 'try_rag' -> devolve prompt_rag")
+                return jsonify({
+                    "success": False,
+                    "erro": "Pergunta não encontrada nas FAQs. Deseja tentar encontrar uma resposta nos documentos PDF? Isso pode levar alguns segundos.",
+                    "prompt_rag": True
+                })
+
         else:
             return jsonify({"success": False, "erro": "Fonte inválida."}), 400
+
     except Exception as e:
         print(traceback.format_exc())
         return jsonify({"success": False, "erro": str(e)}), 500
+    finally:
+        cur.close()
 
 @app.route("/perguntas-semelhantes", methods=["POST"])
 def perguntas_semelhantes():
@@ -952,7 +1090,7 @@ def perguntas_semelhantes():
         return jsonify({"success": True, "sugestoes": sugestoes})
     except Exception as e:
         return jsonify({"success": False, "erro": str(e)}), 500
-    
+
 @app.route("/faqs-aleatorias", methods=["POST"])
 def faqs_aleatorias():
     cur = conn.cursor()
