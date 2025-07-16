@@ -1097,14 +1097,25 @@ def faqs_aleatorias():
     dados = request.get_json()
     idioma = dados.get("idioma", "pt")
     n = int(dados.get("n", 3))
+    chatbot_id = dados.get("chatbot_id")
+
     try:
-        cur.execute("""
-            SELECT pergunta
-            FROM FAQ
-            WHERE idioma = %s
-            ORDER BY RANDOM()
-            LIMIT %s
-        """, (idioma, n))
+        if chatbot_id:
+            cur.execute("""
+                SELECT pergunta
+                FROM FAQ
+                WHERE idioma = %s AND chatbot_id = %s
+                ORDER BY RANDOM()
+                LIMIT %s
+            """, (idioma, chatbot_id, n))
+        else:
+            cur.execute("""
+                SELECT pergunta
+                FROM FAQ
+                WHERE idioma = %s
+                ORDER BY RANDOM()
+                LIMIT %s
+            """, (idioma, n))
         faqs = [row[0] for row in cur.fetchall()]
         return jsonify({"success": True, "faqs": [{"pergunta": p} for p in faqs]})
     except Exception as e:

@@ -6,12 +6,11 @@ CREATE TABLE IF NOT EXISTS Categoria (
 
 -- Inserir categorias iniciais
 INSERT INTO Categoria (nome) VALUES
-    ('Educação'),
-    ('Ação Social'),
-    ('Habitação'),
-    ('Cultura'),
-    ('Desporto'),
-    ('Ambiente')
+    ('Reciclagem'),
+    ('Aterro Sanitário'),
+    ('Resíduos'),
+    ('Óleos e Poluentes'),
+    ('Limpeza Pública')
 ON CONFLICT (nome) DO NOTHING;
 
 -- Tabela: Chatbot

@@ -12,6 +12,24 @@ function shadeColor(color, percent) {
   return "#" + RR + GG + BB;
 }
 
+function atualizarCorChatbot() {
+  const corBot = localStorage.getItem("corChatbot") || "#d4af37";
+  const btnToggle = document.getElementById("chatToggleBtn");
+  if (btnToggle) {
+    btnToggle.style.backgroundColor = corBot;
+  }
+  const btnEnviar = document.querySelector(".chat-input button");
+  if (btnEnviar) {
+    btnEnviar.style.backgroundColor = corBot;
+    btnEnviar.onmouseenter = () => btnEnviar.style.backgroundColor = shadeColor(corBot, 12);
+    btnEnviar.onmouseleave = () => btnEnviar.style.backgroundColor = corBot;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  atualizarCorChatbot();
+});
+
 function getIdiomaAtual() {
   return localStorage.getItem("idiomaAtivo") || "pt";
 }
@@ -83,6 +101,7 @@ async function atualizarNomeChatHeader() {
     chatHeader.style.background = corBot;
   }
   atualizarFonteBadge();
+  atualizarCorChatbot();
 }
 
 function atualizarFonteBadge() {
@@ -210,6 +229,7 @@ function abrirChat() {
   document.getElementById('chatSidebar').style.display = 'flex';
   apresentarMensagemInicial();
   iniciarTimerAutoMensagem();
+  atualizarCorChatbot();
 }
 
 window.fecharChat = function() {
@@ -246,6 +266,8 @@ async function apresentarMensagemInicial() {
     localStorage.setItem("nomeBot", nomeBot);
     localStorage.setItem("corChatbot", corBot);
   }
+
+  atualizarCorChatbot();
 
   const msg = `Olá!
 Eu sou o ${nomeBot}, o seu assistente virtual.  
@@ -534,7 +556,12 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
         const corBot = localStorage.getItem("corChatbot") || "#d4af37";
         titulo.style.color = corBot;
         titulo.style.marginBottom = "7px";
-        titulo.textContent = "📌 Perguntas que também podem interessar:";
+
+        let sugestoesTitulo = "📌 Perguntas que também podem interessar:";
+        if (idioma === "en") {
+          sugestoesTitulo = "📌 Questions you might also be interested in:";
+        }
+        titulo.textContent = sugestoesTitulo;
         sugestoesWrapper.appendChild(titulo);
 
         const btnContainer = document.createElement("div");
@@ -577,15 +604,22 @@ async function mostrarPerguntasSugestivasDB() {
   const chat = document.getElementById("chatBody");
   if (!chat) return;
   const idioma = getIdiomaAtual();
+  const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
+
+  if (!chatbotId || isNaN(chatbotId)) return;
 
   try {
     const res = await fetch("http://localhost:5000/faqs-aleatorias", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idioma: idioma, n: 3 })
+      body: JSON.stringify({ 
+        idioma: idioma, 
+        n: 3,
+        chatbot_id: chatbotId 
+      })
     });
     const data = await res.json();
-    if (data.success && data.faqs.length > 0) {
+    if (data.success && data.faqs && data.faqs.length > 0) {
       const title = document.createElement("div");
       title.className = "sugestoes-title";
       title.textContent = "Possíveis perguntas:";
@@ -623,7 +657,8 @@ async function mostrarPerguntasSugestivasDB() {
       chat.appendChild(btnContainer);
       chat.scrollTop = chat.scrollHeight;
     }
-  } catch (e) {}
+  } catch (e) {
+  }
 }
 
 window.setIdiomaAtivo = function(idioma) {
