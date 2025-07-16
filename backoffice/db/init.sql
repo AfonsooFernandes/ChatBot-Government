@@ -4,15 +4,6 @@ CREATE TABLE IF NOT EXISTS Categoria (
     nome VARCHAR(100) NOT NULL UNIQUE
 );
 
--- Inserir categorias iniciais
-INSERT INTO Categoria (nome) VALUES
-    ('Reciclagem'),
-    ('Aterro Sanitário'),
-    ('Resíduos'),
-    ('Óleos e Poluentes'),
-    ('Limpeza Pública')
-ON CONFLICT (nome) DO NOTHING;
-
 -- Tabela: Chatbot
 CREATE TABLE IF NOT EXISTS Chatbot (
     chatbot_id SERIAL PRIMARY KEY,

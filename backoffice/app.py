@@ -292,6 +292,31 @@ def get_categorias():
     except Exception as e:
         conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route("/categorias", methods=["POST"])
+def criar_categoria():
+    cur = conn.cursor()
+    data = request.get_json()
+    nome = data.get("nome", "").strip()
+    if not nome:
+        return jsonify({"success": False, "error": "Nome da categoria é obrigatório."}), 400
+    try:
+        cur.execute("SELECT categoria_id FROM Categoria WHERE LOWER(nome) = LOWER(%s)", (nome,))
+        if cur.fetchone():
+            return jsonify({"success": False, "error": "Já existe uma categoria com esse nome."}), 409
+
+        cur.execute(
+            "INSERT INTO Categoria (nome) VALUES (%s) RETURNING categoria_id",
+            (nome,)
+        )
+        categoria_id = cur.fetchone()[0]
+        conn.commit()
+        return jsonify({"categoria_id": categoria_id, "nome": nome}), 201
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        cur.close()
 
 @app.route("/chatbots", methods=["GET"])
 def get_chatbots():
@@ -393,6 +418,48 @@ def atualizar_chatbot(chatbot_id):
     except Exception as e:
         conn.rollback()
         print(traceback.format_exc())
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route("/chatbots/<int:chatbot_id>/categorias", methods=["GET"])
+def get_categorias_chatbot(chatbot_id):
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            SELECT c.categoria_id, c.nome
+            FROM Categoria c
+            JOIN ChatbotCategoria cc ON c.categoria_id = cc.categoria_id
+            WHERE cc.chatbot_id = %s
+        """, (chatbot_id,))
+        data = cur.fetchall()
+        return jsonify([{"categoria_id": c[0], "nome": c[1]} for c in data])
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route("/chatbots/<int:chatbot_id>/categorias/<int:categoria_id>", methods=["DELETE"])
+def remove_categoria_from_chatbot(chatbot_id, categoria_id):
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM ChatbotCategoria WHERE chatbot_id = %s AND categoria_id = %s", (chatbot_id, categoria_id))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route("/chatbots/<int:chatbot_id>/categorias", methods=["POST"])
+def add_categoria_to_chatbot(chatbot_id):
+    cur = conn.cursor()
+    data = request.get_json()
+    categoria_id = data.get("categoria_id")
+    if not categoria_id:
+        return jsonify({"success": False, "error": "ID da categoria é obrigatório."}), 400
+    try:
+        cur.execute("INSERT INTO ChatbotCategoria (chatbot_id, categoria_id) VALUES (%s, %s) ON CONFLICT DO NOTHING", (chatbot_id, categoria_id))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/fonte/<int:chatbot_id>", methods=["GET"])

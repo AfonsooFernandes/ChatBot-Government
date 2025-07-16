@@ -504,15 +504,14 @@ let categoriasDisponiveis = [];
 
 async function editarFAQ(faq_id) {
   try {
-    const [faqResp, categorias] = await Promise.all([
-      fetch(`http://localhost:5000/faqs/${faq_id}`).then(r => r.json()),
-      fetch("http://localhost:5000/categorias").then(r => r.json())
-    ]);
+    const faqResp = await fetch(`http://localhost:5000/faqs/${faq_id}`).then(r => r.json());
     if (!faqResp.success || !faqResp.faq) {
       alert("Erro ao carregar dados da FAQ.");
       return;
     }
     faqAEditar = faqResp.faq;
+
+    const categorias = await fetch(`http://localhost:5000/chatbots/${faqAEditar.chatbot_id}/categorias`).then(r => r.json());
     categoriasDisponiveis = categorias;
 
     document.getElementById('editarPergunta').value = faqAEditar.pergunta || "";
@@ -522,8 +521,14 @@ async function editarFAQ(faq_id) {
       document.getElementById('editarRecomendado').checked = !!faqAEditar.recomendado;
 
     const catContainer = document.getElementById('editarCategoriasContainer');
+    let categoriasMarcadas = [];
+    if (Array.isArray(faqAEditar.categorias)) {
+      categoriasMarcadas = faqAEditar.categorias.map(Number);
+    } else if (faqAEditar.categoria_id) {
+      categoriasMarcadas = [Number(faqAEditar.categoria_id)];
+    }
     catContainer.innerHTML = categorias.map(cat => {
-      const checked = cat.categoria_id === faqAEditar.categoria_id;
+      const checked = categoriasMarcadas.includes(Number(cat.categoria_id));
       return `<label style="display:inline-flex;align-items:center;gap:3px;">
         <input type="checkbox" value="${cat.categoria_id}" ${checked ? "checked" : ""} />${cat.nome}
       </label>`;
@@ -534,13 +539,6 @@ async function editarFAQ(faq_id) {
   } catch (err) {
     alert("Erro ao carregar dados da FAQ.");
   }
-}
-
-const btnCancelar = document.getElementById("btnCancelarFAQ");
-if (btnCancelar) {
-  btnCancelar.onclick = function() {
-    document.getElementById("modalEditarFAQ").style.display = "none";
-  };
 }  
 
 const formEditarFAQ = document.getElementById("formEditarFAQ");
@@ -591,6 +589,18 @@ if (formEditarFAQ) {
   };
 }
 
+function ligarBotaoCancelarEditarFAQ() {
+  const btnCancelar = document.getElementById("btnCancelarFAQ");
+  if (btnCancelar) {
+    btnCancelar.onclick = function(e) {
+      e.preventDefault();
+      document.getElementById("modalEditarFAQ").style.display = "none";
+      const status = document.getElementById("editarStatusFAQ");
+      if (status) status.textContent = "";
+    }
+  }
+}
+
 async function eliminarFAQ(faq_id) {
   try {
     const res = await fetch(`http://localhost:5000/faqs/${faq_id}`, { method: "DELETE" });
@@ -609,7 +619,6 @@ window.eliminarFAQ = eliminarFAQ;
 window.responderPergunta = responderPergunta;
 window.obterPerguntasSemelhantes = obterPerguntasSemelhantes;
 window.pedirConfirmacao = pedirConfirmacao;
-
 document.addEventListener("DOMContentLoaded", () => {
   carregarChatbots();
   carregarTabelaFAQsBackoffice();
@@ -621,4 +630,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (pesquisaInput) pesquisaInput.addEventListener("input", carregarTabelaFAQsBackoffice);
   if (filtroChatbot) filtroChatbot.addEventListener("change", carregarTabelaFAQsBackoffice);
   if (filtroIdioma) filtroIdioma.addEventListener("change", carregarTabelaFAQsBackoffice);
+
+  ligarBotaoCancelarEditarFAQ();
 });

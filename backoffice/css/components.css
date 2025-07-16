@@ -915,3 +915,25 @@ form button:hover,
 .chat-toggle-card-arrow {
   display: none !important;
 }
+
+.btn-categorias {
+  background: #9e77d4;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 15px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-right: 8px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  box-shadow: 0 1px 4px rgba(158,119,212,0.11);
+  display: inline-block;
+}
+
+.btn-categorias:hover,
+.btn-categorias:focus {
+  background: #7e5cb7;
+  color: #fff;
+}

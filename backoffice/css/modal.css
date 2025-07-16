@@ -385,3 +385,114 @@
   z-index: 1;
   white-space: nowrap;
 }
+
+.categorias-list > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 7px 0;
+  border-bottom: 1px solid #f2f2f2;
+  font-size: 15.2px;
+  min-height: 38px;
+  position: relative;
+}
+
+.categorias-list > div:last-child {
+  border-bottom: none;
+}
+
+.categorias-list input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #d4af37;
+  margin-right: 10px;
+  margin-left: 2px;
+}
+
+.categorias-list .categoria-nome {
+  flex: 1;
+  font-size: 15.3px;
+  color: #28313e;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.categorias-list .btn-eliminar-cat {
+  background: #ff6b6b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 7px 21px;
+  cursor: pointer;
+  transition: background 0.14s;
+  margin-left: auto;
+  box-shadow: 0 1px 4px rgba(255,94,94,0.09);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  min-width: 102px;
+}
+.categorias-list .btn-eliminar-cat:hover {
+  background: #e03939;
+}
+
+.btn-adicionar-categoria,
+.btn-adicionar-cat {
+  background: #d4af37;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 0 20px;
+  font-size: 15px;
+  font-weight: 600;
+  height: 48px;
+  min-height: 48px;
+  min-width: 230px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.16s;
+  box-shadow: 0 1px 6px rgba(212,175,55,0.12);
+}
+.btn-adicionar-categoria:hover,
+.btn-adicionar-cat:hover {
+  background: #e0c565;
+}
+
+.btn-fechar-categorias {
+  background: #ff6b6b;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-weight: 600;
+  font-size: 15px;
+  min-width: 80px;
+  height: 48px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s;
+  cursor: pointer;
+  margin-top: 0;
+  margin-left: 0;
+  box-shadow: 0 1px 5px rgba(255,94,94,0.09);
+}
+.btn-fechar-categorias:hover {
+  background: #e03939;
+  color: #fff;
+}
+
+.btn-bar-categorias {
+  display: flex;
+  gap: 14px;
+  margin-top: 18px;
+  flex-direction: row;
+  align-items: center;
+} 
