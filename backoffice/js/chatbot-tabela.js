@@ -262,17 +262,19 @@ window.abrirModalAtualizar = async function(chatbot_id) {
 };
 
 async function mostrarModalEditarChatbot(chatbot_id) {
-  const todasCategorias = await fetch("http://localhost:5000/categorias").then(r=>r.json());
   const categoriasAssociadas = await fetch(`http://localhost:5000/chatbots/${chatbot_id}/categorias`).then(r=>r.json());
-  const associadasIds = categoriasAssociadas.map(c=>c.categoria_id);
 
   const catDiv = document.getElementById("editarCategoriasChatbot");
-  catDiv.innerHTML = todasCategorias.map(cat => `
-    <label style="display:flex;align-items:center;gap:4px;">
-      <input type="checkbox" value="${cat.categoria_id}" ${associadasIds.includes(cat.categoria_id) ? "checked" : ""}>
-      ${cat.nome}
-    </label>
-  `).join("");
+  if (categoriasAssociadas.length === 0) {
+    catDiv.innerHTML = `<span style="color:#888;">Nenhuma categoria associada a este chatbot.</span>`;
+  } else {
+    catDiv.innerHTML = categoriasAssociadas.map(cat => `
+      <label style="display:flex;align-items:center;gap:4px;">
+        <input type="checkbox" value="${cat.categoria_id}" checked>
+        ${cat.nome}
+      </label>
+    `).join("");
+  }
 }
 
 document.addEventListener("DOMContentLoaded", function () {
