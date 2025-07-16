@@ -230,13 +230,18 @@ function abrirChat() {
   apresentarMensagemInicial();
   iniciarTimerAutoMensagem();
   atualizarCorChatbot();
+  const toggleCard = document.querySelector('.chat-toggle-card');
+  if (toggleCard) toggleCard.style.display = 'none';
 }
 
 window.fecharChat = function() {
   document.getElementById('chatSidebar').style.display = 'none';
   limparTimersAutoChat();
   initialMessageShown = false;
+  const toggleCard = document.querySelector('.chat-toggle-card');
+  if (toggleCard) toggleCard.style.display = '';
 };
+
 
 async function apresentarMensagemInicial() {
   if (initialMessageShown) return;
