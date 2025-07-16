@@ -1018,8 +1018,27 @@ def obter_resposta():
                 })
 
         elif fonte == "faq+raga":
-            print("DEBUG: Fonte = faq+raga | feedback =", repr(feedback))
-            if feedback and feedback.strip().lower() == "try_rag":
+            resultado = obter_faq_mais_semelhante(pergunta, chatbot_id)
+            if resultado:
+                cur.execute("""
+                    SELECT faq_id, categoria_id FROM FAQ
+                    WHERE LOWER(pergunta) = LOWER(%s) AND chatbot_id = %s
+                """, (resultado["pergunta"], chatbot_id))
+                row = cur.fetchone()
+                faq_id, categoria_id = row if row else (None, None)
+                cur.execute("SELECT link FROM FAQ_Documento WHERE faq_id = %s", (faq_id,))
+                docs = [r[0] for r in cur.fetchall()]
+                return jsonify({
+                    "success": True,
+                    "fonte": "FAQ",
+                    "resposta": resultado["resposta"],
+                    "faq_id": faq_id,
+                    "categoria_id": categoria_id,
+                    "score": resultado["score"],
+                    "pergunta_faq": resultado["pergunta"],
+                    "documentos": docs
+                })
+            elif feedback and feedback.strip().lower() == "try_rag":
                 print("DEBUG: A tentar responder via RAG (PDF) via Ollama")
                 resposta_ollama = pesquisar_pdf_ollama(pergunta, chatbot_id=chatbot_id)
                 if resposta_ollama:
