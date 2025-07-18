@@ -43,14 +43,26 @@ if not os.path.exists(PDF_STORAGE_PATH):
     os.makedirs(PDF_STORAGE_PATH)
 
 # ---------- EMBEDDINGS E FAISS ----------
-SAUDACOES = [
-    "olá", "ola", "oi", "bom dia", "boa tarde", "boa noite", "oi", "hello", "hi"
+
+SAUDACOES_PT = [
+    "olá", "ola", "oi", "bom dia", "boa tarde", "boa noite"
 ]
-SAUDACOES_PERGUNTAS = [
+SAUDACOES_EN = [
+    "hello", "hi", "good morning", "good afternoon", "good evening", "good night"
+]
+SAUDACOES_PERGUNTAS_PT = [
     "tudo bem", "como estás", "como está", "está tudo bem", "como vais", "tá bem"
 ]
-RESPOSTA_SAUDACAO = "Olá! 👋 Como posso ajudar? Se tiver alguma dúvida, basta perguntar!"
-RESPOSTA_TUDO_BEM = "Estou sempre pronto a ajudar! 😊 Em que posso ser útil?"
+SAUDACOES_PERGUNTAS_EN = [
+    "how are you", "how's it going", "everything ok", "are you ok", "how are you doing"
+]
+
+RESPOSTA_SAUDACAO_PT = "Olá! 👋 Como posso ajudar? Se tiver alguma dúvida, basta perguntar!"
+RESPOSTA_SAUDACAO_EN = "Hello! 👋 How can I help you? If you have any question, just ask!"
+
+RESPOSTA_TUDO_BEM_PT = "Estou sempre pronto a ajudar! 😊 Em que posso ser útil?"
+RESPOSTA_TUDO_BEM_EN = "I'm always ready to help! 😊 How can I assist you?"
+
 NEGATIVE_FEEDBACK = [
     "não", "nao", "não está certo", "nao esta certo", "errado", "não é isso", "nao e isso"
 ]
@@ -58,13 +70,22 @@ NEGATIVE_FEEDBACK = [
 def detectar_saudacao(pergunta):
     texto = pergunta.strip().lower()
     palavras = set(texto.replace("?", "").replace("!", "").replace(".", "").split())
-    for saud in SAUDACOES:
+
+    for saud in SAUDACOES_PT:
         for palavra in palavras:
             if saud == palavra:
-                return RESPOSTA_SAUDACAO
-    for p in SAUDACOES_PERGUNTAS:
+                return RESPOSTA_SAUDACAO_PT
+    for p in SAUDACOES_PERGUNTAS_PT:
         if p == texto:
-            return RESPOSTA_TUDO_BEM
+            return RESPOSTA_TUDO_BEM_PT
+
+    for saud in SAUDACOES_EN:
+        if saud in texto:
+            return RESPOSTA_SAUDACAO_EN
+    for p in SAUDACOES_PERGUNTAS_EN:
+        if p in texto:
+            return RESPOSTA_TUDO_BEM_EN
+
     return None
 
 def detectar_feedback_negativo(pergunta):
