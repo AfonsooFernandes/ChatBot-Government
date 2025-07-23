@@ -7,19 +7,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalNovoBot = document.getElementById("modalNovoBot");
   const novoBotForm = document.getElementById("novoBotForm");
   const mensagemNovoBot = document.getElementById("mensagemNovoBot");
-  const categoriaSelect = novoBotForm.querySelector('select[name="categoria_id"]');
 
   novoBotBtn.addEventListener("click", () => {
     modalNovoBot.style.display = "flex";
     mensagemNovoBot.textContent = "";
-    fetch("http://localhost:5000/categorias")
-      .then(r => r.json())
-      .then(categorias => {
-        categoriaSelect.innerHTML = `<option value="">Escolha a Categoria</option>`;
-        categorias.forEach(cat => {
-          categoriaSelect.innerHTML += `<option value="${cat.categoria_id}">${cat.nome}</option>`;
-        });
-      });
   });
 
   modalNovoBot.addEventListener("click", (e) => {
@@ -32,12 +23,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const nome = this.nome.value.trim();
     const descricao = this.descricao.value.trim();
-    const categoria_id = this.categoria_id.value !== "" ? this.categoria_id.value : null;
 
     const data = {
       nome,
-      descricao,
-      categoria_id 
+      descricao
     };
 
     fetch("http://localhost:5000/chatbots", {

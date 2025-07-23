@@ -33,8 +33,6 @@ async function renderizarCategoriasChatbot(chatbot_id) {
     categoriasHtml = associadas.map(cat => `
       <div class="categoria-row">
         <span>${cat.nome}</span>
-        <input type="checkbox" value="${cat.categoria_id}" checked
-          onchange="toggleAssociacaoCategoria(${chatbot_id},${cat.categoria_id},this.checked)">
         <button class="btn-eliminar-cat" onclick="removerAssociacaoCategoria(${chatbot_id},${cat.categoria_id})" title="Remover">Eliminar</button>
       </div>
     `).join("");
@@ -75,25 +73,33 @@ window.adicionarCategoriaDireta = async function() {
   if (!nome) return;
 
   try {
-    const res = await fetch("http://localhost:5000/categorias", {
+    let categoria_id = null;
+    let res = await fetch("http://localhost:5000/categorias", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nome })
     });
 
     if (res.status === 409) {
-      alert("Já existe uma categoria com esse nome!");
-      return;
-    }
-    if (!res.ok) {
+      let cats = await fetch("http://localhost:5000/categorias").then(r => r.json());
+      let cat = cats.find(c => c.nome.toLowerCase() === nome.toLowerCase());
+      if (cat) categoria_id = cat.categoria_id;
+      else {
+        alert("Erro inesperado ao encontrar categoria existente!");
+        return;
+      }
+    } else if (!res.ok) {
       alert("Erro ao criar categoria!");
       return;
+    } else {
+      let cat = await res.json();
+      categoria_id = cat.categoria_id;
     }
-    const cat = await res.json();
+
     await fetch(`http://localhost:5000/chatbots/${botIdCategorias}/categorias`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ categoria_id: cat.categoria_id })
+      body: JSON.stringify({ categoria_id })
     });
     input.value = "";
     await renderizarCategoriasChatbot(botIdCategorias);
