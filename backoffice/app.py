@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import psycopg2
 import docx
@@ -20,6 +20,26 @@ logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 CORS(app)
+
+@app.route("/")
+def index():
+    return render_template("recursos.html")
+
+@app.route("/contexto")
+def contexto():
+    return render_template("contexto.html")
+
+@app.route("/landing")
+def landing():
+    return render_template("landing.html")
+
+@app.route("/landing-2")
+def landing_2():
+    return render_template("landing-2.html")
+
+@app.route("/respostas")
+def respostas():
+    return render_template("respostas.html")
 
 # ---------- CONEXÃO À BASE DE DADOS ----------
 try:
@@ -1061,7 +1081,7 @@ def obter_resposta():
                 })
             return jsonify({
                 "success": False,
-                "erro": "Não foi encontrada nenhuma resposta para a sua pergunta nas FAQs da base de dados."
+                "erro": "Não conseguimos perceber a sua questão, pode ser mais claro?"
             })
 
         elif fonte == "faiss":

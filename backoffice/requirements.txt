@@ -1,11 +1,12 @@
-Flask
+flask
 flask-cors
-psycopg2-binary
+psycopg2
 python-docx
+PyPDF2
 fuzzywuzzy
 faiss-cpu
 sentence-transformers
 numpy
-PyPDF2
+pickle-mixin
 unidecode
 requests
