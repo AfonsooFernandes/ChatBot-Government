@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS Chatbot (
     nome VARCHAR(100) NOT NULL UNIQUE,
     descricao TEXT,
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    cor VARCHAR(16) NOT NULL DEFAULT '#d4af37'
+    cor VARCHAR(16) NOT NULL DEFAULT '#d4af37',
+    mensagem_sem_resposta TEXT
 );
 
 -- Tabela: ChatbotCategoria

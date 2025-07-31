@@ -303,6 +303,19 @@ def obter_faq_mais_semelhante(pergunta_utilizador, chatbot_id, threshold=None):
         return {"pergunta": melhor_pergunta, "resposta": melhor_resposta, "score": maior_score}
     else:
         return None
+    
+def obter_mensagem_sem_resposta(chatbot_id):
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT mensagem_sem_resposta FROM Chatbot WHERE chatbot_id = %s", (chatbot_id,))
+        row = cur.fetchone()
+        if row and row[0] and row[0].strip():
+            return row[0].strip()
+    except Exception:
+        pass
+    finally:
+        cur.close()
+    return "Não conseguimos perceber a sua questão, pode ser mais claro?"    
 
 @app.route("/chatbots/<int:chatbot_id>", methods=["DELETE"])
 def eliminar_chatbot(chatbot_id):
@@ -365,11 +378,12 @@ def get_chatbots():
     try:
         cur.execute("""
             SELECT c.chatbot_id, c.nome, c.descricao, c.data_criacao, c.cor, fr.fonte,
-                   array_remove(array_agg(cc.categoria_id), NULL) as categorias
+                   array_remove(array_agg(cc.categoria_id), NULL) as categorias,
+                   c.mensagem_sem_resposta
             FROM Chatbot c
             LEFT JOIN FonteResposta fr ON fr.chatbot_id = c.chatbot_id
             LEFT JOIN ChatbotCategoria cc ON cc.chatbot_id = c.chatbot_id
-            GROUP BY c.chatbot_id, c.nome, c.descricao, c.data_criacao, c.cor, fr.fonte
+            GROUP BY c.chatbot_id, c.nome, c.descricao, c.data_criacao, c.cor, fr.fonte, c.mensagem_sem_resposta
             ORDER BY c.chatbot_id ASC
         """)
         data = cur.fetchall()
@@ -381,13 +395,16 @@ def get_chatbots():
                 "data_criacao": row[3],
                 "cor": row[4] if row[4] else "#d4af37",
                 "fonte": row[5] if row[5] else "faq",
-                "categorias": row[6] if row[6] is not None else []
+                "categorias": row[6] if row[6] is not None else [],
+                "mensagem_sem_resposta": row[7] if len(row) > 7 else ""
             }
             for row in data
         ])
     except Exception as e:
         conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        cur.close()
 
 @app.route("/chatbots", methods=["POST"])
 def criar_chatbot():
@@ -397,6 +414,7 @@ def criar_chatbot():
     descricao = data.get("descricao", "").strip()
     categorias = data.get("categorias", [])
     cor = data.get("cor", "").strip() or "#d4af37"
+    mensagem_sem_resposta = data.get("mensagem_sem_resposta", "").strip()
     if not nome:
         return jsonify({"success": False, "error": "Nome obrigatório."}), 400
     try:
@@ -405,8 +423,8 @@ def criar_chatbot():
             return jsonify({"success": False, "error": "Já existe um chatbot com esse nome."}), 409
 
         cur.execute(
-            "INSERT INTO Chatbot (nome, descricao, cor) VALUES (%s, %s, %s) RETURNING chatbot_id",
-            (nome, descricao, cor)
+            "INSERT INTO Chatbot (nome, descricao, cor, mensagem_sem_resposta) VALUES (%s, %s, %s, %s) RETURNING chatbot_id",
+            (nome, descricao, cor, mensagem_sem_resposta)
         )
         chatbot_id = cur.fetchone()[0]
 
@@ -425,6 +443,8 @@ def criar_chatbot():
     except Exception as e:
         conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        cur.close()
 
 @app.route("/chatbots/<int:chatbot_id>", methods=["PUT"])
 def atualizar_chatbot(chatbot_id):
@@ -436,12 +456,13 @@ def atualizar_chatbot(chatbot_id):
         fonte = data.get("fonte", "faq")
         categorias = data.get("categorias", [])
         cor = data.get("cor", "").strip() or "#d4af37"
+        mensagem_sem_resposta = data.get("mensagem_sem_resposta", "").strip()
         if not nome:
             return jsonify({"success": False, "error": "O nome do chatbot é obrigatório."}), 400
 
         cur.execute(
-            "UPDATE Chatbot SET nome=%s, descricao=%s, cor=%s WHERE chatbot_id=%s",
-            (nome, descricao, cor, chatbot_id)
+            "UPDATE Chatbot SET nome=%s, descricao=%s, cor=%s, mensagem_sem_resposta=%s WHERE chatbot_id=%s",
+            (nome, descricao, cor, mensagem_sem_resposta, chatbot_id)
         )
         cur.execute("DELETE FROM ChatbotCategoria WHERE chatbot_id=%s", (chatbot_id,))
         for categoria_id in categorias:
@@ -460,6 +481,8 @@ def atualizar_chatbot(chatbot_id):
         conn.rollback()
         print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        cur.close()
     
 @app.route("/chatbots/<int:chatbot_id>/categorias", methods=["GET"])
 def get_categorias_chatbot(chatbot_id):
@@ -1081,7 +1104,7 @@ def obter_resposta():
                 })
             return jsonify({
                 "success": False,
-                "erro": "Não conseguimos perceber a sua questão, pode ser mais claro?"
+                "erro": obter_mensagem_sem_resposta(chatbot_id)
             })
 
         elif fonte == "faiss":

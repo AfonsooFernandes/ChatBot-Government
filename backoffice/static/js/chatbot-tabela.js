@@ -242,48 +242,38 @@ window.tornarBotAtivo = function(chatbot_id, btn) {
   carregarTabelaBots();
 };
 
-window.abrirModalAtualizar = async function(chatbot_id) {
-  try {
-    const res = await fetch(`/chatbots`);
-    const bots = await res.json();
-    const bot = bots.find(b => String(b.chatbot_id) === String(chatbot_id));
-    if (!bot) {
-      alert("Chatbot não encontrado!");
-      return;
-    }
-    document.getElementById("editarNomeChatbot").value = bot.nome || "";
-    document.getElementById("editarDescricaoChatbot").value = bot.descricao || "";
-    document.getElementById("editarDataCriacao").value = bot.data_criacao ? new Date(bot.data_criacao).toLocaleDateString('pt-PT') : "";
-    document.getElementById("editarFonteResposta").value = bot.fonte || "faq";
-    document.getElementById("editarChatbotForm").setAttribute("data-edit-id", chatbot_id);
-
-    const inputCor = document.getElementById("editarCorChatbot");
-    if (inputCor) inputCor.value = bot.cor || "#d4af37";
-    await mostrarModalEditarChatbot(chatbot_id);
-
-    document.getElementById("modalEditarChatbot").style.display = "flex";
-  } catch (e) {
-    alert("Erro ao carregar dados do chatbot.");
-  }
-};
-
-async function mostrarModalEditarChatbot(chatbot_id) {
-  const categoriasAssociadas = await fetch(`/chatbots/${chatbot_id}/categorias`).then(r=>r.json());
-
-  const catDiv = document.getElementById("editarCategoriasChatbot");
-  if (categoriasAssociadas.length === 0) {
-    catDiv.innerHTML = `<span style="color:#888;">Nenhuma categoria associada a este chatbot.</span>`;
-  } else {
-    catDiv.innerHTML = categoriasAssociadas.map(cat => `
-      <label style="display:flex;align-items:center;gap:4px;">
-        <input type="checkbox" value="${cat.categoria_id}" checked>
-        ${cat.nome}
-      </label>
-    `).join("");
-  }
-}
-
 document.addEventListener("DOMContentLoaded", function () {
+  const novoBotForm = document.getElementById("novoBotForm");
+  if (novoBotForm) {
+    novoBotForm.onsubmit = async function(e) {
+      e.preventDefault();
+      const nome = novoBotForm.elements["nome"].value.trim();
+      const descricao = novoBotForm.elements["descricao"].value.trim();
+      const mensagem_sem_resposta = novoBotForm.elements["mensagem_sem_resposta"].value.trim();
+      if (!nome) {
+        alert("Nome obrigatório");
+        return;
+      }
+      const body = { nome, descricao, mensagem_sem_resposta };
+      try {
+        const res = await fetch(`/chatbots`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        if (res.ok) {
+          window.fecharModalNovoBot();
+          carregarTabelaBots();
+        } else {
+          const result = await res.json().catch(() => ({}));
+          alert("Erro ao criar chatbot: " + (result.error || result.erro || res.statusText));
+        }
+      } catch (err) {
+        alert("Erro ao criar chatbot: " + err.message);
+      }
+    };
+  }
+
   const editarForm = document.getElementById("editarChatbotForm");
   if (editarForm) {
     editarForm.onsubmit = async function(e) {
@@ -293,11 +283,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const descricao = document.getElementById("editarDescricaoChatbot").value.trim();
       const fonte = document.getElementById("editarFonteResposta").value;
       const cor = (document.getElementById("editarCorChatbot").value || "#d4af37").trim();
+      const mensagem_sem_resposta = document.getElementById("editarMensagemSemResposta").value.trim();
       if (!nome) {
         alert("Nome obrigatório");
         return;
       }
-      const body = { nome, descricao, fonte, cor };
+      const body = { nome, descricao, fonte, cor, mensagem_sem_resposta };
       try {
         const res = await fetch(`/chatbots/${chatbot_id}`, {
           method: "PUT",
@@ -343,6 +334,46 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
+
+window.abrirModalAtualizar = async function(chatbot_id) {
+  try {
+    const res = await fetch(`/chatbots`);
+    const bots = await res.json();
+    const bot = bots.find(b => String(b.chatbot_id) === String(chatbot_id));
+    if (!bot) {
+      alert("Chatbot não encontrado!");
+      return;
+    }
+    document.getElementById("editarNomeChatbot").value = bot.nome || "";
+    document.getElementById("editarDescricaoChatbot").value = bot.descricao || "";
+    document.getElementById("editarDataCriacao").value = bot.data_criacao ? new Date(bot.data_criacao).toLocaleDateString('pt-PT') : "";
+    document.getElementById("editarFonteResposta").value = bot.fonte || "faq";
+    document.getElementById("editarCorChatbot").value = bot.cor || "#d4af37";
+    document.getElementById("editarMensagemSemResposta").value = bot.mensagem_sem_resposta || "";
+    document.getElementById("editarChatbotForm").setAttribute("data-edit-id", chatbot_id);
+
+    await mostrarModalEditarChatbot(chatbot_id);
+
+    document.getElementById("modalEditarChatbot").style.display = "flex";
+  } catch (e) {
+    alert("Erro ao carregar dados do chatbot.");
+  }
+};
+
+async function mostrarModalEditarChatbot(chatbot_id) {
+  const categoriasAssociadas = await fetch(`/chatbots/${chatbot_id}/categorias`).then(r=>r.json());
+  const catDiv = document.getElementById("editarCategoriasChatbot");
+  if (categoriasAssociadas.length === 0) {
+    catDiv.innerHTML = `<span style="color:#888;">Nenhuma categoria associada a este chatbot.</span>`;
+  } else {
+    catDiv.innerHTML = categoriasAssociadas.map(cat => `
+      <label style="display:flex;align-items:center;gap:4px;">
+        <input type="checkbox" value="${cat.categoria_id}" checked>
+        ${cat.nome}
+      </label>
+    `).join("");
+  }
+}
 
 async function atualizarCategoriasDoChatbot(chatbot_id) {
   const checks = Array.from(document.querySelectorAll("#editarCategoriasChatbot input[type=checkbox]"));
@@ -398,4 +429,8 @@ window.fecharModalAdicionarFAQ = function() {
 
 window.fecharModalEditarChatbot = function() {
   document.getElementById("modalEditarChatbot").style.display = "none";
+};
+
+window.fecharModalNovoBot = function() {
+  document.getElementById("modalNovoBot").style.display = "none";
 };

@@ -59,6 +59,16 @@
       <form id="novoBotForm">
         <input type="text" name="nome" placeholder="Nome do Chatbot" required>
         <textarea name="descricao" placeholder="Descrição"></textarea>
+        <div class="form-group">
+          <label for="novaMensagemSemResposta">Mensagem personalizada "Sem Resposta":</label>
+          <textarea name="mensagem_sem_resposta" id="novaMensagemSemResposta" placeholder="Mensagem apresentada quando não há resposta..." rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="cor-bot-label" for="novaCorChatbot">
+            <span>Cor do Bot:</span>
+            <input type="color" name="cor" id="novaCorChatbot" value="#d4af37" style="width: 38px; height: 28px; border-radius:8px; border:1px solid #ccc;"/>
+          </label>
+        </div>
         <div class="btn-bar-novo-bot">
           <button type="submit" class="btn-novo-bot-modal">Criar Chatbot</button>
           <button type="button" onclick="fecharModalNovoBot()" class="btn-cancelar-novo-bot">Cancelar</button>
@@ -95,6 +105,10 @@
               <option value="faq+raga">FAQ+RAG</option>
             </select>
           </div>
+        </div>
+        <div class="form-group">
+          <label for="editarMensagemSemResposta">Mensagem personalizada "Sem Resposta":</label>
+          <textarea name="mensagem_sem_resposta" id="editarMensagemSemResposta" placeholder="Mensagem apresentada quando não há resposta..." rows="2"></textarea>
         </div>
         <div class="form-group">
           <label class="cor-bot-label" for="editarCorChatbot">
