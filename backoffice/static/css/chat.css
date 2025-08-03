@@ -338,3 +338,68 @@
   margin-right: 8px;
   text-align: right;
 }
+
+.feedback-icons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  margin-top: 9px;
+  margin-left: 2px;
+}
+
+.feedback-icons img {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  opacity: 0.62;
+  transition: opacity 0.18s, filter 0.2s;
+  filter: grayscale(0.2);
+}
+
+.feedback-icons img:hover {
+  opacity: 1;
+  filter: grayscale(0);
+}
+
+.feedback-icons .like-btn.active,
+.feedback-icons .dislike-btn.active {
+  opacity: 1;
+  filter: none;
+}
+
+.feedback-badge {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+  margin-bottom: 5px;
+  min-width: 0;
+}
+.feedback-badge .feedback-line {
+  height: 2px;
+  background: #e2e8f0;
+  flex: 1 1 0;
+  border-radius: 1px;
+  margin-right: 8px;
+  min-width: 20px;
+  max-width: 64px;
+}
+.feedback-badge .feedback-label-box {
+  background: #e8efff;
+  color: #293147;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 3px 16px 3px 13px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px 0 #c7d5ed33;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+.feedback-badge.positive .feedback-label-box {
+  background: #e7f4ea;
+  color: #24683c;
+}
+.feedback-badge.negative .feedback-label-box {
+  background: #fde7e7;
+  color: #aa2630;
+}

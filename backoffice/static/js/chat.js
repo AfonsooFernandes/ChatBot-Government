@@ -135,6 +135,16 @@ function atualizarFonteBadge() {
   badgeDiv.innerHTML = badgeHTML;
 }
 
+function criarBlocoFeedback(msgId) {
+  return `
+    <div class="feedback-icons" data-msg-id="${msgId}">
+      <img src="/static/images/like.png" class="like-btn" title="Boa resposta" alt="Like">
+      <img src="/static/images/dislike.png" class="dislike-btn" title="Má resposta" alt="Dislike">
+      <span class="feedback-label" style="display:none;"></span>
+    </div>
+  `;
+}
+
 function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestamp = null) {
   const chat = document.getElementById("chatBody");
   let wrapper = document.createElement("div");
@@ -181,6 +191,13 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
 
   bubbleCol.appendChild(msgDiv);
 
+  if (tipo === "bot") {
+    const feedbackId = "feedback-" + Math.random().toString(36).substr(2, 9);
+    const feedbackDiv = document.createElement("div");
+    feedbackDiv.innerHTML = criarBlocoFeedback(feedbackId);
+    bubbleCol.appendChild(feedbackDiv);
+  }
+
   if (!timestamp) timestamp = gerarDataHoraFormatada();
   const timestampDiv = document.createElement("div");
   timestampDiv.className = "chat-timestamp";
@@ -191,6 +208,44 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
   wrapper.appendChild(messageContent);
   chat.appendChild(wrapper);
   chat.scrollTop = chat.scrollHeight;
+
+  setTimeout(() => {
+    document.querySelectorAll('.feedback-icons').forEach(feedback => {
+      if (!feedback.dataset.eventBound) {
+        feedback.dataset.eventBound = true;
+        const likeBtn = feedback.querySelector('.like-btn');
+        const dislikeBtn = feedback.querySelector('.dislike-btn');
+        const label = feedback.querySelector('.feedback-label');
+
+        likeBtn.onclick = () => {
+          if (label.nextElementSibling && label.nextElementSibling.classList.contains('feedback-badge')) {
+            label.nextElementSibling.remove();
+          }
+          label.style.display = "none";
+          const badge = document.createElement('div');
+          badge.className = "feedback-badge positive";
+          badge.innerHTML = `<div class="feedback-line"></div><div class="feedback-label-box">Boa resposta</div>`;
+          label.parentNode.insertBefore(badge, label.nextSibling);
+
+          likeBtn.classList.add('active');
+          dislikeBtn.classList.remove('active');
+        };
+        dislikeBtn.onclick = () => {
+          if (label.nextElementSibling && label.nextElementSibling.classList.contains('feedback-badge')) {
+            label.nextElementSibling.remove();
+          }
+          label.style.display = "none";
+          const badge = document.createElement('div');
+          badge.className = "feedback-badge negative";
+          badge.innerHTML = `<div class="feedback-line"></div><div class="feedback-label-box">Má resposta</div>`;
+          label.parentNode.insertBefore(badge, label.nextSibling);
+
+          dislikeBtn.classList.add('active');
+          likeBtn.classList.remove('active');
+        };
+      }
+    });
+  }, 10);
 }
 
 let autoMensagemTimeout = null;
@@ -518,6 +573,13 @@ function adicionarMensagemComHTML(tipo, html, avatarUrl = null, autor = null, ti
 
   bubbleCol.appendChild(msgDiv);
 
+  if (tipo === "bot") {
+    const feedbackId = "feedback-" + Math.random().toString(36).substr(2, 9);
+    const feedbackDiv = document.createElement("div");
+    feedbackDiv.innerHTML = criarBlocoFeedback(feedbackId);
+    bubbleCol.appendChild(feedbackDiv);
+  }
+
   if (!timestamp) timestamp = gerarDataHoraFormatada();
   const timestampDiv = document.createElement("div");
   timestampDiv.className = "chat-timestamp";
@@ -528,6 +590,32 @@ function adicionarMensagemComHTML(tipo, html, avatarUrl = null, autor = null, ti
   wrapper.appendChild(messageContent);
   chat.appendChild(wrapper);
   chat.scrollTop = chat.scrollHeight;
+
+  setTimeout(() => {
+    document.querySelectorAll('.feedback-icons').forEach(feedback => {
+      if (!feedback.dataset.eventBound) {
+        feedback.dataset.eventBound = true;
+        const likeBtn = feedback.querySelector('.like-btn');
+        const dislikeBtn = feedback.querySelector('.dislike-btn');
+        const label = feedback.querySelector('.feedback-label');
+
+        likeBtn.onclick = () => {
+          label.textContent = "Boa resposta";
+          label.style.color = "#388e3c";
+          label.style.display = "inline-block";
+          likeBtn.style.opacity = 1;
+          dislikeBtn.style.opacity = 0.3;
+        };
+        dislikeBtn.onclick = () => {
+          label.textContent = "Má resposta";
+          label.style.color = "#d32f2f";
+          label.style.display = "inline-block";
+          dislikeBtn.style.opacity = 1;
+          likeBtn.style.opacity = 0.3;
+        };
+      }
+    });
+  }, 10);
 }
 
 function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
