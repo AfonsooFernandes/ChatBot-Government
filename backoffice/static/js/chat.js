@@ -145,6 +145,18 @@ function criarBlocoFeedback(msgId) {
   `;
 }
 
+function isSaudacao(msg) {
+  if (!msg) return false;
+  const s = msg.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const saudacoes = [
+    "olá","ola","bom dia","boa tarde","boa noite","hello","hi","good morning","good afternoon","good evening"
+  ];
+  for (let saud of saudacoes) {
+    if (s === saud || s.startsWith(saud)) return true;
+  }
+  return false;
+}
+
 function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestamp = null) {
   const chat = document.getElementById("chatBody");
   let wrapper = document.createElement("div");
@@ -191,7 +203,14 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
 
   bubbleCol.appendChild(msgDiv);
 
-  if (tipo === "bot") {
+  if (
+    tipo === "bot" &&
+    texto !== "Fico contente por ter ajudado." &&
+    texto !== "Lamento não ter conseguido responder. Tente reformular a pergunta." &&
+    texto !== "I'm glad I could help." &&
+    texto !== "I'm sorry I couldn't answer. Please try rephrasing the question." &&
+    !isSaudacao(texto)
+  ) {
     const feedbackId = "feedback-" + Math.random().toString(36).substr(2, 9);
     const feedbackDiv = document.createElement("div");
     feedbackDiv.innerHTML = criarBlocoFeedback(feedbackId);
@@ -248,6 +267,61 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
   }, 10);
 }
 
+function adicionarFeedbackResolvido(onClick, idioma = "pt", isSaudacaoMsg = false) {
+  if (isSaudacaoMsg) return;
+
+  const chat = document.getElementById("chatBody");
+  const wrapper = document.createElement("div");
+  wrapper.className = "message-wrapper bot feedback-resolvido";
+
+  const messageContent = document.createElement("div");
+  messageContent.className = "message-content";
+
+  const bubbleCol = document.createElement("div");
+  bubbleCol.style.display = "flex";
+  bubbleCol.style.flexDirection = "column";
+  bubbleCol.style.alignItems = "flex-start";
+
+  const msgDiv = document.createElement("div");
+  msgDiv.className = "message bot";
+  let corBot = localStorage.getItem("corChatbot") || "#d4af37";
+  msgDiv.style.backgroundColor = corBot;
+  msgDiv.style.color = "#fff";
+  msgDiv.style.display = "flex";
+  msgDiv.style.alignItems = "center";
+
+  let textoPergunta = "A sua questão foi resolvida?";
+  let btnSim = "Sim";
+  let btnNao = "Não";
+  if (idioma === "en") {
+    textoPergunta = "Was your issue resolved?";
+    btnSim = "Yes";
+    btnNao = "No";
+  }
+  msgDiv.innerHTML = `
+    <span style="font-weight: 500;">${textoPergunta}</span>
+    <button class="btn-feedback-sim" style="margin-left:12px; margin-right:6px; background: #fff; color:${corBot}; border: 1.5px solid ${corBot}; border-radius: 6px; padding: 4px 14px; font-weight: 600; cursor:pointer; transition:0.18s;">${btnSim}</button>
+    <button class="btn-feedback-nao" style="background: #fff; color:${corBot}; border: 1.5px solid ${corBot}; border-radius: 6px; padding: 4px 14px; font-weight: 600; cursor:pointer; transition:0.18s;">${btnNao}</button>
+  `;
+
+  bubbleCol.appendChild(msgDiv);
+  messageContent.appendChild(bubbleCol);
+  wrapper.appendChild(messageContent);
+  chat.appendChild(wrapper);
+  chat.scrollTop = chat.scrollHeight;
+
+  setTimeout(() => {
+    msgDiv.querySelector(".btn-feedback-sim").onclick = function() {
+      if (typeof onClick === "function") onClick("sim", wrapper);
+      wrapper.remove();
+    };
+    msgDiv.querySelector(".btn-feedback-nao").onclick = function() {
+      if (typeof onClick === "function") onClick("nao", wrapper);
+      wrapper.remove();
+    };
+  }, 60);
+}
+
 let autoMensagemTimeout = null;
 let autoFecharTimeout = null;
 let initialMessageShown = false;
@@ -298,7 +372,6 @@ window.fecharChat = function() {
   const toggleCard = document.querySelector('.chat-toggle-card');
   if (toggleCard) toggleCard.style.display = '';
 };
-
 
 async function apresentarMensagemInicial() {
   if (initialMessageShown) return;
@@ -390,6 +463,8 @@ function responderPergunta(pergunta) {
   })
     .then(res => res.json())
     .then(data => {
+      let faqPergunta = data.pergunta_faq || pergunta;
+      let faqIdioma = (data.faq_idioma || idioma || "pt").toLowerCase();
       if (data.success) {
         let resposta = data.resposta || "";
         if (data.documentos && Array.isArray(data.documentos) && data.documentos.length > 0) {
@@ -409,8 +484,46 @@ function responderPergunta(pergunta) {
         }
 
         adicionarMensagemComHTML("bot", resposta, "images/chatbot-icon.png", localStorage.getItem("nomeBot"));
-        const perguntaFaq = data.pergunta_faq || pergunta;
-        obterPerguntasSemelhantes(perguntaFaq, chatbotId, idioma);
+
+        const saudacao = isSaudacao(faqPergunta) || isSaudacao(resposta);
+        adicionarFeedbackResolvido((respostaFeedback, bloco) => {
+          if (respostaFeedback === "sim") {
+            if (faqIdioma === "en") {
+              adicionarMensagem(
+                "bot",
+                "I'm glad I could help.",
+                "images/chatbot-icon.png",
+                localStorage.getItem("nomeBot")
+              );
+            } else {
+              adicionarMensagem(
+                "bot",
+                "Fico contente por ter ajudado.",
+                "images/chatbot-icon.png",
+                localStorage.getItem("nomeBot")
+              );
+            }
+            obterPerguntasSemelhantes(faqPergunta, chatbotId, faqIdioma);
+          } else if (respostaFeedback === "nao") {
+            if (faqIdioma === "en") {
+              adicionarMensagem(
+                "bot",
+                "I'm sorry I couldn't answer. Please try rephrasing the question.",
+                "images/chatbot-icon.png",
+                localStorage.getItem("nomeBot")
+              );
+            } else {
+              adicionarMensagem(
+                "bot",
+                "Lamento não ter conseguido responder. Tente reformular a pergunta.",
+                "images/chatbot-icon.png",
+                localStorage.getItem("nomeBot")
+              );
+            }
+            obterPerguntasSemelhantes(faqPergunta, chatbotId, faqIdioma);
+          }
+        }, faqIdioma, saudacao);
+
         window.awaitingRagConfirmation = false;
       }
       else if (
@@ -573,7 +686,14 @@ function adicionarMensagemComHTML(tipo, html, avatarUrl = null, autor = null, ti
 
   bubbleCol.appendChild(msgDiv);
 
-  if (tipo === "bot") {
+  if (
+    tipo === "bot" &&
+    html !== "Fico contente por ter ajudado." &&
+    html !== "Lamento não ter conseguido responder. Tente reformular a pergunta." &&
+    html !== "I'm glad I could help." &&
+    html !== "I'm sorry I couldn't answer. Please try rephrasing the question." &&
+    !isSaudacao(html)
+  ) {
     const feedbackId = "feedback-" + Math.random().toString(36).substr(2, 9);
     const feedbackDiv = document.createElement("div");
     feedbackDiv.innerHTML = criarBlocoFeedback(feedbackId);

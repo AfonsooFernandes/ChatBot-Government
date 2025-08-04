@@ -403,3 +403,42 @@
   background: #fde7e7;
   color: #aa2630;
 }
+
+.feedback-resolvido .message.bot {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start;
+  gap: 0.6em;
+  background: var(--corBot, #d4af37);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  padding-top: 14px;
+  padding-bottom: 14px;
+  min-height: 44px;
+  border-radius: 15px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.feedback-resolvido .btn-feedback-sim,
+.feedback-resolvido .btn-feedback-nao {
+  margin-left: 10px;
+  margin-right: 2px;
+  background: #fff;
+  color: var(--corBot, #d4af37);
+  border: 1.5px solid var(--corBot, #d4af37);
+  border-radius: 6px;
+  padding: 4px 18px 4px 18px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.18s;
+  outline: none;
+}
+
+.feedback-resolvido .btn-feedback-sim:hover,
+.feedback-resolvido .btn-feedback-nao:hover {
+  background: var(--corBot, #d4af37);
+  color: #fff;
+  border-color: #fff;
+}
