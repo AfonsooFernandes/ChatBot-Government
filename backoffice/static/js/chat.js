@@ -65,10 +65,11 @@ function gerarDataHoraFormatada() {
 
 async function atualizarNomeChatHeader() {
   const headerNome = document.getElementById('chatHeaderNomeBot');
+  const headerImg = document.querySelector('.chat-header-avatar');
   let nomeBot = localStorage.getItem("nomeBot") || "Assistente Municipal";
   let corBot = localStorage.getItem("corChatbot") || "#d4af37";
+  let iconBot = localStorage.getItem("iconBot") || "/static/images/chatbot-icon.png";
   const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
-
   if (chatbotId && !isNaN(chatbotId)) {
     try {
       const res = await fetch(`/chatbot/${chatbotId}`);
@@ -81,6 +82,13 @@ async function atualizarNomeChatHeader() {
         corBot = data.cor;
         localStorage.setItem("corChatbot", corBot);
       }
+      if (data.success && data.icon) {
+        iconBot = data.icon;
+        localStorage.setItem("iconBot", iconBot);
+        if (headerImg) {
+          headerImg.src = iconBot;
+        }
+      }
     } catch (e) {
       const botsData = JSON.parse(localStorage.getItem("chatbotsData") || "[]");
       const bot = botsData.find(b => b.chatbot_id === chatbotId || b.chatbot_id === String(chatbotId));
@@ -92,11 +100,20 @@ async function atualizarNomeChatHeader() {
         corBot = bot.cor;
         localStorage.setItem("corChatbot", corBot);
       }
+      if (bot && bot.icon_path) {
+        iconBot = bot.icon_path;
+        localStorage.setItem("iconBot", iconBot);
+        if (headerImg) {
+          headerImg.src = iconBot;
+        }
+      }
     }
   }
-
   if (headerNome) {
     headerNome.textContent = nomeBot !== "..." ? nomeBot : "Assistente Municipal";
+  }
+  if (headerImg) {
+    headerImg.src = iconBot;
   }
   const chatHeader = document.querySelector('.chat-header');
   if (chatHeader) {
@@ -116,7 +133,6 @@ function atualizarFonteBadge() {
   }
   const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
   let badgeHTML = "";
-
   if (fonte === "faq" || fonte === "faiss") {
     badgeHTML = `
       <span style="display:inline-flex;align-items:center;gap:7px;font-weight:500;font-size:14px;color:#fff;border-radius:7px;padding:3px 7px 3px 2px;margin-top:4px;margin-left: 0px;">
@@ -161,36 +177,30 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
   const chat = document.getElementById("chatBody");
   let wrapper = document.createElement("div");
   wrapper.className = "message-wrapper " + tipo;
-
   const authorDiv = document.createElement("div");
   authorDiv.className = "chat-author " + tipo;
   authorDiv.textContent = tipo === "user" ? "Eu" : (autor || "Assistente Municipal");
   wrapper.appendChild(authorDiv);
-
   const messageContent = document.createElement("div");
   messageContent.className = "message-content";
-
   if (tipo === "bot" && avatarUrl) {
     const avatarDiv = document.createElement("div");
     avatarDiv.className = "bot-avatar-outer";
     const avatar = document.createElement("img");
-    avatar.src = avatarUrl.startsWith("/") ? avatarUrl : "/static/images/chatbot-icon.png";
+    avatar.src = avatarUrl;
     avatar.alt = "Bot";
     avatar.className = "bot-avatar";
     avatarDiv.appendChild(avatar);
     messageContent.appendChild(avatarDiv);
   }
-
   const bubbleCol = document.createElement("div");
   bubbleCol.style.display = "flex";
   bubbleCol.style.flexDirection = "column";
   bubbleCol.style.alignItems = tipo === "user" ? "flex-end" : "flex-start";
-
   const msgDiv = document.createElement("div");
   msgDiv.className = `message ${tipo}`;
   msgDiv.style.whiteSpace = "pre-line";
   msgDiv.textContent = texto;
-
   let corBot = localStorage.getItem("corChatbot") || "#d4af37";
   if (tipo === "bot") {
     msgDiv.style.backgroundColor = corBot;
@@ -200,9 +210,7 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
     msgDiv.style.backgroundColor = shadeColor(corBot, -18);
     msgDiv.style.color = "#fff";
   }
-
   bubbleCol.appendChild(msgDiv);
-
   if (
     tipo === "bot" &&
     texto !== "Fico contente por ter ajudado." &&
@@ -216,18 +224,15 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
     feedbackDiv.innerHTML = criarBlocoFeedback(feedbackId);
     bubbleCol.appendChild(feedbackDiv);
   }
-
   if (!timestamp) timestamp = gerarDataHoraFormatada();
   const timestampDiv = document.createElement("div");
   timestampDiv.className = "chat-timestamp";
   timestampDiv.textContent = timestamp;
   bubbleCol.appendChild(timestampDiv);
-
   messageContent.appendChild(bubbleCol);
   wrapper.appendChild(messageContent);
   chat.appendChild(wrapper);
   chat.scrollTop = chat.scrollHeight;
-
   setTimeout(() => {
     document.querySelectorAll('.feedback-icons').forEach(feedback => {
       if (!feedback.dataset.eventBound) {
@@ -235,7 +240,6 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
         const likeBtn = feedback.querySelector('.like-btn');
         const dislikeBtn = feedback.querySelector('.dislike-btn');
         const label = feedback.querySelector('.feedback-label');
-
         likeBtn.onclick = () => {
           if (label.nextElementSibling && label.nextElementSibling.classList.contains('feedback-badge')) {
             label.nextElementSibling.remove();
@@ -245,7 +249,6 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
           badge.className = "feedback-badge positive";
           badge.innerHTML = `<div class="feedback-line"></div><div class="feedback-label-box">Boa resposta</div>`;
           label.parentNode.insertBefore(badge, label.nextSibling);
-
           likeBtn.classList.add('active');
           dislikeBtn.classList.remove('active');
         };
@@ -258,7 +261,6 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
           badge.className = "feedback-badge negative";
           badge.innerHTML = `<div class="feedback-line"></div><div class="feedback-label-box">Má resposta</div>`;
           label.parentNode.insertBefore(badge, label.nextSibling);
-
           dislikeBtn.classList.add('active');
           likeBtn.classList.remove('active');
         };
@@ -269,19 +271,15 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
 
 function adicionarFeedbackResolvido(onClick, idioma = "pt", isSaudacaoMsg = false) {
   if (isSaudacaoMsg) return;
-
   const chat = document.getElementById("chatBody");
   const wrapper = document.createElement("div");
   wrapper.className = "message-wrapper bot feedback-resolvido";
-
   const messageContent = document.createElement("div");
   messageContent.className = "message-content";
-
   const bubbleCol = document.createElement("div");
   bubbleCol.style.display = "flex";
   bubbleCol.style.flexDirection = "column";
   bubbleCol.style.alignItems = "flex-start";
-
   const msgDiv = document.createElement("div");
   msgDiv.className = "message bot";
   let corBot = localStorage.getItem("corChatbot") || "#d4af37";
@@ -289,7 +287,6 @@ function adicionarFeedbackResolvido(onClick, idioma = "pt", isSaudacaoMsg = fals
   msgDiv.style.color = "#fff";
   msgDiv.style.display = "flex";
   msgDiv.style.alignItems = "center";
-
   let textoPergunta = "A sua questão foi resolvida?";
   let btnSim = "Sim";
   let btnNao = "Não";
@@ -303,13 +300,11 @@ function adicionarFeedbackResolvido(onClick, idioma = "pt", isSaudacaoMsg = fals
     <button class="btn-feedback-sim" style="margin-left:12px; margin-right:6px; background: #fff; color:${corBot}; border: 1.5px solid ${corBot}; border-radius: 6px; padding: 4px 14px; font-weight: 600; cursor:pointer; transition:0.18s;">${btnSim}</button>
     <button class="btn-feedback-nao" style="background: #fff; color:${corBot}; border: 1.5px solid ${corBot}; border-radius: 6px; padding: 4px 14px; font-weight: 600; cursor:pointer; transition:0.18s;">${btnNao}</button>
   `;
-
   bubbleCol.appendChild(msgDiv);
   messageContent.appendChild(bubbleCol);
   wrapper.appendChild(messageContent);
   chat.appendChild(wrapper);
   chat.scrollTop = chat.scrollHeight;
-
   setTimeout(() => {
     msgDiv.querySelector(".btn-feedback-sim").onclick = function() {
       if (typeof onClick === "function") onClick("sim", wrapper);
@@ -325,7 +320,6 @@ function adicionarFeedbackResolvido(onClick, idioma = "pt", isSaudacaoMsg = fals
 let autoMensagemTimeout = null;
 let autoFecharTimeout = null;
 let initialMessageShown = false;
-
 function iniciarTimerAutoMensagem() {
   limparTimersAutoChat();
   autoMensagemTimeout = setTimeout(() => {
@@ -337,7 +331,7 @@ function enviarMensagemAutomatica() {
   adicionarMensagem(
     "bot",
     "Se precisar de ajuda, basta escrever a sua pergunta!",
-    "images/chatbot-icon.png",
+    localStorage.getItem("iconBot") || "images/chatbot-icon.png",
     localStorage.getItem("nomeBot") || "Assistente Municipal"
   );
   autoFecharTimeout = setTimeout(() => {
@@ -362,9 +356,9 @@ function abrirChat() {
   iniciarTimerAutoMensagem();
   atualizarCorChatbot();
   const toggleCard = document.querySelector('.chat-toggle-card');
-  if (toggleCard) toggleCard.style.display = 'none';
+  if (
+    toggleCard) toggleCard.style.display = 'none';
 }
-
 window.fecharChat = function() {
   document.getElementById('chatSidebar').style.display = 'none';
   limparTimersAutoChat();
@@ -375,42 +369,42 @@ window.fecharChat = function() {
 
 async function apresentarMensagemInicial() {
   if (initialMessageShown) return;
-
-  let nomeBot, corBot;
+  let nomeBot, corBot, iconBot;
   const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
-
   if (chatbotId && !isNaN(chatbotId)) {
     try {
       const res = await fetch(`/chatbot/${chatbotId}`);
       const data = await res.json();
       nomeBot = data.success && data.nome ? data.nome : "Assistente Municipal";
       corBot = data.success && data.cor ? data.cor : "#d4af37";
+      iconBot = data.success && data.icon ? data.icon : "/static/images/chatbot-icon.png";
       localStorage.setItem("nomeBot", nomeBot);
       localStorage.setItem("corChatbot", corBot);
+      localStorage.setItem("iconBot", iconBot);
     } catch (e) {
       const botsData = JSON.parse(localStorage.getItem("chatbotsData") || "[]");
       const bot = botsData.find(b => b.chatbot_id === chatbotId || b.chatbot_id === String(chatbotId));
       nomeBot = bot && bot.nome ? bot.nome : "Assistente Municipal";
       corBot = bot && bot.cor ? bot.cor : "#d4af37";
+      iconBot = bot && bot.icon_path ? bot.icon_path : "/static/images/chatbot-icon.png";
       localStorage.setItem("nomeBot", nomeBot);
       localStorage.setItem("corChatbot", corBot);
+      localStorage.setItem("iconBot", iconBot);
     }
   } else {
     nomeBot = "Assistente Municipal";
     corBot = "#d4af37";
+    iconBot = "/static/images/chatbot-icon.png";
     localStorage.setItem("nomeBot", nomeBot);
     localStorage.setItem("corChatbot", corBot);
+    localStorage.setItem("iconBot", iconBot);
   }
-
   atualizarCorChatbot();
-
   const msg = `Olá!
-Eu sou o ${nomeBot}, o seu assistente virtual.  
+Eu sou o ${nomeBot}, o seu assistente virtual.
 Faça uma pergunta de cada vez que eu procurarei esclarecer todas as suas dúvidas.`;
-
-  adicionarMensagem("bot", msg, "images/chatbot-icon.png", nomeBot);
+  adicionarMensagem("bot", msg, iconBot, nomeBot);
   initialMessageShown = true;
-
   await atualizarNomeChatHeader();
   mostrarPerguntasSugestivasDB();
 }
@@ -419,12 +413,10 @@ function enviarPergunta() {
   const input = document.getElementById("chatInput");
   const texto = input.value.trim();
   if (!texto) return;
-
   adicionarMensagem("user", texto);
   input.value = "";
   limparTimersAutoChat();
   iniciarTimerAutoMensagem();
-
   responderPergunta(texto);
 }
 
@@ -434,11 +426,10 @@ function responderPergunta(pergunta) {
     return adicionarMensagem(
       "bot",
       "⚠️ Nenhum chatbot está ativo. Por favor, selecione um chatbot ativo no menu de recursos.",
-      "images/chatbot-icon.png",
+      localStorage.getItem("iconBot") || "images/chatbot-icon.png",
       localStorage.getItem("nomeBot") || "Assistente Municipal"
     );
   }
-
   if (window.awaitingRagConfirmation) {
     adicionarMensagem(
       "bot",
@@ -446,11 +437,10 @@ function responderPergunta(pergunta) {
     );
     return;
   }
-
   const fonte = localStorage.getItem(`fonteSelecionada_bot${chatbotId}`) || "faq";
   const idioma = getIdiomaAtual();
   let corBot = localStorage.getItem("corChatbot") || "#d4af37";
-
+  let iconBot = localStorage.getItem("iconBot") || "/static/images/chatbot-icon.png";
   fetch("/obter-resposta", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -482,9 +472,7 @@ function responderPergunta(pergunta) {
             </div>
           `;
         }
-
-        adicionarMensagemComHTML("bot", resposta, "images/chatbot-icon.png", localStorage.getItem("nomeBot"));
-
+        adicionarMensagemComHTML("bot", resposta, iconBot, localStorage.getItem("nomeBot"));
         const saudacao = isSaudacao(faqPergunta) || isSaudacao(resposta);
         adicionarFeedbackResolvido((respostaFeedback, bloco) => {
           if (respostaFeedback === "sim") {
@@ -492,14 +480,14 @@ function responderPergunta(pergunta) {
               adicionarMensagem(
                 "bot",
                 "I'm glad I could help.",
-                "images/chatbot-icon.png",
+                iconBot,
                 localStorage.getItem("nomeBot")
               );
             } else {
               adicionarMensagem(
                 "bot",
                 "Fico contente por ter ajudado.",
-                "images/chatbot-icon.png",
+                iconBot,
                 localStorage.getItem("nomeBot")
               );
             }
@@ -509,21 +497,20 @@ function responderPergunta(pergunta) {
               adicionarMensagem(
                 "bot",
                 "I'm sorry I couldn't answer. Please try rephrasing the question.",
-                "images/chatbot-icon.png",
+                iconBot,
                 localStorage.getItem("nomeBot")
               );
             } else {
               adicionarMensagem(
                 "bot",
                 "Lamento não ter conseguido responder. Tente reformular a pergunta.",
-                "images/chatbot-icon.png",
+                iconBot,
                 localStorage.getItem("nomeBot")
               );
             }
             obterPerguntasSemelhantes(faqPergunta, chatbotId, faqIdioma);
           }
         }, faqIdioma, saudacao);
-
         window.awaitingRagConfirmation = false;
       }
       else if (
@@ -531,49 +518,40 @@ function responderPergunta(pergunta) {
         (data.erro && data.erro.toLowerCase().includes("deseja tentar encontrar uma resposta nos documentos pdf"))
       ) {
         window.awaitingRagConfirmation = true;
-
         const chat = document.getElementById("chatBody");
-        let corBot = localStorage.getItem("corChatbot") || "#d4af37";
         let wrapper = document.createElement("div");
         wrapper.className = "message-wrapper bot";
-
         const authorDiv = document.createElement("div");
         authorDiv.className = "chat-author bot";
         authorDiv.textContent = localStorage.getItem("nomeBot") || "Assistente Municipal";
         wrapper.appendChild(authorDiv);
-
         const messageContent = document.createElement("div");
         messageContent.className = "message-content";
         const bubbleCol = document.createElement("div");
         bubbleCol.style.display = "flex";
         bubbleCol.style.flexDirection = "column";
         bubbleCol.style.alignItems = "flex-start";
-
         const msgDiv = document.createElement("div");
         msgDiv.className = "message bot";
         msgDiv.style.whiteSpace = "pre-line";
         msgDiv.style.backgroundColor = corBot;
         msgDiv.style.color = "#fff";
-        msgDiv.innerHTML = `Pergunta não encontrada nas FAQs.<br> 
+        msgDiv.innerHTML = `Pergunta não encontrada nas FAQs.<br>
         <a id="confirmar-rag-link" href="#" style="
-          color: #fff; background: ${corBot}; border: 2px solid #fff; 
-          border-radius: 8px; padding: 5px 17px; font-weight: bold; 
+          color: #fff; background: ${corBot}; border: 2px solid #fff;
+          border-radius: 8px; padding: 5px 17px; font-weight: bold;
           text-decoration: underline; display: inline-block; margin-top: 7px; cursor: pointer;"
         >Clique aqui para tentar encontrar uma resposta nos documentos PDF.</a>
         <br><span style="font-size:13px; opacity:.86;">Pode demorar alguns segundos.</span>`;
-
         bubbleCol.appendChild(msgDiv);
-
         const timestampDiv = document.createElement("div");
         timestampDiv.className = "chat-timestamp";
         timestampDiv.textContent = gerarDataHoraFormatada();
         bubbleCol.appendChild(timestampDiv);
-
         messageContent.appendChild(bubbleCol);
         wrapper.appendChild(messageContent);
         chat.appendChild(wrapper);
         chat.scrollTop = chat.scrollHeight;
-
         setTimeout(() => {
           const confirmarRag = document.getElementById("confirmar-rag-link");
           if (confirmarRag) {
@@ -597,12 +575,12 @@ function responderPergunta(pergunta) {
                 .then(res => res.json())
                 .then(ragData => {
                   if (ragData.success) {
-                    adicionarMensagemComHTML("bot", ragData.resposta || "", "images/chatbot-icon.png", localStorage.getItem("nomeBot"));
+                    adicionarMensagemComHTML("bot", ragData.resposta || "", iconBot, localStorage.getItem("nomeBot"));
                   } else {
                     adicionarMensagem(
                       "bot",
                       ragData.erro || "❌ Nenhuma resposta encontrada nos documentos PDF.",
-                      "images/chatbot-icon.png",
+                      iconBot,
                       localStorage.getItem("nomeBot")
                     );
                   }
@@ -611,19 +589,18 @@ function responderPergunta(pergunta) {
                   adicionarMensagem(
                     "bot",
                     "❌ Erro ao comunicar com o servidor (RAG).",
-                    "images/chatbot-icon.png",
+                    iconBot,
                     localStorage.getItem("nomeBot")
                   );
                 });
             };
           }
         }, 60);
-
       } else {
         adicionarMensagem(
           "bot",
           data.erro || "❌ Nenhuma resposta encontrada para a pergunta fornecida.",
-          "images/chatbot-icon.png",
+          iconBot,
           localStorage.getItem("nomeBot")
         );
         window.awaitingRagConfirmation = false;
@@ -633,7 +610,7 @@ function responderPergunta(pergunta) {
       adicionarMensagem(
         "bot",
         "❌ Erro ao comunicar com o servidor. Verifique se o servidor está ativo.",
-        "images/chatbot-icon.png",
+        iconBot,
         localStorage.getItem("nomeBot")
       );
       window.awaitingRagConfirmation = false;
@@ -644,36 +621,30 @@ function adicionarMensagemComHTML(tipo, html, avatarUrl = null, autor = null, ti
   const chat = document.getElementById("chatBody");
   let wrapper = document.createElement("div");
   wrapper.className = "message-wrapper " + tipo;
-
   const authorDiv = document.createElement("div");
   authorDiv.className = "chat-author " + tipo;
   authorDiv.textContent = tipo === "user" ? "Eu" : (autor || "Assistente Municipal");
   wrapper.appendChild(authorDiv);
-
   const messageContent = document.createElement("div");
   messageContent.className = "message-content";
-
   if (tipo === "bot" && avatarUrl) {
     const avatarDiv = document.createElement("div");
     avatarDiv.className = "bot-avatar-outer";
     const avatar = document.createElement("img");
-    avatar.src = avatarUrl.startsWith("/") ? avatarUrl : "/static/images/chatbot-icon.png";
+    avatar.src = avatarUrl;
     avatar.alt = "Bot";
     avatar.className = "bot-avatar";
     avatarDiv.appendChild(avatar);
     messageContent.appendChild(avatarDiv);
   }
-
   const bubbleCol = document.createElement("div");
   bubbleCol.style.display = "flex";
   bubbleCol.style.flexDirection = "column";
   bubbleCol.style.alignItems = tipo === "user" ? "flex-end" : "flex-start";
-
   const msgDiv = document.createElement("div");
   msgDiv.className = `message ${tipo}`;
   msgDiv.style.whiteSpace = "pre-line";
   msgDiv.innerHTML = html;
-
   let corBot = localStorage.getItem("corChatbot") || "#d4af37";
   if (tipo === "bot") {
     msgDiv.style.backgroundColor = corBot;
@@ -683,9 +654,7 @@ function adicionarMensagemComHTML(tipo, html, avatarUrl = null, autor = null, ti
     msgDiv.style.backgroundColor = shadeColor(corBot, -18);
     msgDiv.style.color = "#fff";
   }
-
   bubbleCol.appendChild(msgDiv);
-
   if (
     tipo === "bot" &&
     html !== "Fico contente por ter ajudado." &&
@@ -699,18 +668,15 @@ function adicionarMensagemComHTML(tipo, html, avatarUrl = null, autor = null, ti
     feedbackDiv.innerHTML = criarBlocoFeedback(feedbackId);
     bubbleCol.appendChild(feedbackDiv);
   }
-
   if (!timestamp) timestamp = gerarDataHoraFormatada();
   const timestampDiv = document.createElement("div");
   timestampDiv.className = "chat-timestamp";
   timestampDiv.textContent = timestamp;
   bubbleCol.appendChild(timestampDiv);
-
   messageContent.appendChild(bubbleCol);
   wrapper.appendChild(messageContent);
   chat.appendChild(wrapper);
   chat.scrollTop = chat.scrollHeight;
-
   setTimeout(() => {
     document.querySelectorAll('.feedback-icons').forEach(feedback => {
       if (!feedback.dataset.eventBound) {
@@ -718,7 +684,6 @@ function adicionarMensagemComHTML(tipo, html, avatarUrl = null, autor = null, ti
         const likeBtn = feedback.querySelector('.like-btn');
         const dislikeBtn = feedback.querySelector('.dislike-btn');
         const label = feedback.querySelector('.feedback-label');
-
         likeBtn.onclick = () => {
           label.textContent = "Boa resposta";
           label.style.color = "#388e3c";
@@ -741,7 +706,6 @@ function adicionarMensagemComHTML(tipo, html, avatarUrl = null, autor = null, ti
 function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
   if (!chatbotId || isNaN(chatbotId)) return;
   if (!idioma) idioma = getIdiomaAtual();
-
   fetch("/perguntas-semelhantes", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -754,16 +718,13 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
     .then(res => res.json())
     .then(data => {
       document.querySelectorAll('.sugestoes-similares').forEach(el => el.remove());
-
       if (data.success && Array.isArray(data.sugestoes) && data.sugestoes.length > 0) {
         const chat = document.getElementById("chatBody");
-
         const sugestoesWrapper = document.createElement("div");
         sugestoesWrapper.className = "sugestoes-similares";
         sugestoesWrapper.style.marginTop = "10px";
         sugestoesWrapper.style.marginBottom = "8px";
         sugestoesWrapper.style.maxWidth = "540px";
-
         const titulo = document.createElement("div");
         titulo.className = "sugestoes-title";
         titulo.style.fontWeight = "600";
@@ -771,26 +732,21 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
         const corBot = localStorage.getItem("corChatbot") || "#d4af37";
         titulo.style.color = corBot;
         titulo.style.marginBottom = "7px";
-
         let sugestoesTitulo = "📌 Perguntas que também podem interessar:";
         if (idioma === "en") {
           sugestoesTitulo = "📌 Questions you might also be interested in:";
         }
         titulo.textContent = sugestoesTitulo;
         sugestoesWrapper.appendChild(titulo);
-
         const btnContainer = document.createElement("div");
         btnContainer.className = "suggested-questions-bar";
-
         data.sugestoes.forEach(pergunta => {
           const btn = document.createElement("button");
           btn.className = "suggested-question-btn";
           btn.textContent = pergunta;
-
           btn.style.background = "#fff";
           btn.style.borderColor = corBot;
           btn.style.color = corBot;
-
           btn.onmouseover = () => {
             btn.style.background = corBot;
             btn.style.color = "#fff";
@@ -806,7 +762,6 @@ function obterPerguntasSemelhantes(perguntaOriginal, chatbotId, idioma = null) {
           };
           btnContainer.appendChild(btn);
         });
-
         sugestoesWrapper.appendChild(btnContainer);
         chat.appendChild(sugestoesWrapper);
         chat.scrollTop = chat.scrollHeight;
@@ -820,17 +775,15 @@ async function mostrarPerguntasSugestivasDB() {
   if (!chat) return;
   const idioma = getIdiomaAtual();
   const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
-
   if (!chatbotId || isNaN(chatbotId)) return;
-
   try {
     const res = await fetch("/faqs-aleatorias", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        idioma: idioma, 
+      body: JSON.stringify({
+        idioma: idioma,
         n: 3,
-        chatbot_id: chatbotId 
+        chatbot_id: chatbotId
       })
     });
     const data = await res.json();
@@ -841,10 +794,8 @@ async function mostrarPerguntasSugestivasDB() {
       const corBot = localStorage.getItem("corChatbot") || "#d4af37";
       title.style.color = corBot;
       chat.appendChild(title);
-
       const btnContainer = document.createElement("div");
       btnContainer.className = "suggested-questions-bar";
-
       data.faqs.forEach(faq => {
         const btn = document.createElement("button");
         btn.className = "suggested-question-btn";
@@ -868,7 +819,6 @@ async function mostrarPerguntasSugestivasDB() {
         };
         btnContainer.appendChild(btn);
       });
-
       chat.appendChild(btnContainer);
       chat.scrollTop = chat.scrollHeight;
     }

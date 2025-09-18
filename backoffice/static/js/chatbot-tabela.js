@@ -6,6 +6,7 @@ window.abrirModalEliminarBot = function(chatbot_id) {
   const modal = document.getElementById('modalConfirmarEliminarBot');
   if (modal) modal.style.display = 'flex';
 };
+
 window.fecharModalEliminarBot = function() {
   botIdAEliminar = null;
   const modal = document.getElementById('modalConfirmarEliminarBot');
@@ -15,56 +16,73 @@ window.fecharModalEliminarBot = function() {
 window.abrirModalCategorias = async function(chatbot_id) {
   botIdCategorias = chatbot_id;
   await renderizarCategoriasChatbot(chatbot_id);
-  document.getElementById("modalCategorias").style.display = "flex";
+  const modal = document.getElementById("modalCategorias");
+  if (modal) modal.style.display = "flex";
 };
+
 window.fecharModalCategorias = function() {
-  document.getElementById("modalCategorias").style.display = "none";
+  const modal = document.getElementById("modalCategorias");
+  if (modal) modal.style.display = "none";
   botIdCategorias = null;
 };
 
 async function renderizarCategoriasChatbot(chatbot_id) {
   const container = document.getElementById("categoriasContainer");
+  if (!container) return;
   container.innerHTML = "<span style='color:#888;'>A carregar categorias...</span>";
 
-  const associadas = await fetch(`/chatbots/${chatbot_id}/categorias`).then(r=>r.json());
+  try {
+    const associadas = await fetch(`/chatbots/${chatbot_id}/categorias`).then(r => r.json());
 
-  let categoriasHtml = '';
-  if (associadas && associadas.length > 0) {
-    categoriasHtml = associadas.map(cat => `
-      <div class="categoria-row">
-        <span>${cat.nome}</span>
-        <button class="btn-eliminar-cat" onclick="removerAssociacaoCategoria(${chatbot_id},${cat.categoria_id})" title="Remover">Eliminar</button>
+    let categoriasHtml = '';
+    if (associadas && associadas.length > 0) {
+      categoriasHtml = associadas.map(cat => `
+        <div class="categoria-row">
+          <span>${cat.nome}</span>
+          <button class="btn-eliminar-cat" onclick="removerAssociacaoCategoria(${chatbot_id}, ${cat.categoria_id})" title="Remover">Eliminar</button>
+        </div>
+      `).join("");
+    } else {
+      categoriasHtml = `<span style='color:#888;'>Nenhuma categoria associada a este chatbot.</span>`;
+    }
+
+    const adicionarHtml = `
+      <div class="adicionar-categoria-row" style="margin-top:18px;">
+        <input type="text" id="novaCategoriaInput" placeholder="Nova categoria" maxlength="50">
+        <button class="btn-adicionar-categoria" onclick="adicionarCategoriaDireta()">Adicionar Nova Categoria</button>
       </div>
-    `).join("");
-  } else {
-    categoriasHtml = `<span style='color:#888;'>Nenhuma categoria associada a este chatbot.</span>`;
+    `;
+
+    container.innerHTML = categoriasHtml + adicionarHtml;
+  } catch (err) {
+    container.innerHTML = `<span style='color:red;'>Erro ao carregar categorias: ${err.message}</span>`;
   }
-
-  const adicionarHtml = `
-    <div class="adicionar-categoria-row" style="margin-top:18px;">
-      <input type="text" id="novaCategoriaInput" placeholder="Nova categoria" maxlength="50">
-      <button class="btn-adicionar-categoria" onclick="adicionarCategoriaDireta()">Adicionar Nova Categoria</button>
-    </div>
-  `;
-
-  container.innerHTML = categoriasHtml + adicionarHtml;
 }
 
 window.toggleAssociacaoCategoria = async function(chatbot_id, categoria_id, checked) {
-  if (checked) {
-    await fetch(`/chatbots/${chatbot_id}/categorias`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ categoria_id })
-    });
-  } else {
-    await fetch(`/chatbots/${chatbot_id}/categorias/${categoria_id}`, { method: "DELETE" });
+  try {
+    if (checked) {
+      await fetch(`/chatbots/${chatbot_id}/categorias`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoria_id })
+      });
+    } else {
+      await fetch(`/chatbots/${chatbot_id}/categorias/${categoria_id}`, { method: "DELETE" });
+    }
+    await renderizarCategoriasChatbot(chatbot_id);
+  } catch (err) {
+    alert("Erro ao atualizar associação de categoria: " + err.message);
   }
 };
 
 window.removerAssociacaoCategoria = async function(chatbot_id, categoria_id) {
-  await fetch(`/chatbots/${chatbot_id}/categorias/${categoria_id}`, { method: "DELETE" });
-  await renderizarCategoriasChatbot(chatbot_id);
+  try {
+    await fetch(`/chatbots/${chatbot_id}/categorias/${categoria_id}`, { method: "DELETE" });
+    await renderizarCategoriasChatbot(chatbot_id);
+  } catch (err) {
+    alert("Erro ao remover associação de categoria: " + err.message);
+  }
 };
 
 window.adicionarCategoriaDireta = async function() {
@@ -89,8 +107,7 @@ window.adicionarCategoriaDireta = async function() {
         return;
       }
     } else if (!res.ok) {
-      alert("Erro ao criar categoria!");
-      return;
+      throw new Error("Erro ao criar categoria!");
     } else {
       let cat = await res.json();
       categoria_id = cat.categoria_id;
@@ -104,7 +121,7 @@ window.adicionarCategoriaDireta = async function() {
     input.value = "";
     await renderizarCategoriasChatbot(botIdCategorias);
   } catch (err) {
-    alert("Erro ao comunicar com o servidor.");
+    alert("Erro ao adicionar categoria: " + err.message);
   }
 };
 
@@ -114,10 +131,11 @@ async function eliminarChatbotConfirmado(chatbot_id) {
     if (res.ok) {
       carregarTabelaBots();
     } else {
-      alert("Erro ao eliminar o chatbot!");
+      const result = await res.json();
+      alert("Erro ao eliminar o chatbot: " + (result.error || result.erro || res.statusText));
     }
-  } catch (e) {
-    alert("Erro ao comunicar com o servidor.");
+  } catch (err) {
+    alert("Erro ao comunicar com o servidor: " + err.message);
   }
 }
 
@@ -161,6 +179,7 @@ async function carregarTabelaBots() {
             <th>Estado</th>
             <th>Fonte</th>
             <th>Cor</th>
+            <th>Ícone</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -180,6 +199,9 @@ async function carregarTabelaBots() {
               </td>
               <td class="cor">
                 <span class="cor-bot-preview" style="background:${bot.cor || '#d4af37'}"></span>
+              </td>
+              <td class="icone">
+                <img src="${bot.icon_path || '/static/images/chatbot-icon.png'}" alt="Ícone do Bot" style="width:24px; height:24px; border-radius:4px; object-fit:cover;">
               </td>
               <td>
                 <button class="btn-ativo" onclick="tornarBotAtivo(${bot.chatbot_id}, this)">
@@ -250,11 +272,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const nome = novoBotForm.elements["nome"].value.trim();
       const descricao = novoBotForm.elements["descricao"].value.trim();
       const mensagem_sem_resposta = novoBotForm.elements["mensagem_sem_resposta"].value.trim();
+      const cor = novoBotForm.elements["cor"].value.trim();
       if (!nome) {
         alert("Nome obrigatório");
         return;
       }
-      const body = { nome, descricao, mensagem_sem_resposta };
+      const body = { nome, descricao, mensagem_sem_resposta, cor };
       try {
         const res = await fetch(`/chatbots`, {
           method: "POST",
@@ -282,18 +305,28 @@ document.addEventListener("DOMContentLoaded", function () {
       const nome = document.getElementById("editarNomeChatbot").value.trim();
       const descricao = document.getElementById("editarDescricaoChatbot").value.trim();
       const fonte = document.getElementById("editarFonteResposta").value;
-      const cor = (document.getElementById("editarCorChatbot").value || "#d4af37").trim();
+      const cor = document.getElementById("editarCorChatbot").value.trim();
       const mensagem_sem_resposta = document.getElementById("editarMensagemSemResposta").value.trim();
+      const iconInput = document.getElementById("editarIconChatbot");
+      const iconFile = iconInput.files[0];
+
       if (!nome) {
         alert("Nome obrigatório");
         return;
       }
-      const body = { nome, descricao, fonte, cor, mensagem_sem_resposta };
+
+      const formData = new FormData();
+      formData.append("nome", nome);
+      formData.append("descricao", descricao);
+      formData.append("fonte", fonte);
+      formData.append("cor", cor);
+      formData.append("mensagem_sem_resposta", mensagem_sem_resposta);
+      if (iconFile) formData.append("icon", iconFile);
+
       try {
         const res = await fetch(`/chatbots/${chatbot_id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
+          body: formData
         });
         await atualizarCategoriasDoChatbot(chatbot_id);
         if (res.ok) {
@@ -333,6 +366,23 @@ document.addEventListener("DOMContentLoaded", function () {
       el.addEventListener("change", carregarTabelaBots);
     }
   });
+
+  const iconInput = document.getElementById("editarIconChatbot");
+  if (iconInput) {
+    iconInput.onchange = function(e) {
+      const file = e.target.files[0];
+      const preview = document.getElementById("previewIcon");
+      if (file && file.type.startsWith('image/')) {
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = "block";
+      } else {
+        preview.src = "/static/images/chatbot-icon.png";
+        preview.style.display = "none";
+        alert("Por favor, selecione um arquivo de imagem válido.");
+        iconInput.value = "";
+      }
+    };
+  }
 });
 
 window.abrirModalAtualizar = async function(chatbot_id) {
@@ -350,87 +400,206 @@ window.abrirModalAtualizar = async function(chatbot_id) {
     document.getElementById("editarFonteResposta").value = bot.fonte || "faq";
     document.getElementById("editarCorChatbot").value = bot.cor || "#d4af37";
     document.getElementById("editarMensagemSemResposta").value = bot.mensagem_sem_resposta || "";
+    document.getElementById("previewIcon").src = bot.icon_path || "/static/images/chatbot-icon.png";
+    document.getElementById("previewIcon").style.display = bot.icon_path ? "block" : "none";
     document.getElementById("editarChatbotForm").setAttribute("data-edit-id", chatbot_id);
 
     await mostrarModalEditarChatbot(chatbot_id);
-
     document.getElementById("modalEditarChatbot").style.display = "flex";
   } catch (e) {
-    alert("Erro ao carregar dados do chatbot.");
+    alert("Erro ao carregar dados do chatbot: " + e.message);
   }
 };
 
 async function mostrarModalEditarChatbot(chatbot_id) {
-  const categoriasAssociadas = await fetch(`/chatbots/${chatbot_id}/categorias`).then(r=>r.json());
   const catDiv = document.getElementById("editarCategoriasChatbot");
-  if (categoriasAssociadas.length === 0) {
-    catDiv.innerHTML = `<span style="color:#888;">Nenhuma categoria associada a este chatbot.</span>`;
-  } else {
-    catDiv.innerHTML = categoriasAssociadas.map(cat => `
-      <label style="display:flex;align-items:center;gap:4px;">
-        <input type="checkbox" value="${cat.categoria_id}" checked>
-        ${cat.nome}
-      </label>
-    `).join("");
+  if (!catDiv) return;
+
+  try {
+    const categoriasAssociadas = await fetch(`/chatbots/${chatbot_id}/categorias`).then(r => r.json());
+    if (categoriasAssociadas.length === 0) {
+      catDiv.innerHTML = `<span style="color:#888;">Nenhuma categoria associada a este chatbot.</span>`;
+    } else {
+      catDiv.innerHTML = categoriasAssociadas.map(cat => `
+        <label style="display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" name="categorias[]" value="${cat.categoria_id}" checked>
+          ${cat.nome}
+        </label>
+      `).join("");
+    }
+  } catch (err) {
+    catDiv.innerHTML = `<span style="color:red;">Erro ao carregar categorias: ${err.message}</span>`;
   }
 }
 
 async function atualizarCategoriasDoChatbot(chatbot_id) {
-  const checks = Array.from(document.querySelectorAll("#editarCategoriasChatbot input[type=checkbox]"));
-  const selecionadas = checks.filter(cb => cb.checked).map(cb => parseInt(cb.value));
+  const catDiv = document.getElementById("editarCategoriasChatbot");
+  if (!catDiv) return;
 
-  const associadasResp = await fetch(`/chatbots/${chatbot_id}/categorias`);
-  const associadas = await associadasResp.json();
-  const associadasIds = associadas.map(c => c.categoria_id);
+  try {
+    const checks = Array.from(catDiv.querySelectorAll("input[type=checkbox]"));
+    const selecionadas = checks.filter(cb => cb.checked).map(cb => parseInt(cb.value));
 
-  const toAdd = selecionadas.filter(id => !associadasIds.includes(id));
-  const toRemove = associadasIds.filter(id => !selecionadas.includes(id));
+    const associadasResp = await fetch(`/chatbots/${chatbot_id}/categorias`);
+    const associadas = await associadasResp.json();
+    const associadasIds = associadas.map(c => c.categoria_id);
 
-  for (const catId of toAdd) {
-    await fetch(`/chatbots/${chatbot_id}/categorias`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ categoria_id: catId })
-    });
-  }
-  for (const catId of toRemove) {
-    await fetch(`/chatbots/${chatbot_id}/categorias/${catId}`, { method: "DELETE" });
+    const toAdd = selecionadas.filter(id => !associadasIds.includes(id));
+    const toRemove = associadasIds.filter(id => !selecionadas.includes(id));
+
+    for (const catId of toAdd) {
+      await fetch(`/chatbots/${chatbot_id}/categorias`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoria_id: catId })
+      });
+    }
+    for (const catId of toRemove) {
+      await fetch(`/chatbots/${chatbot_id}/categorias/${catId}`, { method: "DELETE" });
+    }
+  } catch (err) {
+    alert("Erro ao atualizar categorias: " + err.message);
   }
 }
 
 window.abrirModalAdicionarFAQ = async function(chatbot_id) {
-  document.getElementById('faqChatbotId').value = chatbot_id;
-  document.getElementById('docxChatbotId').value = chatbot_id;
-  document.getElementById('pdfChatbotId').value = chatbot_id;
+  const modal = document.getElementById("modalAdicionarFAQ");
+  if (!modal) return;
+  modal.setAttribute("data-chatbot-id", chatbot_id);
+  document.getElementById("faqChatbotId").value = chatbot_id;
+  document.getElementById("docxChatbotId").value = chatbot_id;
+  document.getElementById("pdfChatbotId").value = chatbot_id;
   await atualizarCategoriasFAQForm(chatbot_id);
-  document.getElementById("modalAdicionarFAQ").style.display = "flex";
-  if (document.getElementById("mensagemAdicionarFAQ"))
-    document.getElementById("mensagemAdicionarFAQ").innerHTML = "";
-  if (window.adicionarListenersFormulariosFAQ) window.adicionarListenersFormulariosFAQ();
-  if (window.adicionarListenersUploadDocx) window.adicionarListenersUploadDocx();
+  modal.style.display = "flex";
+  document.getElementById("mensagemFAQ").textContent = "";
 };
 
 async function atualizarCategoriasFAQForm(chatbot_id) {
   const select = document.getElementById("faqCategoriaSelect");
+  if (!select) return;
   select.innerHTML = '<option value="">Escolha a categoria</option>';
-  if (!chatbot_id) return;
-  const cats = await fetch(`/chatbots/${chatbot_id}/categorias`).then(r=>r.json());
-  cats.forEach(cat => {
-    const opt = document.createElement("option");
-    opt.value = cat.categoria_id;
-    opt.innerText = cat.nome;
-    select.appendChild(opt);
-  });
+
+  try {
+    if (!chatbot_id) return;
+    const cats = await fetch(`/chatbots/${chatbot_id}/categorias`).then(r => r.json());
+    cats.forEach(cat => {
+      const opt = document.createElement("option");
+      opt.value = cat.categoria_id;
+      opt.textContent = cat.nome;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Erro ao carregar categorias para FAQ:", err);
+  }
 }
 
+document.getElementById("formAdicionarFAQ").onsubmit = async function(e) {
+  e.preventDefault();
+  const chatbot_id = document.getElementById("faqChatbotId").value;
+  const designacao = this.elements["designacao"].value.trim();
+  const pergunta = this.elements["pergunta"].value.trim();
+  const resposta = this.elements["resposta"].value.trim();
+  const categoria_id = this.elements["categoria_id"].value;
+  const idioma = this.elements["idioma"].value;
+  const links_documentos = this.elements["links_documentos"].value.trim();
+  const relacionadas = this.elements["relacionadas"].value.trim();
+
+  if (!designacao || !pergunta || !resposta || !categoria_id || !idioma) {
+    document.getElementById("mensagemFAQ").textContent = "Preencha todos os campos obrigatórios!";
+    document.getElementById("mensagemFAQ").style.color = "red";
+    return;
+  }
+
+  const body = { chatbot_id, designacao, pergunta, resposta, categoria_id, idioma, links_documentos, relacionadas };
+  try {
+    const res = await fetch("/faqs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const result = await res.json();
+    if (res.ok) {
+      document.getElementById("mensagemFAQ").textContent = "FAQ adicionada com sucesso!";
+      document.getElementById("mensagemFAQ").style.color = "green";
+      this.reset();
+      setTimeout(() => {
+        window.fecharModalAdicionarFAQ();
+        carregarTabelaBots();
+      }, 1000);
+    } else {
+      document.getElementById("mensagemFAQ").textContent = "Erro: " + (result.error || result.erro);
+      document.getElementById("mensagemFAQ").style.color = "red";
+    }
+  } catch (err) {
+    document.getElementById("mensagemFAQ").textContent = "Erro ao comunicar com o servidor: " + err.message;
+    document.getElementById("mensagemFAQ").style.color = "red";
+  }
+};
+
+document.getElementById("formUploadDocxFAQ").onsubmit = async function(e) {
+  e.preventDefault();
+  const chatbot_id = document.getElementById("docxChatbotId").value;
+  const formData = new FormData(this);
+  formData.append("chatbot_id", chatbot_id);
+
+  try {
+    const res = await fetch("/upload-faq-docx", {
+      method: "POST",
+      body: formData
+    });
+    const result = await res.json();
+    if (res.ok) {
+      document.querySelector("#formUploadDocxFAQ .uploadStatus").textContent = "Upload bem-sucedido!";
+      document.querySelector("#formUploadDocxFAQ .uploadStatus").style.color = "green";
+      this.reset();
+    } else {
+      document.querySelector("#formUploadDocxFAQ .uploadStatus").textContent = "Erro: " + (result.error || result.erro);
+      document.querySelector("#formUploadDocxFAQ .uploadStatus").style.color = "red";
+    }
+  } catch (err) {
+    document.querySelector("#formUploadDocxFAQ .uploadStatus").textContent = "Erro ao enviar: " + err.message;
+    document.querySelector("#formUploadDocxFAQ .uploadStatus").style.color = "red";
+  }
+};
+
+document.getElementById("formUploadPDFFAQ").onsubmit = async function(e) {
+  e.preventDefault();
+  const chatbot_id = document.getElementById("pdfChatbotId").value;
+  const formData = new FormData(this);
+  formData.append("chatbot_id", chatbot_id);
+
+  try {
+    const res = await fetch("/upload-pdf", {
+      method: "POST",
+      body: formData
+    });
+    const result = await res.json();
+    if (res.ok) {
+      document.querySelector("#formUploadPDFFAQ .uploadStatusPDF").textContent = "Upload bem-sucedido!";
+      document.querySelector("#formUploadPDFFAQ .uploadStatusPDF").style.color = "green";
+      this.reset();
+    } else {
+      document.querySelector("#formUploadPDFFAQ .uploadStatusPDF").textContent = "Erro: " + (result.error || result.erro);
+      document.querySelector("#formUploadPDFFAQ .uploadStatusPDF").style.color = "red";
+    }
+  } catch (err) {
+    document.querySelector("#formUploadPDFFAQ .uploadStatusPDF").textContent = "Erro ao enviar: " + err.message;
+    document.querySelector("#formUploadPDFFAQ .uploadStatusPDF").style.color = "red";
+  }
+};
+
 window.fecharModalAdicionarFAQ = function() {
-  document.getElementById("modalAdicionarFAQ").style.display = "none";
+  const modal = document.getElementById("modalAdicionarFAQ");
+  if (modal) modal.style.display = "none";
 };
 
 window.fecharModalEditarChatbot = function() {
-  document.getElementById("modalEditarChatbot").style.display = "none";
+  const modal = document.getElementById("modalEditarChatbot");
+  if (modal) modal.style.display = "none";
+  document.getElementById("previewIcon").style.display = "none";
 };
 
 window.fecharModalNovoBot = function() {
-  document.getElementById("modalNovoBot").style.display = "none";
+  const modal = document.getElementById("modalNovoBot");
+  if (modal) modal.style.display = "none";
 };
