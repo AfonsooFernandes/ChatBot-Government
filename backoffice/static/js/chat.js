@@ -1,3 +1,5 @@
+const TEXTO_RGPD = "Antes de iniciar a conversa, gostaria de informar que, de acordo com o Regulamento Geral de Proteção de Dados (RGPD), esta conversa está registada. Se não concordar com este registo, por favor utilize outro canal.";
+
 function shadeColor(color, percent) {
   let R = parseInt(color.substring(1,3),16);
   let G = parseInt(color.substring(3,5),16);
@@ -173,17 +175,22 @@ function isSaudacao(msg) {
   return false;
 }
 
-function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestamp = null) {
+function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestamp = null, isRgpd = false) {
   const chat = document.getElementById("chatBody");
   let wrapper = document.createElement("div");
-  wrapper.className = "message-wrapper " + tipo;
-  const authorDiv = document.createElement("div");
-  authorDiv.className = "chat-author " + tipo;
-  authorDiv.textContent = tipo === "user" ? "Eu" : (autor || "Assistente Municipal");
-  wrapper.appendChild(authorDiv);
+  wrapper.className = `message-wrapper ${tipo}${isRgpd ? ' rgpd-wrapper' : ''}`;
+  
+  if (!isRgpd) {
+    const authorDiv = document.createElement("div");
+    authorDiv.className = "chat-author " + tipo;
+    authorDiv.textContent = tipo === "user" ? "Eu" : (autor || "Assistente Municipal");
+    wrapper.appendChild(authorDiv);
+  }
+  
   const messageContent = document.createElement("div");
   messageContent.className = "message-content";
-  if (tipo === "bot" && avatarUrl) {
+  
+  if (tipo === "bot" && avatarUrl && !isRgpd) {
     const avatarDiv = document.createElement("div");
     avatarDiv.className = "bot-avatar-outer";
     const avatar = document.createElement("img");
@@ -193,26 +200,30 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
     avatarDiv.appendChild(avatar);
     messageContent.appendChild(avatarDiv);
   }
+  
   const bubbleCol = document.createElement("div");
   bubbleCol.style.display = "flex";
   bubbleCol.style.flexDirection = "column";
   bubbleCol.style.alignItems = tipo === "user" ? "flex-end" : "flex-start";
+  
   const msgDiv = document.createElement("div");
-  msgDiv.className = `message ${tipo}`;
+  msgDiv.className = `message ${tipo}${isRgpd ? ' rgpd' : ''}`;
   msgDiv.style.whiteSpace = "pre-line";
   msgDiv.textContent = texto;
+  
   let corBot = localStorage.getItem("corChatbot") || "#d4af37";
-  if (tipo === "bot") {
+  if (tipo === "bot" && !isRgpd) {
     msgDiv.style.backgroundColor = corBot;
     msgDiv.style.color = "#fff";
   }
-  if (tipo === "user") {
+  if (tipo === "user" && !isRgpd) {
     msgDiv.style.backgroundColor = shadeColor(corBot, -18);
     msgDiv.style.color = "#fff";
   }
+  
   bubbleCol.appendChild(msgDiv);
-  if (
-    tipo === "bot" &&
+  
+  if (!isRgpd && tipo === "bot" &&
     texto !== "Fico contente por ter ajudado." &&
     texto !== "Lamento não ter conseguido responder. Tente reformular a pergunta." &&
     texto !== "I'm glad I could help." &&
@@ -224,49 +235,56 @@ function adicionarMensagem(tipo, texto, avatarUrl = null, autor = null, timestam
     feedbackDiv.innerHTML = criarBlocoFeedback(feedbackId);
     bubbleCol.appendChild(feedbackDiv);
   }
-  if (!timestamp) timestamp = gerarDataHoraFormatada();
-  const timestampDiv = document.createElement("div");
-  timestampDiv.className = "chat-timestamp";
-  timestampDiv.textContent = timestamp;
-  bubbleCol.appendChild(timestampDiv);
+  
+  if (!isRgpd && !timestamp) timestamp = gerarDataHoraFormatada();
+  if (!isRgpd) {
+    const timestampDiv = document.createElement("div");
+    timestampDiv.className = "chat-timestamp";
+    timestampDiv.textContent = timestamp;
+    bubbleCol.appendChild(timestampDiv);
+  }
+  
   messageContent.appendChild(bubbleCol);
   wrapper.appendChild(messageContent);
   chat.appendChild(wrapper);
   chat.scrollTop = chat.scrollHeight;
-  setTimeout(() => {
-    document.querySelectorAll('.feedback-icons').forEach(feedback => {
-      if (!feedback.dataset.eventBound) {
-        feedback.dataset.eventBound = true;
-        const likeBtn = feedback.querySelector('.like-btn');
-        const dislikeBtn = feedback.querySelector('.dislike-btn');
-        const label = feedback.querySelector('.feedback-label');
-        likeBtn.onclick = () => {
-          if (label.nextElementSibling && label.nextElementSibling.classList.contains('feedback-badge')) {
-            label.nextElementSibling.remove();
-          }
-          label.style.display = "none";
-          const badge = document.createElement('div');
-          badge.className = "feedback-badge positive";
-          badge.innerHTML = `<div class="feedback-line"></div><div class="feedback-label-box">Boa resposta</div>`;
-          label.parentNode.insertBefore(badge, label.nextSibling);
-          likeBtn.classList.add('active');
-          dislikeBtn.classList.remove('active');
-        };
-        dislikeBtn.onclick = () => {
-          if (label.nextElementSibling && label.nextElementSibling.classList.contains('feedback-badge')) {
-            label.nextElementSibling.remove();
-          }
-          label.style.display = "none";
-          const badge = document.createElement('div');
-          badge.className = "feedback-badge negative";
-          badge.innerHTML = `<div class="feedback-line"></div><div class="feedback-label-box">Má resposta</div>`;
-          label.parentNode.insertBefore(badge, label.nextSibling);
-          dislikeBtn.classList.add('active');
-          likeBtn.classList.remove('active');
-        };
-      }
-    });
-  }, 10);
+  
+  if (!isRgpd) {
+    setTimeout(() => {
+      document.querySelectorAll('.feedback-icons').forEach(feedback => {
+        if (!feedback.dataset.eventBound) {
+          feedback.dataset.eventBound = true;
+          const likeBtn = feedback.querySelector('.like-btn');
+          const dislikeBtn = feedback.querySelector('.dislike-btn');
+          const label = feedback.querySelector('.feedback-label');
+          likeBtn.onclick = () => {
+            if (label.nextElementSibling && label.nextElementSibling.classList.contains('feedback-badge')) {
+              label.nextElementSibling.remove();
+            }
+            label.style.display = "none";
+            const badge = document.createElement('div');
+            badge.className = "feedback-badge positive";
+            badge.innerHTML = `<div class="feedback-line"></div><div class="feedback-label-box">Boa resposta</div>`;
+            label.parentNode.insertBefore(badge, label.nextSibling);
+            likeBtn.classList.add('active');
+            dislikeBtn.classList.remove('active');
+          };
+          dislikeBtn.onclick = () => {
+            if (label.nextElementSibling && label.nextElementSibling.classList.contains('feedback-badge')) {
+              label.nextElementSibling.remove();
+            }
+            label.style.display = "none";
+            const badge = document.createElement('div');
+            badge.className = "feedback-badge negative";
+            badge.innerHTML = `<div class="feedback-line"></div><div class="feedback-label-box">Má resposta</div>`;
+            label.parentNode.insertBefore(badge, label.nextSibling);
+            dislikeBtn.classList.add('active');
+            likeBtn.classList.remove('active');
+          };
+        }
+      });
+    }, 10);
+  }
 }
 
 function adicionarFeedbackResolvido(onClick, idioma = "pt", isSaudacaoMsg = false) {
@@ -352,12 +370,12 @@ function limparTimersAutoChat() {
 
 function abrirChat() {
   document.getElementById('chatSidebar').style.display = 'flex';
+  initialMessageShown = false;
   apresentarMensagemInicial();
   iniciarTimerAutoMensagem();
   atualizarCorChatbot();
   const toggleCard = document.querySelector('.chat-toggle-card');
-  if (
-    toggleCard) toggleCard.style.display = 'none';
+  if (toggleCard) toggleCard.style.display = 'none';
 }
 window.fecharChat = function() {
   document.getElementById('chatSidebar').style.display = 'none';
@@ -369,6 +387,7 @@ window.fecharChat = function() {
 
 async function apresentarMensagemInicial() {
   if (initialMessageShown) return;
+  
   let nomeBot, corBot, iconBot;
   const chatbotId = parseInt(localStorage.getItem("chatbotAtivo"));
   if (chatbotId && !isNaN(chatbotId)) {
@@ -400,6 +419,9 @@ async function apresentarMensagemInicial() {
     localStorage.setItem("iconBot", iconBot);
   }
   atualizarCorChatbot();
+  
+  adicionarMensagem("bot", TEXTO_RGPD, null, null, null, true);
+
   const msg = `Olá!
 Eu sou o ${nomeBot}, o seu assistente virtual.
 Faça uma pergunta de cada vez que eu procurarei esclarecer todas as suas dúvidas.`;
