@@ -12,6 +12,15 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
 </head>
+{% if 'admin_id' not in session %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <script>
+                window.location.href = "{{ url_for('login') }}";
+            </script>
+        {% endif %}
+    {% endwith %}
+{% endif %}
 <body>
   <div class="layout">
     <aside>
@@ -31,7 +40,7 @@
             <div class="bot-subtext">Chatbot Municipal</div>
           </div>
         </div>
-        <button id="publicarBtn">Publicar</button>
+        <button id="publicarBtn" onclick="window.location.href='{{ url_for('logout') }}'">Sair</button>
       </header>
       <div class="panel">
         <div id="indicadorAtivo" style="display: none;" class="ativo-indicador"></div>
@@ -54,8 +63,7 @@
       </div>
     </div>
   </div>
-
-  <!-- Chat Sidebar UNIFICADO -->
+  <!-- Chat Sidebar -->
   <div class="chat-sidebar" id="chatSidebar" style="display: none;">
     <div class="chat-header">
       <button class="chat-close-btn" onclick="fecharChat()">×</button>
@@ -71,12 +79,10 @@
       <button onclick="enviarPergunta()" title="Enviar">➤</button>
     </div>
   </div>
-
   <!-- Botão flutuante para abrir o chat -->
   <button id="chatToggleBtn" class="chat-toggle-btn">
     <img src="{{ url_for('static', filename='images/icon-botao.png') }}" alt="Chatbot">
   </button>
-
   <!-- Modal de confirmação -->
   <div id="modalConfirmacao" class="modal-overlay modal-overlay-confirmacao" style="display: none;">
     <div class="modal-box modal-box-confirmacao">
@@ -87,7 +93,6 @@
       </div>
     </div>
   </div>
-
   <!-- Modal de Editar FAQ -->
   <div id="modalEditarFAQ" class="modal-overlay modal-overlay-editar-faq" style="display: none;">
     <div class="modal-box modal-box-editar-faq">
@@ -95,24 +100,19 @@
       <form id="formEditarFAQ" autocomplete="off">
         <label for="editarPergunta">Pergunta</label>
         <textarea name="pergunta" id="editarPergunta" required class="input-lg" rows="4"></textarea>
-
         <label for="editarResposta" style="margin-top:18px;">Resposta</label>
         <textarea name="resposta" id="editarResposta" required class="input-lg" rows="8"></textarea>
-
         <label for="editarIdioma" style="margin-top:18px;">Idioma</label>
         <select name="idioma" id="editarIdioma" class="input-lg" style="max-width: 100%;">
           <option value="pt">Português (PT)</option>
           <option value="en">Inglês (EN)</option>
         </select>
-
         <label style="margin-bottom: 7px; margin-top: 22px;">Categorias associadas</label>
         <div id="editarCategoriasContainer" class="categorias-scroll"></div>
-
         <label for="editarRecomendado" style="margin-top:22px;display:flex;align-items:center;gap:8px;">
           <input type="checkbox" id="editarRecomendado" name="recomendado" style="width:18px;height:18px;">
           Marcar como resposta recomendada
         </label>
-
         <div class="btn-bar" style="margin-top: 30px;">
           <button type="submit" class="btn-guardar-faq" id="btnGuardarFAQ">Guardar</button>
           <button type="button" class="btn-cancelar" id="btnCancelarFAQ">Cancelar</button>
@@ -121,7 +121,6 @@
       </form>
     </div>
   </div>
-
   <!-- Rodapé -->
   <footer class="rodape">
     <div class="rodape-content">
@@ -133,7 +132,6 @@
       </div>
     </div>
   </footer>
-
   <!-- Scripts -->
   <script src="{{ url_for('static', filename='js/globals.js') }}"></script>
   <script src="{{ url_for('static', filename='js/faq.js') }}"></script>

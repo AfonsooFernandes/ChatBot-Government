@@ -1,5 +1,7 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 import psycopg2
 import docx
 import PyPDF2
@@ -19,13 +21,55 @@ from werkzeug.utils import secure_filename
 # ---------- LOGGING ----------
 logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
+app.secret_key = "uma_chave_secreta_fixa_para_testes"
 CORS(app)
 
+# ---------- SISTEMA DE LOGIN ----------
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'admin_id' not in session:
+            flash('Acesso negado! Faça login.', 'error')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'login':
+            username = request.form['username']
+            password = request.form['password']
+            
+            cur = conn.cursor()
+            cur.execute("SELECT admin_id, password FROM Administrador WHERE username = %s", (username,))
+            admin = cur.fetchone()
+            cur.close()
+            
+            if admin and admin[1] and check_password_hash(admin[1], password):
+                session['admin_id'] = admin[0]
+                flash('Login realizado com sucesso!', 'success')
+                return redirect(url_for('index'))
+            else:
+                flash('Username ou password incorretos!', 'error')
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('admin_id', None)
+    flash('Logout realizado com sucesso!', 'success')
+    return redirect(url_for('login'))
+
+# ---------- ROTAS DO BACKOFFICE ----------
 @app.route("/")
+@login_required
 def index():
     return render_template("recursos.html")
 
 @app.route("/contexto")
+@login_required
 def contexto():
     return render_template("contexto.html")
 
@@ -38,6 +82,7 @@ def landing_2():
     return render_template("landing-2.html")
 
 @app.route("/respostas")
+@login_required
 def respostas():
     return render_template("respostas.html")
 
@@ -50,6 +95,10 @@ try:
         user="postgres",
         password="29344"
     )
+    cur = conn.cursor()
+    cur.execute("SELECT 1")
+    cur.close()
+    print("Conexão á base~de dados bem-sucedida")
 except Exception as e:
     print("❌ Erro ao conectar à base de dados:", e)
     raise
@@ -430,7 +479,7 @@ def atualizar_chatbot(chatbot_id):
         print("Dados recebidos:", dict(request.form))
         nome = request.form.get("nome", "").strip()
         descricao = request.form.get("descricao", "").strip()
-        fonte = request.form.get("fonte", "faq")  # Valor padrão "faq" se não enviado
+        fonte = request.form.get("fonte", "faq")
         categorias = request.form.getlist("categorias[]") if request.form.getlist("categorias[]") else []
         cor = request.form.get("cor", "").strip() or "#d4af37"
         mensagem_sem_resposta = request.form.get("mensagem_sem_resposta", "").strip()
@@ -454,7 +503,6 @@ def atualizar_chatbot(chatbot_id):
                 "INSERT INTO ChatbotCategoria (chatbot_id, categoria_id) VALUES (%s, %s)",
                 (chatbot_id, int(categoria_id))
             )
-        # Garantir que a fonte seja sempre atualizada ou inserida
         cur.execute("SELECT 1 FROM FonteResposta WHERE chatbot_id=%s", (chatbot_id,))
         if cur.fetchone():
             cur.execute("UPDATE FonteResposta SET fonte=%s WHERE chatbot_id=%s", (fonte, chatbot_id))
@@ -975,6 +1023,7 @@ def get_faqs_detalhes():
     except Exception as e:
         conn.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route("/obter-resposta", methods=["POST"])
 def obter_resposta():
     cur = conn.cursor()
@@ -1139,6 +1188,7 @@ def obter_resposta():
         return jsonify({"success": False, "erro": str(e)}), 500
     finally:
         cur.close()
+
 @app.route("/perguntas-semelhantes", methods=["POST"])
 def perguntas_semelhantes():
     cur = conn.cursor()
@@ -1171,6 +1221,7 @@ def perguntas_semelhantes():
         return jsonify({"success": True, "sugestoes": sugestoes})
     except Exception as e:
         return jsonify({"success": False, "erro": str(e)}), 500
+
 @app.route("/faqs-aleatorias", methods=["POST"])
 def faqs_aleatorias():
     cur = conn.cursor()
@@ -1199,6 +1250,7 @@ def faqs_aleatorias():
         return jsonify({"success": True, "faqs": [{"pergunta": p} for p in faqs]})
     except Exception as e:
         return jsonify({"success": False, "erro": str(e)}), 500
+
 @app.route("/chatbot/<int:chatbot_id>", methods=["GET"])
 def obter_nome_chatbot(chatbot_id):
     cur = conn.cursor()
@@ -1210,12 +1262,14 @@ def obter_nome_chatbot(chatbot_id):
         return jsonify({"success": False, "erro": "Chatbot não encontrado."}), 404
     except Exception as e:
         return jsonify({"success": False, "erro": str(e)}), 500
+
 @app.route("/rebuild-faiss", methods=["POST"])
 def rebuild_faiss():
     build_faiss_index()
     global faiss_index, faqs_db, faq_embeddings
     faiss_index, faqs_db, faq_embeddings = load_faiss_index()
     return jsonify({"success": True, "msg": "FAISS index rebuilt."})
+
 # ---------- INICIAR SERVIDOR ----------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

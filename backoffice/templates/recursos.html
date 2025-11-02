@@ -12,6 +12,15 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
 </head>
+{% if 'admin_id' not in session %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <script>
+                window.location.href = "{{ url_for('login') }}";
+            </script>
+        {% endif %}
+    {% endwith %}
+{% endif %}
 <body>
   <div class="layout">
     <aside>
@@ -31,7 +40,7 @@
             <div class="bot-subtext">Chatbot Municipal</div>
           </div>
         </div>
-        <button id="publicarBtn">Publicar</button>
+        <button id="publicarBtn" onclick="window.location.href='{{ url_for('logout') }}'">Sair</button>
       </header>
       <div class="panel">
         <div id="indicadorAtivo" style="display: none;" class="ativo-indicador"></div>
