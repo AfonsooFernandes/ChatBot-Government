@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Login - Backoffice AI4Governance</title>
+    <title>Registar Admin - Backoffice AI4Governance</title>
     <link rel="icon" href="{{ url_for('static', filename='images/chatbot-icon.png') }}" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
@@ -54,7 +54,7 @@
             border-color: #667eea;
             box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
         }
-        .btn-login {
+        .btn-login, .btn-registar {
             width: 100%;
             padding: 12px;
             background: #667eea;
@@ -65,8 +65,9 @@
             cursor: pointer;
             font-family: 'Inter', sans-serif;
             transition: background 0.3s;
+            margin-top: 10px;
         }
-        .btn-login:hover {
+        .btn-login:hover, .btn-registar:hover {
             background: #5a67d8;
         }
         .alert {
@@ -86,25 +87,22 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-        .register-link {
+        .back-link {
             display: block;
             margin-top: 20px;
             color: #667eea;
             text-decoration: none;
             font-weight: 500;
-            font-size: 15px;
-        }
-        .register-link:hover {
-            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="login-header">
-            <img src="{{ url_for('static', filename='images/chatbot-icon.png') }}" alt="Logo AI4Governance">
-            <h1>Backoffice AI4Governance</h1>
+            <img src="{{ url_for('static', filename='images/chatbot-icon.png') }}" alt="Logo">
+            <h1>Novo Administrador</h1>
         </div>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -113,18 +111,13 @@
             {% endif %}
         {% endwith %}
 
-        <!-- Formulário de Login -->
         <form method="POST" class="login-form">
-            <input type="hidden" name="action" value="login">
-            <input type="text" name="username" placeholder="Username" required autofocus>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit" class="btn-login">ENTRAR</button>
+            <input type="text" name="username" placeholder="Novo Username" required autofocus>
+            <input type="password" name="password" placeholder="Nova Password" required>
+            <button type="submit" class="btn-registar">CRIAR CONTA</button>
         </form>
 
-        <!-- Link para Registar Novo Admin -->
-        <a href="{{ url_for('registrar_admin') }}" class="register-link">
-            Registar Novo Administrador
-        </a>
+        <a href="{{ url_for('login') }}" class="back-link">Voltar ao Login</a>
     </div>
 </body>
 </html>

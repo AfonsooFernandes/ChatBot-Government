@@ -56,6 +56,33 @@ def login():
     
     return render_template('login.html')
 
+@app.route('/registrar_admin', methods=['GET', 'POST'])
+def registrar_admin():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Verificar se já existe
+        cur = conn.cursor()
+        cur.execute("SELECT admin_id FROM Administrador WHERE username = %s", (username,))
+        if cur.fetchone():
+            flash('Este utilizador já existe!', 'error')
+            cur.close()
+            return redirect(url_for('registrar_admin'))
+        
+        # Criar novo admin
+        hashed = generate_password_hash(password)
+        cur.execute(
+            "INSERT INTO Administrador (username, password) VALUES (%s, %s)",
+            (username, hashed)
+        )
+        conn.commit()
+        cur.close()
+        flash('Administrador criado com sucesso! Pode agora fazer login.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('registrar_admin.html')    
+
 @app.route('/logout')
 def logout():
     session.pop('admin_id', None)
